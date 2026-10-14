@@ -1,0 +1,13 @@
+# Environnement Python créé par les lanceurs
+.venv/
+__pycache__/
+*.pyc
+
+# Cache local des données NBA (ne doit jamais être publié)
+data/
+*.sqlite3
+*.sqlite3-*
+
+# Systèmes
+.DS_Store
+Thumbs.db
