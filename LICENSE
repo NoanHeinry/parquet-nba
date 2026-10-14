@@ -19,14 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-This license covers the source code of Parquet only. It does not cover:
-
-- the fonts in web/fonts/ (Archivo and Big Shoulders Display), distributed
-  under the SIL Open Font License 1.1 (see the OFL-*.txt files next to them);
-- the data, logos and photos that the application downloads at runtime from
-  NBA.com, which remain the property of the NBA and their respective owners;
-- the Wikipedia texts displayed by the application, which are available under
-  the CC BY-SA license.
