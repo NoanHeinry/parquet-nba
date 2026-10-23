@@ -16,9 +16,10 @@ Parquet affiche les scores des matchs en temps réel, le détail de chaque renco
 - Page de match : score par quart-temps, duel statistique des deux équipes, meilleurs joueurs, box score complet, fil des actions filtrable et carte des tirs.
 - Avant le coup d'envoi : forme récente des deux équipes. La page bascule seule en mode direct au début du match.
 
-**Encyclopédie**
+**Encyclopédie et analyse**
 - Équipes : effectif, staff, calendrier, résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
 - Joueurs : recherche dans toute l'histoire de la ligue, filtres (équipe, poste, pays), biographie, palmarès, parcours, records, statistiques de carrière en graphique et en tableau, derniers matchs.
+- Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.
 - Classement par conférence et leaders statistiques de la saison.
 
 **Confort**
@@ -143,6 +144,6 @@ Parquet est un projet personnel indépendant, sans lien avec la NBA ni ses équi
 ## Pistes d'amélioration
 
 - Notifications de début et de fin de match pour les équipes favorites.
-- Comparateur de deux joueurs, saison par saison.
 - Tableau des séries pendant les playoffs.
 - Application installable sur téléphone (PWA) servie depuis l'ordinateur.
+- Graphiques avancés et cartes de tir comparées.

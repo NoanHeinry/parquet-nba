@@ -4,7 +4,7 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 
 - **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, puis pour chaque match le score par quart-temps, le duel des équipes, le box score complet, le fil des actions et la carte des tirs. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
 - **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier, leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
-- **Joueurs** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière, derniers matchs).
+- **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
 - **Classement** et **leaders** de la saison.
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
 
@@ -37,6 +37,7 @@ Le premier lancement prépare un environnement Python dans le dossier (une minut
 ## Astuces
 
 - Appuie sur `/` n'importe où pour chercher un joueur ou une équipe.
+- Depuis la fiche d'un joueur, clique sur « ⚖️ Comparer ce joueur » pour lancer un face-à-face immédiat avec un rival.
 - Ajoute tes équipes favorites (bouton en haut de leur page) : leurs matchs passent en premier.
 - Le bouton en forme de lune ou de soleil change le thème.
 
