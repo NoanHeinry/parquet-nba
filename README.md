@@ -23,6 +23,7 @@ Parquet affiche les scores des matchs en temps réel, le détail de chaque renco
 
 **Confort**
 - Recherche instantanée accessible partout (touche `/`).
+- Mode anti-spoiler pour masquer les scores et regarder les matchs en différé sans révélation involontaire (révélation match par match ou globale).
 - Équipes favorites mises en avant, thème sombre ou clair, mise en page adaptée au téléphone.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
