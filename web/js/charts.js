@@ -297,3 +297,150 @@ export function shotChart(shots, color) {
   svg.append(marks);
   return svg;
 }
+
+// ------------------------------------------------------------ double courbe (comparateur)
+
+// seriesA: { name: string, color: string, points: [{ label, value, tip }] }
+// seriesB: { name: string, color: string, points: [{ label, value, tip }] }
+export function dualLineChart(seriesA, seriesB, { format = (v) => String(v), tickFormat = null, height = 280 } = {}) {
+  const width = 760;
+  const m = { top: 36, right: 44, bottom: 32, left: 44 };
+  const allValues = [
+    ...seriesA.points.map((p) => p.value),
+    ...seriesB.points.map((p) => p.value),
+  ].filter((v) => v !== null && v !== undefined);
+  const maxV = allValues.length ? Math.max(...allValues) : 1;
+  const step = niceStep(maxV);
+  const top = Math.max(step, Math.ceil(maxV / step) * step);
+  const iw = width - m.left - m.right;
+  const ih = height - m.top - m.bottom;
+
+  const maxLen = Math.max(seriesA.points.length, seriesB.points.length, 1);
+  const x = (i) => m.left + (maxLen === 1 ? iw / 2 : (i / (maxLen - 1)) * iw);
+  const y = (v) => m.top + ih - (v / top) * ih;
+
+  const svg = s("svg", { viewBox: `0 0 ${width} ${height}`, class: "chart dual-chart", role: "img" });
+  const grid = s("g", { class: "grid" });
+  const axis = s("g", { class: "axis" });
+
+  for (let v = 0; v <= top + 1e-9; v += step) {
+    grid.append(s("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v) }));
+    axis.append(s("text", { x: m.left - 8, y: y(v) + 4, "text-anchor": "end" }, (tickFormat || format)(v)));
+  }
+
+  // Étiquettes horizontales (Saison 1, Saison 2...)
+  const labelEvery = Math.max(1, Math.ceil(maxLen / 10));
+  for (let i = 0; i < maxLen; i++) {
+    if (i % labelEvery === 0 || i === maxLen - 1) {
+      axis.append(s("text", { x: x(i), y: height - 8, "text-anchor": "middle" }, `S${i + 1}`));
+    }
+  }
+
+  svg.append(grid, axis);
+
+  // Tracé pour chaque joueur
+  const drawSeries = (series, color) => {
+    const defined = series.points.map((p, i) => ({ ...p, i })).filter((p) => p.value !== null && p.value !== undefined);
+    if (!defined.length) return;
+    const d = defined.map((p, k) => `${k ? "L" : "M"}${x(p.i).toFixed(1)},${y(p.value).toFixed(1)}`).join("");
+    svg.append(
+      s("path", {
+        class: "dual-series",
+        d,
+        fill: "none",
+        stroke: color,
+        "stroke-width": 2.5,
+        "stroke-linecap": "round",
+        "stroke-linejoin": "round",
+      })
+    );
+    for (const p of defined) {
+      svg.append(s("circle", { cx: x(p.i), cy: y(p.value), r: 3.5, fill: color }));
+    }
+  };
+
+  drawSeries(seriesA, seriesA.color);
+  drawSeries(seriesB, seriesB.color);
+
+  // Légende en haut du graphique
+  const legend = s("g", { class: "legend" });
+  legend.append(
+    s("circle", { cx: width - 240, cy: 15, r: 5, fill: seriesA.color }),
+    s("text", { x: width - 230, y: 19, fill: "var(--text-2)", "font-size": "12.5px", "font-weight": "600" }, seriesA.name),
+    s("circle", { cx: width - 110, cy: 15, r: 5, fill: seriesB.color }),
+    s("text", { x: width - 100, y: 19, fill: "var(--text-2)", "font-size": "12.5px", "font-weight": "600" }, seriesB.name)
+  );
+  svg.append(legend);
+
+  // Calque de survol
+  const cross = s("line", { class: "crosshair", y1: m.top, y2: m.top + ih, visibility: "hidden" });
+  const dotA = s("circle", { r: 5.5, fill: seriesA.color, stroke: "var(--surface)", "stroke-width": 1.5, visibility: "hidden" });
+  const dotB = s("circle", { r: 5.5, fill: seriesB.color, stroke: "var(--surface)", "stroke-width": 1.5, visibility: "hidden" });
+  const overlay = s("rect", { x: m.left - 10, y: m.top, width: iw + 20, height: ih, fill: "transparent", tabindex: 0 });
+  svg.append(cross, dotA, dotB, overlay);
+
+  const showSeason = (i, event) => {
+    if (i < 0 || i >= maxLen) return;
+    const pA = seriesA.points[i];
+    const pB = seriesB.points[i];
+
+    cross.setAttribute("x1", x(i));
+    cross.setAttribute("x2", x(i));
+    cross.setAttribute("visibility", "visible");
+
+    if (pA && pA.value !== null && pA.value !== undefined) {
+      dotA.setAttribute("cx", x(i));
+      dotA.setAttribute("cy", y(pA.value));
+      dotA.setAttribute("visibility", "visible");
+    } else {
+      dotA.setAttribute("visibility", "hidden");
+    }
+
+    if (pB && pB.value !== null && pB.value !== undefined) {
+      dotB.setAttribute("cx", x(i));
+      dotB.setAttribute("cy", y(pB.value));
+      dotB.setAttribute("visibility", "visible");
+    } else {
+      dotB.setAttribute("visibility", "hidden");
+    }
+
+    const lines = [`Saison n°${i + 1} de carrière`];
+    if (pA && pA.value !== null && pA.value !== undefined) {
+      lines.push(`${seriesA.name} : ${format(pA.value)}${pA.label ? ` (${pA.label})` : ""}`);
+    } else {
+      lines.push(`${seriesA.name} : non disputée`);
+    }
+    if (pB && pB.value !== null && pB.value !== undefined) {
+      lines.push(`${seriesB.name} : ${format(pB.value)}${pB.label ? ` (${pB.label})` : ""}`);
+    } else {
+      lines.push(`${seriesB.name} : non disputée`);
+    }
+
+    if (event) showTip(event, lines);
+    else tipAt(cross, lines);
+  };
+
+  overlay.addEventListener("pointermove", (e) => {
+    const r = svg.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * width;
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < maxLen; i++) {
+      const dd = Math.abs(x(i) - px);
+      if (dd < bestD) {
+        bestD = dd;
+        best = i;
+      }
+    }
+    showSeason(best, e);
+  });
+
+  overlay.addEventListener("pointerleave", () => {
+    cross.setAttribute("visibility", "hidden");
+    dotA.setAttribute("visibility", "hidden");
+    dotB.setAttribute("visibility", "hidden");
+    hideTip();
+  });
+
+  return svg;
+}

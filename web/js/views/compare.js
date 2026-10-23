@@ -3,7 +3,7 @@
 import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
-import { compareRows } from "../charts.js";
+import { compareRows, dualLineChart } from "../charts.js";
 import { errorState, headshot, loading, segmented, teamLogo } from "../components.js";
 import { playerIndex, searchPlayers } from "../search.js";
 import { team, teamColor, teamPair } from "../teams.js";
@@ -49,6 +49,15 @@ function perGame(row, key) {
   if (key === "fgPct" || key === "tpPct" || key === "ftPct") return v;
   if (key === "gp") return v;
   return row.gp ? v / row.gp : 0;
+}
+
+function careerSeries(rows) {
+  const bySeason = new Map();
+  for (const r of rows || []) {
+    const prev = bySeason.get(r.season);
+    if (!prev || r.tri === "TOT") bySeason.set(r.season, r);
+  }
+  return [...bySeason.values()];
 }
 
 function playerCard(p, onRemove, color) {
@@ -344,13 +353,83 @@ export async function render(ctx) {
       const duelBox = h("div", null, renderDuel());
       const awardsSection = renderAwards();
 
+      // Graphique de trajectoire de carrière saison par saison
+      let chartStat = "pts";
+      const CHART_STATS = [
+        { value: "pts", label: "Points" },
+        { value: "reb", label: "Rebonds" },
+        { value: "ast", label: "Passes" },
+        { value: "min", label: "Minutes" },
+        { value: "fgPct", label: "% Tirs" },
+      ];
+
+      const s1 = careerSeries(p1Career.regular);
+      const s2 = careerSeries(p2Career.regular);
+
+      const chartCard = h("div", { class: "chart-card", style: { marginTop: "14px" } });
+      const drawChart = () => {
+        const isPct = chartStat === "fgPct";
+        const fmt = (v) => (isPct ? `${f.pct(v)} %` : f.num(v));
+        const val = (r) => (isPct ? r[chartStat] : r.gp ? r[chartStat] / r.gp : 0);
+
+        const seriesA = {
+          name: p1Info.name,
+          color: c1,
+          points: s1.map((r) => ({
+            label: r.season,
+            value: val(r),
+          })),
+        };
+        const seriesB = {
+          name: p2Info.name,
+          color: c2,
+          points: s2.map((r) => ({
+            label: r.season,
+            value: val(r),
+          })),
+        };
+
+        const activeChoice = CHART_STATS.find((c) => c.value === chartStat) || CHART_STATS[0];
+        chartCard.replaceChildren(
+          h(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "8px" } },
+            h("strong", null, `${activeChoice.label} par match (aligné par saison de carrière)`),
+            h("span", { class: "note" }, "Survole la courbe pour comparer chaque saison.")
+          ),
+          dualLineChart(seriesA, seriesB, { format: fmt })
+        );
+      };
+
+      const chartToolbar = h(
+        "div",
+        { class: "toolbar", style: { marginBottom: "8px" } },
+        segmented(CHART_STATS, chartStat, (v) => {
+          chartStat = v;
+          drawChart();
+        }, "Statistique du graphique")
+      );
+      drawChart();
+
+      const trajectorySection = (s1.length || s2.length)
+        ? h(
+            "section",
+            { class: "section", style: { marginTop: "36px" } },
+            h("h2", { class: "section-title" }, "Évolution de carrière (saison par saison)"),
+            h("p", { class: "note", style: { margin: "0 0 14px" } }, "Compare leurs moyennes à chaque étape de carrière depuis leur saison rookie (S1 = 1re saison)."),
+            chartToolbar,
+            chartCard
+          )
+        : null;
+
       statsContainer.replaceChildren(
         h("section", { class: "section" },
           h("h2", { class: "section-title" }, "Face-à-face statistique"),
           modeToolbar,
           duelBox
         ),
-        awardsSection || ""
+        awardsSection || "",
+        trajectorySection || ""
       );
     } catch (err) {
       if (err.name === "AbortError") return;

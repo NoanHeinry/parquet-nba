@@ -2082,6 +2082,10 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
   stroke-linecap: round;
 }
 
+.chart .dual-series {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
 .chart .dot {
   fill: var(--accent);
   stroke: var(--surface);
