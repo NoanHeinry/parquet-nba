@@ -889,6 +889,76 @@ main:focus {
   text-overflow: ellipsis;
 }
 
+.tile-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tile-reveal-btn {
+  display: none;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  padding: 2px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  line-height: 1.5;
+  transition: all 0.15s ease;
+}
+
+.tile-reveal-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+/* Mode anti-spoiler sur les tuiles */
+html[data-spoiler="1"] .tile-reveal-btn {
+  display: inline-flex;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team .score {
+  filter: blur(10px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+  opacity: 0.85;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team .score:hover {
+  filter: blur(5px);
+  opacity: 1;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team .winmark {
+  visibility: hidden;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team.loser .score,
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team.loser .tri {
+  color: inherit;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders {
+  filter: blur(8px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+  opacity: 0.75;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
+  filter: blur(4px);
+  opacity: 1;
+}
+
 .tile-leaders {
   font-size: 12.5px;
   color: var(--muted);

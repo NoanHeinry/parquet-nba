@@ -178,6 +178,10 @@ export function toggleFavorite(teamId) {
 
 // ------------------------------------------------------------ matchs
 
+export function isSpoilerFree() {
+  return document.documentElement.dataset.spoiler === "1";
+}
+
 function teamName(side) {
   return side?.name || team(side?.id)?.name || "À déterminer";
 }
@@ -199,7 +203,17 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   const row = (sideKey) => {
     const side = game[sideKey];
     const prevScore = previous?.get(`${game.id}:${sideKey}`);
-    const score = h("span", { class: "score" }, started ? String(side?.score ?? 0) : "");
+    const score = h("span", { class: "score", title: "Cliquer pour révéler ou masquer le score" }, started ? String(side?.score ?? 0) : "");
+    if (started) {
+      score.addEventListener("click", (e) => {
+        if (isSpoilerFree()) {
+          e.preventDefault();
+          e.stopPropagation();
+          tile.classList.toggle("is-revealed");
+          syncRevealBtn();
+        }
+      });
+    }
     if (started && prevScore !== undefined && side?.score > prevScore) score.classList.add("bump");
     if (winner === sideKey) score.append(h("i", { class: "winmark", "aria-label": "vainqueur" }));
     const record = side?.wins !== null && side?.wins !== undefined && (side.wins + side.losses > 0) ? `${side.wins}-${side.losses}` : "";
@@ -240,7 +254,17 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   }
 
   // Meilleurs marqueurs (match commencé) ou lieu et diffusion (match à venir).
-  const extra = h("div", { class: "tile-leaders" });
+  const extra = h("div", { class: "tile-leaders", title: started ? "Cliquer pour révéler le score et les leaders" : null });
+  if (started) {
+    extra.addEventListener("click", (e) => {
+      if (isSpoilerFree()) {
+        e.preventDefault();
+        e.stopPropagation();
+        tile.classList.toggle("is-revealed");
+        syncRevealBtn();
+      }
+    });
+  }
   const leaders = game.leaders;
   if (started && leaders) {
     for (const key of ["away", "home"]) {
@@ -256,12 +280,43 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   }
   if (extra.childNodes.length) tile.append(extra);
 
+  let revealBtn = null;
+  const syncRevealBtn = () => {
+    if (!revealBtn) return;
+    const isRev = tile.classList.contains("is-revealed");
+    revealBtn.textContent = isRev ? "Masquer" : "Révéler";
+    revealBtn.setAttribute("aria-label", isRev ? "Masquer le score de ce match" : "Révéler le score de ce match");
+    revealBtn.title = isRev ? "Masquer le score" : "Révéler le score";
+  };
+
+  if (started) {
+    revealBtn = h("button", {
+      type: "button",
+      class: "tile-reveal-btn",
+      "aria-label": "Révéler le score de ce match",
+    });
+    syncRevealBtn();
+    revealBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      tile.classList.toggle("is-revealed");
+      syncRevealBtn();
+    });
+  }
+
+  const footRight = h(
+    "div",
+    { class: "tile-foot-right" },
+    revealBtn,
+    h("span", { class: "tile-label" }, game.series || f.gameLabel(game))
+  );
+
   tile.append(
     h(
       "div",
       { class: "tile-foot" },
       h("span", { class: `tile-status${status.live ? " live" : ""}` }, status.live ? h("span", { class: "live-dot", "aria-hidden": "true" }) : null, started || status.text.includes("confirmer") || game.postponed ? status.text : "À venir"),
-      h("span", { class: "tile-label" }, game.series || f.gameLabel(game))
+      footRight
     )
   );
   return tile;
