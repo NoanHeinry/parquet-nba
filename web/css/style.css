@@ -338,6 +338,13 @@ h3 {
   font-size: 14px;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
 .icon-btn {
   display: inline-grid;
   place-items: center;
@@ -348,10 +355,18 @@ h3 {
   background: var(--surface);
   cursor: pointer;
   flex: none;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .icon-btn:hover {
   border-color: var(--line-strong);
+}
+
+.icon-btn.is-active,
+.icon-btn[aria-pressed="true"] {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .icon-btn svg {

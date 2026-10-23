@@ -55,6 +55,44 @@ function initTheme() {
   sync();
 }
 
+function initSpoilerMode() {
+  const btn = document.getElementById("spoiler-toggle");
+  if (!btn) return;
+  const root = document.documentElement;
+  const isSpoiler = () => root.dataset.spoiler === "1";
+
+  const EYE =
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF =
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  const sync = () => {
+    const on = isSpoiler();
+    btn.setAttribute("aria-label", on ? "Désactiver le mode anti-spoiler (afficher les scores)" : "Activer le mode anti-spoiler (masquer les scores)");
+    btn.title = on ? "Mode anti-spoiler actif (scores masqués) — cliquer pour afficher" : "Mode anti-spoiler inactif — cliquer pour masquer les scores";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.innerHTML = on ? EYE_OFF : EYE;
+    if (on) btn.classList.add("is-active");
+    else btn.classList.remove("is-active");
+  };
+
+  btn.addEventListener("click", () => {
+    const next = isSpoiler() ? "" : "1";
+    if (next) root.dataset.spoiler = "1";
+    else delete root.dataset.spoiler;
+    try {
+      localStorage.setItem("parquet-spoiler-free", next);
+    } catch {
+      /* préférence non mémorisée */
+    }
+    sync();
+    window.dispatchEvent(new CustomEvent("parquet:spoiler-change", { detail: { active: Boolean(next) } }));
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+
+  sync();
+}
+
 route("/", home.render, "matchs");
 route("/matchs/(\\d{4}-\\d{2}-\\d{2})", home.render, "matchs");
 route("/match/(\\d{10})", game.render, "matchs");
@@ -67,6 +105,7 @@ route("/leaders", leaders.render, "leaders");
 route("/etat", status.render, null);
 
 initTheme();
+initSpoilerMode();
 const outlet = document.getElementById("main");
 loadTeams()
   .then(() => {

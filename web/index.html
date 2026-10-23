@@ -14,6 +14,7 @@
     try {
       var t = localStorage.getItem("parquet-theme");
       if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
+      if (localStorage.getItem("parquet-spoiler-free") === "1") document.documentElement.dataset.spoiler = "1";
     } catch (e) {}
   </script>
 </head>
@@ -45,9 +46,14 @@
         <div class="search-results" id="search-results" role="listbox" hidden></div>
       </div>
 
-      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Passer au thème clair">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor"/></svg>
-      </button>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="spoiler-toggle" type="button" aria-label="Activer le mode anti-spoiler" title="Mode anti-spoiler">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Passer au thème clair">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
