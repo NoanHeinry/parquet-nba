@@ -719,6 +719,19 @@ main:focus {
   color-scheme: inherit;
 }
 
+.spoiler-all-btn {
+  display: none;
+  font-size: 13px;
+  padding: 0 10px;
+  height: 36px;
+  white-space: nowrap;
+}
+
+html[data-spoiler="1"] .spoiler-all-btn {
+  display: inline-flex;
+  align-items: center;
+}
+
 .live-strip {
   display: inline-flex;
   align-items: center;
@@ -1595,6 +1608,17 @@ html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hove
   background: color-mix(in srgb, var(--loss) 14%, transparent);
 }
 
+html[data-spoiler="1"] .stat-table td .wl {
+  filter: blur(6px);
+  user-select: none;
+  transition: filter 0.2s ease;
+}
+
+html[data-spoiler="1"] .stat-table tr:hover td .wl,
+html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
+  filter: blur(0);
+}
+
 /* play-by-play */
 
 .pbp {
@@ -2207,6 +2231,18 @@ html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hove
   align-items: center;
   gap: 8px;
   font-weight: 700;
+}
+
+html[data-spoiler="1"] .sched-row .res {
+  filter: blur(8px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+html[data-spoiler="1"] .sched-row:hover .res,
+html[data-spoiler="1"] .sched-row:focus-within .res {
+  filter: blur(0);
 }
 
 /* --------------------------------------------------------- Joueurs */

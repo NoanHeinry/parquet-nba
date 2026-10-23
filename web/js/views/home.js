@@ -55,13 +55,41 @@ export async function render(ctx) {
     dateInput.addEventListener("change", () => {
       if (dateInput.value) location.hash = `#/matchs/${dateInput.value}`;
     });
+
+    const toggleAllBtn = h(
+      "button",
+      {
+        class: "btn spoiler-all-btn",
+        type: "button",
+        "aria-label": "Révéler tous les scores de cette journée",
+        title: "Révéler tous les scores",
+      },
+      "Révéler tout"
+    );
+    toggleAllBtn.addEventListener("click", () => {
+      const tiles = mainCol.querySelectorAll(".game-tile");
+      const allRev = [...tiles].length > 0 && [...tiles].every((t) => t.classList.contains("is-revealed"));
+      for (const t of tiles) {
+        if (allRev) t.classList.remove("is-revealed");
+        else t.classList.add("is-revealed");
+        const btn = t.querySelector(".tile-reveal-btn");
+        if (btn) {
+          btn.textContent = allRev ? "Révéler" : "Masquer";
+          btn.setAttribute("aria-label", allRev ? "Révéler le score de ce match" : "Masquer le score de ce match");
+        }
+      }
+      toggleAllBtn.textContent = allRev ? "Révéler tout" : "Masquer tout";
+      toggleAllBtn.title = allRev ? "Révéler tous les scores" : "Masquer tous les scores";
+    });
+
     const nav = h(
       "div",
       { class: "day-nav" },
       h("a", { class: "btn square", href: data.prev ? `#/matchs/${data.prev}` : "#/", "aria-disabled": data.prev ? null : "true", "aria-label": "Journée précédente", title: data.prev ? f.dayShort(data.prev) : "" }, "‹"),
       data.isToday ? null : h("a", { class: "btn", href: "#/" }, "Aujourd'hui"),
       dateInput,
-      h("a", { class: "btn square", href: data.next ? `#/matchs/${data.next}` : "#/", "aria-disabled": data.next ? null : "true", "aria-label": "Journée suivante", title: data.next ? f.dayShort(data.next) : "" }, "›")
+      h("a", { class: "btn square", href: data.next ? `#/matchs/${data.next}` : "#/", "aria-disabled": data.next ? null : "true", "aria-label": "Journée suivante", title: data.next ? f.dayShort(data.next) : "" }, "›"),
+      games.some((g) => g.status >= 2) ? toggleAllBtn : null
     );
 
     const head = h(
