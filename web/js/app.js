@@ -10,6 +10,7 @@ import * as players from "./views/players.js";
 import * as player from "./views/player.js";
 import * as standings from "./views/standings.js";
 import * as leaders from "./views/leaders.js";
+import * as compare from "./views/compare.js";
 import * as status from "./views/status.js";
 
 // Les couleurs d'équipe et les versions de logos dépendent du thème : on redessine la page.
@@ -102,6 +103,9 @@ route("/joueurs", players.render, "joueurs");
 route("/joueur/(\\d+)", player.render, "joueurs");
 route("/classement", standings.render, "classement");
 route("/leaders", leaders.render, "leaders");
+route("/comparer", compare.render, "comparer");
+route("/comparer/(\\d+)", compare.render, "comparer");
+route("/comparer/(\\d+)/(\\d+)", compare.render, "comparer");
 route("/etat", status.render, null);
 
 initTheme();

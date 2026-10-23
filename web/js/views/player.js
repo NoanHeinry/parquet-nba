@@ -371,7 +371,10 @@ function heroView(p) {
       h("div", { class: "first" }, p.first),
       h("h1", null, p.last),
       h("div", { class: "hero-meta" }, metaBits),
-      badges.length ? h("div", { class: "hero-meta", style: { marginTop: "12px" } }, badges) : null
+      badges.length ? h("div", { class: "hero-meta", style: { marginTop: "12px" } }, badges) : null,
+      h("div", { style: { marginTop: "14px" } },
+        h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}`, style: { display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px" } }, "⚖️ Comparer ce joueur")
+      )
     )
   );
 }
