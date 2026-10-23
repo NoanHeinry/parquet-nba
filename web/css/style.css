@@ -1230,6 +1230,48 @@ html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
   color: var(--live);
 }
 
+.sb-reveal-btn {
+  display: none;
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 5px 14px;
+}
+
+/* Mode anti-spoiler sur la page de match */
+html[data-spoiler="1"] .sb-reveal-btn {
+  display: inline-flex;
+}
+
+html[data-spoiler="1"] .game-page:not(.is-revealed) .sb-scores span:not(.dash) {
+  filter: blur(18px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+  opacity: 0.85;
+}
+
+html[data-spoiler="1"] .game-page:not(.is-revealed) .sb-scores span:not(.dash):hover {
+  filter: blur(8px);
+  opacity: 1;
+}
+
+html[data-spoiler="1"] .game-page:not(.is-revealed) .sb-scores .lose {
+  color: inherit;
+}
+
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.num,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total {
+  filter: blur(10px);
+  user-select: none;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.num:hover,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hover {
+  filter: blur(4px);
+}
+
 .sb-meta {
   margin-top: 16px;
   text-align: center;

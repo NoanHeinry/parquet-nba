@@ -19,7 +19,7 @@ function sideName(side) {
   return { city: side?.city || t?.city || "", name: side?.name || t?.name || "À déterminer" };
 }
 
-function scoreboard(game, previous) {
+function scoreboard(game, previous, { onToggleReveal, isRevealed } = {}) {
   const colors = teamPair(game.away?.id, game.home?.id);
   const status = f.gameStatus(game);
   const started = game.status >= 2;
@@ -44,11 +44,46 @@ function scoreboard(game, previous) {
       if (previous && previous[key] !== undefined && game[key]?.score > previous[key]) el.classList.add("bump");
       return el;
     };
+
+    let revealBtn = null;
+    if (onToggleReveal) {
+      revealBtn = h(
+        "button",
+        {
+          type: "button",
+          class: "btn sb-reveal-btn",
+          "aria-label": isRevealed ? "Masquer le score du match" : "Révéler le score du match",
+        },
+        isRevealed ? "Masquer le score" : "Révéler le score"
+      );
+      revealBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        onToggleReveal();
+      });
+    }
+
+    const scoresEl = h(
+      "div",
+      { class: "sb-scores num", title: "Cliquer pour révéler ou masquer le score", "aria-label": `${game.away?.score} à ${game.home?.score}` },
+      sc("away"),
+      h("span", { class: "dash" }, "–"),
+      sc("home")
+    );
+    if (onToggleReveal) {
+      scoresEl.addEventListener("click", (e) => {
+        if (document.documentElement.dataset.spoiler === "1") {
+          e.preventDefault();
+          onToggleReveal();
+        }
+      });
+    }
+
     center = h(
       "div",
       { class: "sb-center" },
-      h("div", { class: "sb-scores num", "aria-label": `${game.away?.score} à ${game.home?.score}` }, sc("away"), h("span", { class: "dash" }, "–"), sc("home")),
-      h("div", { class: `sb-status${status.live ? " live" : ""}` }, status.live ? h("span", { class: "live-dot", "aria-hidden": "true" }) : null, status.text)
+      scoresEl,
+      h("div", { class: `sb-status${status.live ? " live" : ""}` }, status.live ? h("span", { class: "live-dot", "aria-hidden": "true" }) : null, status.text),
+      revealBtn
     );
   } else {
     center = h(
@@ -361,9 +396,11 @@ async function pregame(container, game, ctx) {
 
 export async function render(ctx) {
   const id = ctx.params[0];
+  const wrapper = h("div", { class: "game-page" });
   const head = h("div");
   const body = h("div");
-  ctx.outlet.append(head, body);
+  wrapper.append(head, body);
+  ctx.outlet.append(wrapper);
   head.append(loading("Chargement du match…"));
 
   let boxRes;
@@ -380,6 +417,12 @@ export async function render(ctx) {
   let pbp = null;
   let tab = "resume";
   let previous = null;
+  let isRevealed = false;
+  const toggleReveal = () => {
+    isRevealed = !isRevealed;
+    wrapper.classList.toggle("is-revealed", isRevealed);
+    drawHead();
+  };
   const pbpState = { period: box.game.status === 2 ? "current" : 0, filter: "all" };
   const shotState = { player: { away: null, home: null } };
   const panel = h("div");
@@ -388,7 +431,7 @@ export async function render(ctx) {
   ctx.onCleanup(() => (document.title = "Parquet"));
 
   const drawHead = () => {
-    head.replaceChildren(staleBanner(meta) || "", scoreboard(box.game, previous));
+    head.replaceChildren(staleBanner(meta) || "", scoreboard(box.game, previous, { onToggleReveal: toggleReveal, isRevealed }));
   };
 
   const ensurePbp = async () => {
