@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, favorites, gameTile, loading, scoreMap, section, staleBanner, teamLogo } from "../components.js";
+import { checkScoreboard } from "../notifications.js";
 import { team } from "../teams.js";
 
 function refreshDelay(data) {
@@ -130,6 +131,7 @@ export async function render(ctx) {
     draw(data, meta);
     previous = scoreMap(data.games);
     last = data;
+    checkScoreboard(data.games);
   };
 
   try {

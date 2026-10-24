@@ -13,6 +13,7 @@ import * as playoffs from "./views/playoffs.js";
 import * as leaders from "./views/leaders.js";
 import * as compare from "./views/compare.js";
 import * as status from "./views/status.js";
+import { initNotificationsUI } from "./notifications.js";
 
 // Les couleurs d'équipe et les versions de logos dépendent du thème : on redessine la page.
 function redraw() {
@@ -154,6 +155,7 @@ route("/etat", status.render, null);
 initTheme();
 initSpoilerMode();
 initPwa();
+initNotificationsUI();
 const outlet = document.getElementById("main");
 loadTeams()
   .then(() => {

@@ -3056,6 +3056,169 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
   filter: none;
 }
 
+/* --------------------------------------------------------- notifications & toasts */
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 380px;
+  pointer-events: none;
+}
+
+.toast-card {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  animation: toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.toast-card.toast-leaving {
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-icon {
+  font-size: 20px;
+  line-height: 1.2;
+  flex: none;
+}
+
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.toast-desc {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.35;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color var(--duration);
+}
+
+.toast-close:hover {
+  color: var(--text);
+}
+
+/* Panneau de réglage des alertes */
+.notif-panel {
+  position: fixed;
+  z-index: 60;
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  animation: pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notif-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.notif-panel-head strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.notif-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.notif-opt input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex: none;
+}
+
+.notif-opt.main-opt {
+  margin-bottom: 12px;
+}
+
+.notif-opt.main-opt strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.notif-opt.main-opt small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.notif-sep {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 10px 0 12px;
+}
+
 /* --------------------------------------------------------- responsive */
 
 @media (max-width: 1080px) {
@@ -3240,6 +3403,19 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
   .board-top .headshot {
     width: 96px;
     height: 70px;
+  }
+
+  .toast-container {
+    left: 14px;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    max-width: none;
+  }
+
+  .notif-panel {
+    right: 12px;
+    left: 12px;
+    width: auto;
   }
 }
 

@@ -23,6 +23,7 @@ const STATIC_ASSETS = [
   "./js/search.js",
   "./js/charts.js",
   "./js/components.js",
+  "./js/notifications.js",
   "./js/views/home.js",
   "./js/views/game.js",
   "./js/views/teams.js",
@@ -133,6 +134,24 @@ self.addEventListener("fetch", (event) => {
         });
 
       return cachedRes || fetchPromise;
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "./";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
     })
   );
 });
