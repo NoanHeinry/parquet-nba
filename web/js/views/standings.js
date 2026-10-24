@@ -99,8 +99,18 @@ export async function render(ctx) {
     const blocks = ["East", "West"].map((conf) =>
       h("section", { class: "section" }, h("h2", { class: "section-title" }, conf === "East" ? "Conférence Est" : "Conférence Ouest"), table(data.rows.filter((r) => r.conf === conf)))
     );
+    const playoffsBtn = h(
+      "a",
+      { class: "btn", href: `#/playoffs${data.season ? `/${data.season}` : ""}` },
+      "🏆 Tableau des playoffs"
+    );
     container.replaceChildren(
-      h("div", { class: "page-head" }, h("div", null, h("h1", { class: "page-title" }, "Classement"), h("p", { class: "page-sub" }, sub)), seasonSel),
+      h(
+        "div",
+        { class: "page-head" },
+        h("div", null, h("h1", { class: "page-title" }, "Classement"), h("p", { class: "page-sub" }, sub)),
+        h("div", { style: { display: "flex", gap: "8px", alignItems: "center" } }, playoffsBtn, seasonSel)
+      ),
       staleBanner(meta) || "",
       ...blocks,
       h(

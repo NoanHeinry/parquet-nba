@@ -2699,6 +2699,353 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
   border-radius: var(--radius);
 }
 
+/* --------------------------------------------------------- playoffs & bracket */
+
+.playoffs-champion-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.playoffs-champion-card .trophy-icon {
+  font-size: 38px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.playoffs-champion-card .champion-info {
+  min-width: 0;
+}
+
+.playoffs-champion-card .champion-info .label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.playoffs-champion-card .champion-info .name {
+  font-family: var(--font-display);
+  font-stretch: 72%;
+  font-size: 26px;
+  font-weight: 800;
+  margin: 2px 0 0;
+  line-height: 1.1;
+}
+
+.playoffs-champion-card .champion-info .sub {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+
+.bracket-scroll-container {
+  overflow-x: auto;
+  padding-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bracket-conferences-head {
+  display: grid;
+  grid-template-columns: 3fr 1.2fr 3fr;
+  align-items: center;
+  margin-bottom: 12px;
+  min-width: 1120px;
+}
+
+.conf-tag {
+  font-family: var(--font-display);
+  font-stretch: 72%;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.conf-tag.east {
+  background: rgba(0, 107, 182, 0.12);
+  color: #1d70b8;
+}
+
+.conf-tag.west {
+  background: rgba(200, 16, 46, 0.12);
+  color: #c8102e;
+  margin-left: auto;
+}
+
+.conf-tag.finals {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  margin: 0 auto;
+}
+
+.bracket-tree {
+  display: flex;
+  gap: 12px;
+  min-width: 1120px;
+  min-height: 520px;
+}
+
+.bracket-col {
+  flex: 1;
+  min-width: 148px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bracket-col .col-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.bracket-col .col-header.finals-header {
+  color: #d97706;
+  font-weight: 800;
+}
+
+.bracket-col .col-matches {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  flex: 1;
+  gap: 12px;
+}
+
+.matchup-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  position: relative;
+  transition: border-color var(--duration), box-shadow var(--duration);
+}
+
+.matchup-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.col-finals .matchup-card {
+  border-color: #f59e0b;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.12);
+  background: linear-gradient(180deg, var(--surface) 0%, rgba(245, 158, 11, 0.04) 100%);
+}
+
+.matchup-card.empty {
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  opacity: 0.6;
+}
+
+.matchup-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+
+.matchup-team .seed {
+  font-size: 10px;
+  color: var(--muted);
+  width: 16px;
+  font-weight: 700;
+  text-align: right;
+  flex: none;
+}
+
+.matchup-team .team-name {
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.matchup-team .team-name:hover {
+  color: var(--accent);
+}
+
+.matchup-team .wins {
+  font-family: var(--font-display);
+  font-stretch: 72%;
+  font-size: 17px;
+  font-weight: 800;
+  min-width: 14px;
+  text-align: right;
+  color: var(--text);
+}
+
+.matchup-team.winner .team-name {
+  color: var(--accent);
+}
+
+.matchup-team.loser {
+  opacity: 0.6;
+}
+
+.matchup-team.loser .team-name {
+  font-weight: 500;
+}
+
+.matchup-expand-btn {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--line-subtle);
+  padding: 5px 0 0;
+  margin-top: 4px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 11px;
+  font-family: inherit;
+  transition: color var(--duration);
+}
+
+.matchup-expand-btn:hover {
+  color: var(--accent);
+}
+
+.matchup-expand-btn .expand-arrow {
+  transition: transform 0.2s ease;
+  font-size: 10px;
+}
+
+.matchup-expand-btn.is-open .expand-arrow {
+  transform: rotate(180deg);
+}
+
+.matchup-games {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.matchup-game-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--surface-2);
+  transition: background var(--duration), color var(--duration);
+}
+
+.matchup-game-row:hover {
+  background: var(--surface-3);
+  color: var(--accent);
+}
+
+.matchup-game-row .g-num {
+  font-weight: 700;
+  font-size: 10.5px;
+  color: var(--muted);
+  width: 22px;
+}
+
+.matchup-game-row .g-score {
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+}
+
+.matchup-game-row .g-date {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.playoff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* Mode anti-spoiler sur l'arbre des playoffs */
+html[data-spoiler="1"] .matchup-reveal-btn {
+  display: inline-flex;
+}
+
+.matchup-reveal-btn {
+  display: none;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  padding: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+html[data-spoiler="1"] .matchup-card:not(.is-revealed) .wins {
+  filter: blur(4.5px);
+  user-select: none;
+  transition: filter var(--duration);
+}
+
+html[data-spoiler="1"] .matchup-card:not(.is-revealed) .summary-text {
+  filter: blur(4.5px);
+  user-select: none;
+  transition: filter var(--duration);
+}
+
+html[data-spoiler="1"] .matchup-card:not(.is-revealed) .matchup-team.loser {
+  opacity: 1;
+}
+
+html[data-spoiler="1"] .matchup-card:not(.is-revealed) .matchup-team.winner .team-name {
+  color: var(--text);
+  font-weight: 700;
+}
+
+html[data-spoiler="1"] .matchup-card:not(.is-revealed) .matchup-game-row .g-score {
+  filter: blur(4.5px);
+  user-select: none;
+  transition: filter var(--duration);
+}
+
+html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .wins,
+html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .summary-text,
+html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .g-score {
+  filter: none;
+}
+
 /* --------------------------------------------------------- responsive */
 
 @media (max-width: 1080px) {
