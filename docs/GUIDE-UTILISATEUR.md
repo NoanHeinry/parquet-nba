@@ -5,7 +5,7 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 - **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, puis pour chaque match le score par quart-temps, le duel des équipes, le box score complet, le fil des actions et la carte des tirs. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
 - **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier, leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
 - **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
-- **Classement** et **leaders** de la saison.
+- **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
 
 L'application tourne sur ton ordinateur et va chercher les données publiques de NBA.com et de Wikipédia. Rien n'est hébergé ailleurs, aucun compte n'est nécessaire.
