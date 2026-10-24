@@ -37,24 +37,30 @@ Le premier lancement prépare un environnement Python dans le dossier (une minut
 ## Astuces
 
 - Appuie sur `/` n'importe où pour chercher un joueur ou une équipe.
-- Depuis la fiche d'un joueur, clique sur « ⚖️ Comparer ce joueur » pour lancer un face-à-face immédiat avec un rival.
+- Depuis la fiche d'un joueur, clique sur « Comparer ce joueur » pour lancer un face-à-face immédiat avec un rival.
 - Ajoute tes équipes favorites (bouton en haut de leur page) : leurs matchs passent en premier.
-- Clique sur la cloche 🔔 dans la barre du haut pour activer les alertes (coup d'envoi et résultat de tes favoris, alertes de fin de match serrée en Clutch Time).
+- Clique sur l'icône de cloche dans la barre du haut pour activer les alertes (coup d'envoi et résultat de tes favoris, alertes de fin de match serrée en Clutch Time).
+- Le bouton en forme d'œil active le mode anti-spoiler pour masquer les scores avant visionnage.
 - Le bouton en forme de lune ou de soleil change le thème.
 
-### Sur ton téléphone et installation en application (PWA)
+### Sur votre téléphone Android et installation en application (PWA)
 
-Ton ordinateur doit être allumé avec Parquet lancé, et le téléphone connecté au même Wi-Fi. Lance Parquet avec l'option `--lan` :
+1. **Sur votre ordinateur** : double-cliquez simplement sur `lancer.bat`.
+   La fenêtre noire affiche directement l'adresse pour votre smartphone :
+   `Sur votre smartphone Android (même Wi-Fi) : http://192.168.x.x:8765/`
+   *(Si Windows vous demande une autorisation pare-feu pour les réseaux privés, acceptez).*
 
-- Windows : dans le dossier, ouvre un terminal (clic droit dans le dossier, *Ouvrir dans le terminal*) et tape `.\lancer.bat --lan`
-- Mac : dans le Terminal, tape `bash ` puis glisse le fichier `lancer.command` dans la fenêtre, ajoute ` --lan` et valide
+2. **Sur votre téléphone Android** :
+   - Assurez-vous d'être connecté au même réseau Wi-Fi que l'ordinateur.
+   - Ouvrez **Google Chrome** et tapez l'adresse affichée (ex. `http://192.168.1.5:8765`).
 
-La fenêtre affiche alors l'adresse à ouvrir sur le téléphone (du type `http://192.168.1.20:8765/`). Windows te demandera d'autoriser l'accès au réseau privé : accepte.
+3. **Installer Parquet comme une vraie application :**
+   - Appuyez sur le menu de Chrome (les 3 points verticaux en haut à droite).
+   - Choisissez **« Installer l'application »** (ou « Ajouter à l'écran d'accueil »).
+   - Parquet s'installe sur votre écran d'accueil avec son icône officielle, sans barre de navigation et en plein écran comme une application du Play Store !
 
-**Installer Parquet comme une application native :**
-- **Sur Android (Chrome, Brave, Edge)** : clique sur le bouton d'installation dans la barre du haut ou ouvre le menu du navigateur (les trois points) et choisis *Installer l'application*.
-- **Sur iPhone / iPad (Safari)** : appuie sur le bouton Partager ⎋ puis sélectionne *Sur l'écran d'accueil*.
-- **Sur PC / Mac (Chrome, Edge)** : clique sur l'icône d'installation dans la barre d'adresse pour lancer Parquet dans sa propre fenêtre d'application autonome.
+- **Sur iPhone / iPad (Safari)** : ouvrez l'adresse dans Safari, appuyez sur le bouton Partager puis sélectionnez *Sur l'écran d'accueil*.
+- **Sur PC / Mac (Chrome, Edge)** : cliquez sur l'icône d'installation dans la barre d'adresse pour ouvrir Parquet dans sa propre fenêtre d'application autonome.
 
 ## Si quelque chose ne s'affiche pas
 

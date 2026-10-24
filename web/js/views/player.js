@@ -6,6 +6,7 @@ import * as f from "../format.js";
 import { lineChart } from "../charts.js";
 import { chips, errorState, headshot, loading, section, segmented, statTable, tabs, teamLogo, wl } from "../components.js";
 import { team, teamBand, teamByTri } from "../teams.js";
+import { iconScale } from "../icons.js";
 
 // ---------------------------------------------------------------- palmarès
 
@@ -373,7 +374,7 @@ function heroView(p) {
       h("div", { class: "hero-meta" }, metaBits),
       badges.length ? h("div", { class: "hero-meta", style: { marginTop: "12px" } }, badges) : null,
       h("div", { style: { marginTop: "14px" } },
-        h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}`, style: { display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13px" } }, "⚖️ Comparer ce joueur")
+        h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}`, style: { display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px" } }, iconScale(15), "Comparer ce joueur")
       )
     )
   );

@@ -5,6 +5,7 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, loading, segmented, staleBanner, teamLogo } from "../components.js";
 import { team, teamColor } from "../teams.js";
+import { iconEye, iconTrophy } from "../icons.js";
 
 function renderMatchupCard(series) {
   if (!series) {
@@ -85,7 +86,7 @@ function renderMatchupCard(series) {
       "aria-label": "Révéler le score de cette série",
       title: "Révéler le score",
     },
-    h("span", { "aria-hidden": "true" }, "👁️")
+    iconEye(16)
   );
 
   const card = h(
@@ -125,7 +126,7 @@ function renderChampionBanner(champ, finalsSeries) {
         borderLeft: `5px solid ${col}`,
       },
     },
-    h("div", { class: "trophy-icon", "aria-hidden": "true" }, "🏆"),
+    h("div", { class: "trophy-icon", "aria-hidden": "true" }, iconTrophy(26)),
     teamLogo(champ.id, 54),
     h(
       "div",
@@ -158,7 +159,7 @@ function renderBracketTree(data) {
   );
 
   const colFinals = h("div", { class: "bracket-col col-finals" },
-    h("div", { class: "col-header finals-header" }, "🏆 Finales NBA"),
+    h("div", { class: "col-header finals-header" }, iconTrophy(15), "Finales NBA"),
     h("div", { class: "col-matches finals-match" }, renderMatchupCard(finals))
   );
 

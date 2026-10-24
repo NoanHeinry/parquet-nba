@@ -4,6 +4,14 @@
 import { api } from "./api.js";
 import { favorites } from "./components.js";
 import { h } from "./dom.js";
+import { iconBasketball, iconLightning, iconFlag, iconAlertCircle, iconInfo } from "./icons.js";
+
+function resolveIcon(icon) {
+  if (icon instanceof Node) return icon;
+  if (icon === "lightning" || icon === "clutch") return iconLightning(18);
+  if (icon === "flag" || icon === "end") return iconFlag(18);
+  return iconBasketball(18);
+}
 
 const SETTINGS_KEY = "parquet-notifications-settings";
 const DEFAULT_SETTINGS = {
@@ -43,14 +51,14 @@ function getToastContainer() {
   return toastContainer;
 }
 
-export function showToast({ icon = "🏀", title, body, gameId }) {
+export function showToast({ icon = "basketball", title, body, gameId }) {
   const container = getToastContainer();
 
   const closeBtn = h("button", { class: "toast-close", type: "button", "aria-label": "Fermer l'alerte" }, "✕");
   const card = h(
     "div",
     { class: "toast-card", role: "alert" },
-    h("span", { class: "toast-icon", "aria-hidden": "true" }, icon),
+    h("span", { class: "toast-icon", "aria-hidden": "true" }, resolveIcon(icon)),
     h(
       "div",
       { class: "toast-body" },
@@ -82,7 +90,7 @@ export function showToast({ icon = "🏀", title, body, gameId }) {
   setTimeout(dismiss, 6500);
 }
 
-export async function sendNotification({ icon = "🏀", title, body, gameId }) {
+export async function sendNotification({ icon = "basketball", title, body, gameId }) {
   // 1. Toujours afficher le toast dans l'application
   showToast({ icon, title, body, gameId });
 
@@ -147,7 +155,7 @@ export function checkScoreboard(games) {
       if (prev.status === 1 && status === 2 && !notifiedEvents.has(startKey)) {
         notifiedEvents.add(startKey);
         sendNotification({
-          icon: "🏀",
+          icon: "basketball",
           title: `Coup d'envoi : ${g.away?.tri || "EXT"} @ ${g.home?.tri || "DOM"}`,
           body: `Le match vient de débuter entre les ${g.away?.name || "visiteurs"} et les ${g.home?.name || "locaux"}.`,
           gameId: gid,
@@ -167,7 +175,7 @@ export function checkScoreboard(games) {
         const scoreLine = `${g.away?.tri} ${aScore} - ${hScore} ${g.home?.tri}`;
         const clockText = g.statusText ? ` (${g.statusText})` : "";
         sendNotification({
-          icon: "⚡",
+          icon: "lightning",
           title: `Fin de match serrée : ${scoreLine}`,
           body: leader
             ? `Écart de ${diff} pt(s)${clockText}. Suis la fin du match en direct !`
@@ -186,7 +194,7 @@ export function checkScoreboard(games) {
         const winTeam = homeWon ? g.home : g.away;
         const loseTeam = homeWon ? g.away : g.home;
         sendNotification({
-          icon: "🏁",
+          icon: "flag",
           title: `Fin du match : ${g.away?.tri} ${aScore} - ${hScore} ${g.home?.tri}`,
           body: `Victoire des ${winTeam?.name || "vainqueurs"} face aux ${loseTeam?.name || "vaincus"}.`,
           gameId: gid,
@@ -254,9 +262,9 @@ export function initNotificationsUI() {
 
     const permNotice =
       perm === "denied"
-        ? h("p", { class: "note", style: { color: "var(--loss)", margin: "0 0 10px" } }, "⚠️ Les notifications sont bloquées dans les paramètres de votre navigateur.")
+        ? h("p", { class: "note note-warning", style: { color: "var(--loss)", margin: "0 0 10px", display: "flex", alignItems: "center", gap: "6px" } }, iconAlertCircle(15), "Les notifications sont bloquées dans les paramètres de votre navigateur.")
         : perm === "default"
-        ? h("p", { class: "note", style: { margin: "0 0 10px" } }, "💡 Autorisez les notifications du navigateur lors de l'activation.")
+        ? h("p", { class: "note note-info", style: { margin: "0 0 10px", display: "flex", alignItems: "center", gap: "6px" } }, iconInfo(15), "Autorisez les notifications du navigateur lors de l'activation.")
         : null;
 
     const testBtn = h(
@@ -267,7 +275,7 @@ export function initNotificationsUI() {
 
     testBtn.addEventListener("click", () => {
       sendNotification({
-        icon: "🏀",
+        icon: "basketball",
         title: "Alerte NBA Parquet",
         body: "Les alertes fonctionnent ! Tu recevras les coups d'envoi et les fins de match serrées.",
       });
@@ -323,7 +331,7 @@ export function initNotificationsUI() {
       h("label", { class: "notif-opt" }, chkClutch, h("span", null, "Fin de match serrée (Clutch Time ≤ 5 pts)")),
       h("label", { class: "notif-opt" }, chkClutchFavs, h("span", null, "Clutch Time : uniquement mes favoris")),
       h("label", { class: "notif-opt" }, chkEnd, h("span", null, "Résultat final des équipes favorites")),
-      h("p", { class: "note", style: { margin: "8px 0 0", fontSize: "11px" } }, "Conseil : marque tes équipes préférées avec l'étoile ★ sur leur page."),
+      h("p", { class: "note", style: { margin: "8px 0 0", fontSize: "11px" } }, "Conseil : marque tes équipes préférées sur leur page pour recevoir leurs alertes."),
       testBtn
     );
 

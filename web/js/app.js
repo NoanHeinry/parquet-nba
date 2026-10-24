@@ -119,7 +119,7 @@ function initPwa() {
 
   installBtn.addEventListener("click", async () => {
     if (!deferredPrompt) {
-      alert("Pour installer Parquet sur votre appareil :\n- Sur iPhone/iPad : touchez Partager ⎋ puis 'Sur l'écran d'accueil'\n- Sur Android : ouvrez le menu ⋮ puis 'Installer l'application'");
+      alert("Pour installer Parquet sur votre appareil :\n- Sur Android : ouvrez le menu Chrome puis sélectionnez 'Installer l'application'\n- Sur iPhone/iPad : touchez Partager puis 'Sur l'écran d'accueil'");
       return;
     }
     installBtn.hidden = true;

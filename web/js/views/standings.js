@@ -5,6 +5,7 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, loading, segmented, staleBanner, teamLogo } from "../components.js";
 import { team } from "../teams.js";
+import { iconTrophy } from "../icons.js";
 
 const CLINCH = {
   x: "Qualifié pour les playoffs",
@@ -101,8 +102,9 @@ export async function render(ctx) {
     );
     const playoffsBtn = h(
       "a",
-      { class: "btn", href: `#/playoffs${data.season ? `/${data.season}` : ""}` },
-      "🏆 Tableau des playoffs"
+      { class: "btn", href: `#/playoffs${data.season ? `/${data.season}` : ""}`, style: { display: "inline-flex", alignItems: "center", gap: "8px" } },
+      iconTrophy(15),
+      "Tableau des playoffs"
     );
     container.replaceChildren(
       h(

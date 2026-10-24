@@ -209,7 +209,7 @@ h3 {
   height: 60px;
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 16px;
 }
 
 .brand {
@@ -233,18 +233,27 @@ h3 {
 
 .mainnav {
   display: flex;
-  gap: 4px;
-  flex: 1;
+  gap: 3px;
+  flex: 1 1 auto;
   min-width: 0;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mainnav::-webkit-scrollbar {
+  display: none;
 }
 
 .mainnav a {
-  padding: 8px 12px;
+  padding: 6px 11px;
   border-radius: var(--radius-sm);
   color: var(--text-2);
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: 14px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .mainnav a:hover {
@@ -260,8 +269,10 @@ h3 {
 
 .search {
   position: relative;
-  width: 280px;
-  flex: none;
+  width: auto;
+  flex: 0 1 240px;
+  min-width: 140px;
+  max-width: 260px;
 }
 
 .search input {
@@ -1056,8 +1067,17 @@ html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
 }
 
 .fav-star {
+  display: inline-flex;
+  align-items: center;
   color: var(--accent);
-  font-size: 12px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.fav-star svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
 }
 
 .rail {
@@ -2703,6 +2723,23 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
   padding: 6px;
 }
 
+.compare-empty-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  margin: 0 auto 14px;
+}
+
+.compare-empty-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
 .empty-state-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2724,9 +2761,19 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 }
 
 .playoffs-champion-card .trophy-icon {
-  font-size: 38px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(229, 160, 48, 0.16);
+  color: #e5a030;
+  flex: none;
+}
+
+.playoffs-champion-card .trophy-icon svg {
+  width: 26px;
+  height: 26px;
 }
 
 .playoffs-champion-card .champion-info {
@@ -2828,6 +2875,16 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 .bracket-col .col-header.finals-header {
   color: #d97706;
   font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.bracket-col .col-header.finals-header svg {
+  width: 15px;
+  height: 15px;
+  color: #d97706;
 }
 
 .bracket-col .col-matches {
@@ -3102,9 +3159,19 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 }
 
 .toast-icon {
-  font-size: 20px;
-  line-height: 1.2;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--accent);
   flex: none;
+}
+
+.toast-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .toast-body {
@@ -3239,12 +3306,12 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1060px) {
   .topbar-inner {
     height: auto;
     flex-wrap: wrap;
-    gap: 10px 12px;
-    padding: 10px 16px 0;
+    gap: 8px 12px;
+    padding: 10px 16px 6px;
   }
 
   .brand {
@@ -3254,7 +3321,7 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
   .search {
     width: auto;
     flex: 1 1 160px;
-    max-width: 340px;
+    max-width: 320px;
   }
 
   .mainnav {
@@ -3263,7 +3330,11 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
     overflow-x: auto;
     scrollbar-width: none;
     margin: 0 -8px;
+    padding: 2px 8px 6px;
   }
+}
+
+@media (max-width: 860px) {
 
   main {
     padding: 22px 16px 60px;

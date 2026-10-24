@@ -6,16 +6,17 @@ import * as f from "../format.js";
 import { columnChart } from "../charts.js";
 import { favorites, loading, playerCell, section, segmented, statTable, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
 import { team, teamBand, teamColor } from "../teams.js";
+import { iconStar } from "../icons.js";
 
 const SOCIAL = { Facebook: "Facebook", Instagram: "Instagram", Twitter: "X (Twitter)", X: "X", Website: "Site officiel", Tiktok: "TikTok", YouTube: "YouTube" };
 
 function hero(t, ctx) {
   const band = teamBand(t.id);
   const meta = h("div", { class: "hero-meta" }, h("span", null, `Fondée en ${t.founded}`), h("span", null, `Conférence ${t.confFr}, division ${t.divFr}`));
-  const favBtn = h("button", { class: "fav-btn", type: "button" });
+  const favBtn = h("button", { class: "fav-btn", type: "button", style: { display: "inline-flex", alignItems: "center", gap: "6px" } });
   const syncFav = () => {
     const on = favorites().has(t.id);
-    favBtn.textContent = on ? "★ Équipe favorite" : "☆ Ajouter aux favorites";
+    favBtn.replaceChildren(iconStar(on, 14), on ? "Équipe favorite" : "Ajouter aux favorites");
     favBtn.setAttribute("aria-pressed", on ? "true" : "false");
   };
   favBtn.addEventListener("click", () => {
@@ -298,7 +299,7 @@ function franchiseView(container, t, ctx) {
                 h(
                   p.id ? "a" : "div",
                   { class: "jersey-card", href: p.id ? `#/joueur/${p.id}` : null },
-                  h("div", { class: "no" }, p.jersey || "★"),
+                  h("div", { class: "no" }, p.jersey || "—"),
                   h("div", { class: "nm" }, p.name),
                   h("div", { class: "sub" }, [p.seasons, p.year ? `retiré en ${p.year}` : ""].filter(Boolean).join(", "))
                 )

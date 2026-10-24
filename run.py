@@ -70,7 +70,8 @@ def run_diagnostic() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Parquet, tableau de bord NBA personnel")
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--lan", action="store_true")
+    parser.add_argument("--lan", action="store_true", default=True, help="rendre l'application accessible depuis le téléphone (par défaut)")
+    parser.add_argument("--local-only", action="store_true", help="restreindre à la machine locale (127.0.0.1)")
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--vider-cache", action="store_true")
@@ -85,7 +86,7 @@ def main() -> int:
     if args.diagnostic:
         return run_diagnostic()
 
-    host = "0.0.0.0" if args.lan else "127.0.0.1"
+    host = "127.0.0.1" if args.local_only else "0.0.0.0"
     server = None
     port = args.port
     for candidate in range(args.port, args.port + 20):
@@ -102,10 +103,10 @@ def main() -> int:
 
     url = f"http://localhost:{port}/"
     print(f"\n  Parquet {__version__} est lancé : {url}")
-    if args.lan:
+    if host == "0.0.0.0":
         ip = lan_address()
         if ip:
-            print(f"  Depuis ton téléphone (même Wi-Fi) : http://{ip}:{port}/")
+            print(f"  Sur votre smartphone Android (même Wi-Fi) : http://{ip}:{port}/")
     print("  Laisse cette fenêtre ouverte pendant que tu utilises l'application.")
     print("  Pour arrêter : ferme la fenêtre ou appuie sur Ctrl+C.\n")
 

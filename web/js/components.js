@@ -3,6 +3,7 @@
 import { h } from "./dom.js";
 import * as f from "./format.js";
 import { headshotUrl, isDarkTheme, logoUrl, team, teamPair } from "./teams.js";
+import { iconStar } from "./icons.js";
 
 // ------------------------------------------------------------ images
 
@@ -224,7 +225,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
       h(
         "div",
         { class: "who" },
-        h("span", { class: "tri" }, side?.tri || "?", favs.has(side?.id) ? h("span", { class: "fav-star", title: "Équipe favorite" }, " ★") : null),
+        h("span", { class: "tri" }, side?.tri || "?", favs.has(side?.id) ? h("span", { class: "fav-star", title: "Équipe favorite", style: { marginLeft: "4px" } }, iconStar(true, 11)) : null),
         h("span", { class: "nick" }, teamName(side), record ? `, ${record}` : "")
       ),
       started ? score : null

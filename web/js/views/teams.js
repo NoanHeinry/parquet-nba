@@ -3,6 +3,7 @@
 import { api } from "../api.js";
 import { h } from "../dom.js";
 import { errorState, favorites, loading, teamLogo } from "../components.js";
+import { iconStar } from "../icons.js";
 
 const LAYOUT = [
   { conf: "East", title: "Conférence Est", divs: ["Atlantic", "Central", "Southeast"] },
@@ -46,7 +47,7 @@ export async function render(ctx) {
                 "a",
                 { class: "team-row", href: `#/equipe/${t.id}` },
                 teamLogo(t.id, 40),
-                h("span", { class: "nm" }, t.name, favs.has(t.id) ? h("span", { class: "fav-star", title: "Équipe favorite" }, " ★") : null, h("small", null, t.city)),
+                h("span", { class: "nm" }, t.name, favs.has(t.id) ? h("span", { class: "fav-star", title: "Équipe favorite", style: { marginLeft: "4px" } }, iconStar(true, 11)) : null, h("small", null, t.city)),
                 t.record ? h("span", { class: "rec num" }, `${t.record.w}-${t.record.l}`) : null
               )
             )

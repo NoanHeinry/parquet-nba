@@ -7,6 +7,7 @@ import { compareRows, dualLineChart } from "../charts.js";
 import { errorState, headshot, loading, segmented, teamLogo } from "../components.js";
 import { playerIndex, searchPlayers } from "../search.js";
 import { team, teamColor, teamPair } from "../teams.js";
+import { iconScale } from "../icons.js";
 
 const PRESETS = [
   { label: "LeBron James vs Michael Jordan", p1: 2544, p2: 893 },
@@ -250,7 +251,7 @@ export async function render(ctx) {
         h(
           "div",
           { class: "empty-state-card", style: { marginTop: "32px", textAlign: "center", padding: "48px 20px" } },
-          h("div", { style: { fontSize: "36px", marginBottom: "12px" } }, "⚖️"),
+          h("div", { class: "compare-empty-icon", "aria-hidden": "true" }, iconScale(28)),
           h("h3", { style: { marginBottom: "8px" } }, "Sélectionne deux joueurs pour lancer le face-à-face"),
           h("p", { class: "note" }, "Utilise la recherche ci-dessus ou clique sur l'un des duels suggérés pour afficher la comparaison complète.")
         )
