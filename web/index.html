@@ -9,6 +9,13 @@
   <link rel="preconnect" href="https://cdn.nba.com">
   <link rel="preload" href="fonts/archivo.woff" as="font" type="font/woff" crossorigin>
   <link rel="preload" href="fonts/big-shoulders-display.woff" as="font" type="font/woff" crossorigin>
+  <meta name="description" content="Tableau de bord NBA en direct, scores des matchs, box scores et encyclopédie.">
+  <meta name="theme-color" content="#0b1220" id="meta-theme-color">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Parquet">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
   <link rel="stylesheet" href="css/style.css">
   <script>
     try {
@@ -49,6 +56,9 @@
       </div>
 
       <div class="topbar-actions">
+        <button class="icon-btn pwa-install" id="pwa-install-btn" type="button" aria-label="Installer l'application Parquet" title="Installer l'application" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
         <button class="icon-btn" id="spoiler-toggle" type="button" aria-label="Activer le mode anti-spoiler" title="Mode anti-spoiler">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>

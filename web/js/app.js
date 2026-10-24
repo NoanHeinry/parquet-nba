@@ -36,6 +36,8 @@ function initTheme() {
     btn.setAttribute("aria-label", dark ? "Passer au thème clair" : "Passer au thème sombre");
     btn.title = dark ? "Thème clair" : "Thème sombre";
     btn.innerHTML = dark ? SUN : MOON;
+    const metaTheme = document.getElementById("meta-theme-color");
+    if (metaTheme) metaTheme.setAttribute("content", dark ? "#0b1220" : "#f8fafc");
   };
   btn.addEventListener("click", () => {
     const next = isDark() ? "light" : "dark";
@@ -95,6 +97,44 @@ function initSpoilerMode() {
   sync();
 }
 
+function initPwa() {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("./sw.js")
+        .catch((err) => console.debug("ServiceWorker non disponible:", err));
+    });
+  }
+
+  let deferredPrompt = null;
+  const installBtn = document.getElementById("pwa-install-btn");
+  if (!installBtn) return;
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) {
+      alert("Pour installer Parquet sur votre appareil :\n- Sur iPhone/iPad : touchez Partager ⎋ puis 'Sur l'écran d'accueil'\n- Sur Android : ouvrez le menu ⋮ puis 'Installer l'application'");
+      return;
+    }
+    installBtn.hidden = true;
+    deferredPrompt.prompt();
+    try {
+      await deferredPrompt.userChoice;
+    } finally {
+      deferredPrompt = null;
+    }
+  });
+
+  window.addEventListener("appinstalled", () => {
+    installBtn.hidden = true;
+  });
+}
+
 route("/", home.render, "matchs");
 route("/matchs/(\\d{4}-\\d{2}-\\d{2})", home.render, "matchs");
 route("/match/(\\d{10})", game.render, "matchs");
@@ -113,6 +153,7 @@ route("/etat", status.render, null);
 
 initTheme();
 initSpoilerMode();
+initPwa();
 const outlet = document.getElementById("main");
 loadTeams()
   .then(() => {

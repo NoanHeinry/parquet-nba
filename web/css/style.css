@@ -369,6 +369,16 @@ h3 {
   color: var(--accent);
 }
 
+.icon-btn.pwa-install {
+  color: var(--accent);
+  background: var(--surface-2);
+}
+
+.icon-btn.pwa-install:hover {
+  background: var(--surface-3);
+  border-color: var(--accent);
+}
+
 .icon-btn svg {
   width: 18px;
   height: 18px;
@@ -3237,8 +3247,20 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  }
+}
+
+/* Prise en charge des encoches et zones sécurisées sur mobile (iOS / Android) */
+@supports (padding: env(safe-area-inset-top)) {
+  .topbar {
+    padding-top: env(safe-area-inset-top);
+  }
+  main {
+    padding-bottom: calc(50px + env(safe-area-inset-bottom));
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
   }
 }
