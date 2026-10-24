@@ -39,6 +39,7 @@ Le premier lancement prépare un environnement Python dans le dossier (une minut
 - Appuie sur `/` n'importe où pour chercher un joueur ou une équipe.
 - Depuis la fiche d'un joueur, clique sur « ⚖️ Comparer ce joueur » pour lancer un face-à-face immédiat avec un rival.
 - Ajoute tes équipes favorites (bouton en haut de leur page) : leurs matchs passent en premier.
+- Clique sur la cloche 🔔 dans la barre du haut pour activer les alertes (coup d'envoi et résultat de tes favoris, alertes de fin de match serrée en Clutch Time).
 - Le bouton en forme de lune ou de soleil change le thème.
 
 ### Sur ton téléphone et installation en application (PWA)

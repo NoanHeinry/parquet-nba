@@ -25,6 +25,7 @@ Parquet affiche les scores des matchs en temps réel, le détail de chaque renco
 
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
+- Alertes et notifications en direct : notifications navigateur et toasts in-app pour le coup d'envoi et le score final des équipes favorites, ou lorsqu'un match entre dans le *Clutch Time* (écart ≤ 5 points au 4e quart-temps).
 - Mode anti-spoiler pour masquer les scores et regarder les matchs en différé sans révélation involontaire (révélation match par match ou globale).
 - Progressive Web App (PWA) : installable sur smartphone (iOS/Android) ou PC/Mac, icône d'application dédiée, affichage plein écran autonome, gestion des encoches et mise en cache locale des ressources statiques.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
@@ -145,7 +146,7 @@ Parquet est un projet personnel indépendant, sans lien avec la NBA ni ses équi
 
 ## Pistes d'amélioration
 
-- Notifications de début et de fin de match pour les équipes favorites.
+- Mode multilingue (anglais/espagnol) pour les statistiques et récompenses.
 - Widget de bureau ou résumé compact pour suivre les scores en arrière-plan.
 - Statistiques avancées (True Shooting %, Net Rating, Pace, Shot chart comparé).
 - Graphiques avancés et cartes de tir comparées.
