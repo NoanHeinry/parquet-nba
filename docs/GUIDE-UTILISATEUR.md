@@ -41,7 +41,7 @@ Le premier lancement prépare un environnement Python dans le dossier (une minut
 - Ajoute tes équipes favorites (bouton en haut de leur page) : leurs matchs passent en premier.
 - Le bouton en forme de lune ou de soleil change le thème.
 
-### Sur ton téléphone
+### Sur ton téléphone et installation en application (PWA)
 
 Ton ordinateur doit être allumé avec Parquet lancé, et le téléphone connecté au même Wi-Fi. Lance Parquet avec l'option `--lan` :
 
@@ -49,6 +49,11 @@ Ton ordinateur doit être allumé avec Parquet lancé, et le téléphone connect
 - Mac : dans le Terminal, tape `bash ` puis glisse le fichier `lancer.command` dans la fenêtre, ajoute ` --lan` et valide
 
 La fenêtre affiche alors l'adresse à ouvrir sur le téléphone (du type `http://192.168.1.20:8765/`). Windows te demandera d'autoriser l'accès au réseau privé : accepte.
+
+**Installer Parquet comme une application native :**
+- **Sur Android (Chrome, Brave, Edge)** : clique sur le bouton d'installation dans la barre du haut ou ouvre le menu du navigateur (les trois points) et choisis *Installer l'application*.
+- **Sur iPhone / iPad (Safari)** : appuie sur le bouton Partager ⎋ puis sélectionne *Sur l'écran d'accueil*.
+- **Sur PC / Mac (Chrome, Edge)** : clique sur l'icône d'installation dans la barre d'adresse pour lancer Parquet dans sa propre fenêtre d'application autonome.
 
 ## Si quelque chose ne s'affiche pas
 

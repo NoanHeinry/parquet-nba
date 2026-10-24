@@ -23,10 +23,11 @@ Parquet affiche les scores des matchs en temps réel, le détail de chaque renco
 - Tableau des playoffs : arbre complet de la post-saison NBA (1er tour, demi-finales, finales de conférence, Finales NBA), statut et avancement des séries (4-1, 4-2...), détail match par match avec scores, lien vers les box scores et sélecteur de saisons historiques.
 - Classement par conférence et leaders statistiques de la saison.
 
-**Confort**
+**Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
 - Mode anti-spoiler pour masquer les scores et regarder les matchs en différé sans révélation involontaire (révélation match par match ou globale).
-- Équipes favorites mises en avant, thème sombre ou clair, mise en page adaptée au téléphone.
+- Progressive Web App (PWA) : installable sur smartphone (iOS/Android) ou PC/Mac, icône d'application dédiée, affichage plein écran autonome, gestion des encoches et mise en cache locale des ressources statiques.
+- Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
 ## Captures
@@ -145,6 +146,6 @@ Parquet est un projet personnel indépendant, sans lien avec la NBA ni ses équi
 ## Pistes d'amélioration
 
 - Notifications de début et de fin de match pour les équipes favorites.
-- Application installable sur téléphone (PWA) servie depuis l'ordinateur.
+- Widget de bureau ou résumé compact pour suivre les scores en arrière-plan.
 - Statistiques avancées (True Shooting %, Net Rating, Pace, Shot chart comparé).
 - Graphiques avancés et cartes de tir comparées.
