@@ -84,6 +84,11 @@ def api_standings(q):
     return nba.standings(q.get("season"))
 
 
+@route(r"/api/playoffs")
+def api_playoffs(q):
+    return nba.playoffs(q.get("season"))
+
+
 @route(r"/api/teams")
 def api_teams(q):
     if q.get("meta"):

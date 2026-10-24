@@ -10,6 +10,7 @@ et si la donnée vient du cache faute de réponse de la source (stale).
 
 from __future__ import annotations
 
+from collections import defaultdict
 import re
 import threading
 import time
@@ -872,6 +873,254 @@ def teams_overview() -> tuple[dict, dict]:
         r = records.get(t["id"])
         out.append({**t, "record": {"w": r["w"], "l": r["l"], "rank": r["rank"]} if r else None})
     return {"teams": out, "season": season, "fallback": fallback}, meta
+
+
+# ---------------------------------------------------------------------------
+# Playoffs (arbre et séries)
+# ---------------------------------------------------------------------------
+
+SERIES_ROUNDS = {
+    "0010": (1, "1er tour", "East"),
+    "0011": (1, "1er tour", "East"),
+    "0012": (1, "1er tour", "East"),
+    "0013": (1, "1er tour", "East"),
+    "0014": (1, "1er tour", "West"),
+    "0015": (1, "1er tour", "West"),
+    "0016": (1, "1er tour", "West"),
+    "0017": (1, "1er tour", "West"),
+    "0020": (2, "Demi-finales de conférence", "East"),
+    "0021": (2, "Demi-finales de conférence", "East"),
+    "0022": (2, "Demi-finales de conférence", "West"),
+    "0023": (2, "Demi-finales de conférence", "West"),
+    "0030": (3, "Finales de conférence", "East"),
+    "0031": (3, "Finales de conférence", "West"),
+    "0040": (4, "Finales NBA", "Finales"),
+}
+
+BRACKET_ORDER = {
+    "east": {
+        "round1": ["0010", "0013", "0012", "0011"],
+        "semifinals": ["0020", "0021"],
+        "finals": "0030",
+    },
+    "west": {
+        "round1": ["0014", "0017", "0016", "0015"],
+        "semifinals": ["0022", "0023"],
+        "finals": "0031",
+    },
+    "finals": "0040",
+}
+
+
+def _build_playoff_bracket(season: str, cp_rows: list[dict], gf_rows: list[dict], seeds: dict[int, int] | None = None) -> dict:
+    seeds = seeds or {}
+    game_scores: dict[str, dict[int, dict]] = defaultdict(dict)
+    for r in gf_rows:
+        gid = r.get("GAME_ID")
+        tid = _int(r.get("TEAM_ID"))
+        if gid and tid:
+            game_scores[gid][tid] = {
+                "pts": _int(r.get("PTS")),
+                "wl": r.get("WL"),
+                "date": r.get("GAME_DATE"),
+            }
+
+    series_games: dict[str, list[dict]] = defaultdict(list)
+    for r in cp_rows:
+        sid = r.get("SERIES_ID")
+        if sid:
+            series_games[sid].append(r)
+
+    series_dict = {}
+    champion = None
+
+    for sid, games in series_games.items():
+        games.sort(key=lambda g: _int(g.get("GAME_NUM"), 0))
+        g1 = games[0]
+        t1_id = _int(g1.get("HOME_TEAM_ID"))
+        t2_id = _int(g1.get("VISITOR_TEAM_ID"))
+        t1_meta = teams_meta.team(t1_id)
+        t2_meta = teams_meta.team(t2_id)
+
+        parsed_games = []
+        w1, w2 = 0, 0
+        for g in games:
+            gid = g.get("GAME_ID")
+            gnum = _int(g.get("GAME_NUM"), 1)
+            h_id = _int(g.get("HOME_TEAM_ID"))
+            v_id = _int(g.get("VISITOR_TEAM_ID"))
+            scores = game_scores.get(gid, {})
+            h_data = scores.get(h_id, {})
+            v_data = scores.get(v_id, {})
+            h_pts = h_data.get("pts")
+            v_pts = v_data.get("pts")
+            date_str = h_data.get("date") or v_data.get("date")
+            played = h_pts is not None and v_pts is not None
+
+            game_winner = None
+            if played:
+                if h_pts > v_pts:
+                    game_winner = h_id
+                elif v_pts > h_pts:
+                    game_winner = v_id
+
+            if game_winner == t1_id:
+                w1 += 1
+            elif game_winner == t2_id:
+                w2 += 1
+
+            parsed_games.append(
+                {
+                    "gameNum": gnum,
+                    "gameId": gid,
+                    "homeTeamId": h_id,
+                    "visitorTeamId": v_id,
+                    "homePts": h_pts,
+                    "visitorPts": v_pts,
+                    "winnerId": game_winner,
+                    "date": date_str,
+                    "played": played,
+                }
+            )
+
+        suffix = sid[-4:]
+        round_info = SERIES_ROUNDS.get(suffix, (1, "Série", "NBA"))
+        round_num, round_name, conf = round_info
+        winner_id = t1_id if w1 >= 4 else (t2_id if w2 >= 4 else None)
+        if suffix == "0040" and winner_id:
+            champion = teams_meta.team(winner_id)
+
+        played_count = sum(1 for g in parsed_games if g["played"])
+        t1_tri = t1_meta["tri"] if t1_meta else "?"
+        t2_tri = t2_meta["tri"] if t2_meta else "?"
+        if winner_id:
+            status = "Terminée"
+            win_tri = t1_tri if winner_id == t1_id else t2_tri
+            summary = f"{win_tri} gagne {max(w1, w2)}-{min(w1, w2)}"
+        elif played_count > 0:
+            status = "En cours"
+            if w1 > w2:
+                summary = f"{t1_tri} mène {w1}-{w2}"
+            elif w2 > w1:
+                summary = f"{t2_tri} mène {w2}-{w1}"
+            else:
+                summary = f"Égalité {w1}-{w2}"
+        else:
+            status = "À venir"
+            summary = "À venir"
+
+        t1_dict = {
+            "id": t1_id,
+            "tri": t1_tri,
+            "city": t1_meta["city"] if t1_meta else "",
+            "name": t1_meta["name"] if t1_meta else "",
+            "fullName": t1_meta["fullName"] if t1_meta else "",
+            "seed": seeds.get(t1_id),
+            "wins": w1,
+        }
+        t2_dict = {
+            "id": t2_id,
+            "tri": t2_tri,
+            "city": t2_meta["city"] if t2_meta else "",
+            "name": t2_meta["name"] if t2_meta else "",
+            "fullName": t2_meta["fullName"] if t2_meta else "",
+            "seed": seeds.get(t2_id),
+            "wins": w2,
+        }
+        series_dict[suffix] = {
+            "id": sid,
+            "suffix": suffix,
+            "round": round_num,
+            "roundName": round_name,
+            "conference": conf,
+            "topTeam": t1_dict,
+            "bottomTeam": t2_dict,
+            "winnerId": winner_id,
+            "status": status,
+            "summary": summary,
+            "games": parsed_games,
+        }
+
+    return {
+        "season": season,
+        "available": bool(series_dict),
+        "champion": champion,
+        "east": {
+            "round1": [series_dict.get(s) for s in BRACKET_ORDER["east"]["round1"] if s in series_dict],
+            "semifinals": [series_dict.get(s) for s in BRACKET_ORDER["east"]["semifinals"] if s in series_dict],
+            "finals": series_dict.get(BRACKET_ORDER["east"]["finals"]),
+        },
+        "west": {
+            "round1": [series_dict.get(s) for s in BRACKET_ORDER["west"]["round1"] if s in series_dict],
+            "semifinals": [series_dict.get(s) for s in BRACKET_ORDER["west"]["semifinals"] if s in series_dict],
+            "finals": series_dict.get(BRACKET_ORDER["west"]["finals"]),
+        },
+        "finals": series_dict.get(BRACKET_ORDER["finals"]),
+        "series": series_dict,
+    }
+
+
+def _fetch_playoffs(season: str) -> dict:
+    cp_raw = stats_json("commonplayoffseries", {"LeagueID": "00", "Season": season, "SeriesID": ""})
+    cp_rows = result_sets(cp_raw).get("PlayoffSeries", [])
+    if not cp_rows:
+        return {
+            "season": season,
+            "available": False,
+            "champion": None,
+            "series": {},
+            "east": {"round1": [], "semifinals": [], "finals": None},
+            "west": {"round1": [], "semifinals": [], "finals": None},
+            "finals": None,
+        }
+
+    try:
+        gf_raw = stats_json("leaguegamefinder", {"LeagueID": "00", "Season": season, "SeasonType": "Playoffs"})
+        gf_rows = result_sets(gf_raw).get("LeagueGameFinderResults", [])
+    except SourceError:
+        gf_rows = []
+
+    seeds = {}
+    try:
+        st, _ = standings(season)
+        for r in st.get("rows", []):
+            if r.get("teamId") and r.get("rank"):
+                seeds[r["teamId"]] = r["rank"]
+    except Exception:
+        pass
+
+    return _build_playoff_bracket(season, cp_rows, gf_rows, seeds)
+
+
+def playoffs(season: str | None = None) -> tuple[dict, dict]:
+    cur = current_season()
+    requested = valid_season(season) or cur
+    target = requested
+    fallback = False
+
+    data, meta = _cache().get(f"playoffs:{target}", 3600, lambda: _fetch_playoffs(target))
+    if not data.get("available") and target == cur:
+        prev = previous_season()
+        try:
+            prev_data, prev_meta = _cache().get(f"playoffs:{prev}", 24 * 3600, lambda: _fetch_playoffs(prev))
+            if prev_data.get("available"):
+                data, meta = prev_data, prev_meta
+                target = prev
+                fallback = True
+        except SourceError:
+            pass
+
+    start_yr = current_season_start()
+    available_seasons = [f"{y}-{str(y + 1)[-2:]}" for y in range(start_yr, start_yr - 6, -1)]
+
+    result = {
+        **data,
+        "requested": requested,
+        "season": data.get("season", target),
+        "fallback": fallback,
+        "availableSeasons": available_seasons,
+    }
+    return result, meta
 
 
 # ---------------------------------------------------------------------------

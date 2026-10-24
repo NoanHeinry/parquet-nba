@@ -162,5 +162,68 @@ class TeamsTests(unittest.TestCase):
         self.assertEqual(teams_meta.team(1610612738)["tri"], "BOS")
 
 
+class PlayoffTests(unittest.TestCase):
+    def test_build_playoff_bracket(self):
+        # Échantillon d'une finale 004230040 (BOS vs DAL) et d'un 1er tour 004230010 (BOS vs MIA)
+        cp_rows = [
+            {"GAME_ID": "0042300101", "HOME_TEAM_ID": 1610612738, "VISITOR_TEAM_ID": 1610612748, "SERIES_ID": "004230010", "GAME_NUM": 1},
+            {"GAME_ID": "0042300102", "HOME_TEAM_ID": 1610612738, "VISITOR_TEAM_ID": 1610612748, "SERIES_ID": "004230010", "GAME_NUM": 2},
+            {"GAME_ID": "0042300401", "HOME_TEAM_ID": 1610612738, "VISITOR_TEAM_ID": 1610612742, "SERIES_ID": "004230040", "GAME_NUM": 1},
+            {"GAME_ID": "0042300402", "HOME_TEAM_ID": 1610612738, "VISITOR_TEAM_ID": 1610612742, "SERIES_ID": "004230040", "GAME_NUM": 2},
+            {"GAME_ID": "0042300403", "HOME_TEAM_ID": 1610612742, "VISITOR_TEAM_ID": 1610612738, "SERIES_ID": "004230040", "GAME_NUM": 3},
+            {"GAME_ID": "0042300404", "HOME_TEAM_ID": 1610612742, "VISITOR_TEAM_ID": 1610612738, "SERIES_ID": "004230040", "GAME_NUM": 4},
+            {"GAME_ID": "0042300405", "HOME_TEAM_ID": 1610612738, "VISITOR_TEAM_ID": 1610612742, "SERIES_ID": "004230040", "GAME_NUM": 5},
+        ]
+        gf_rows = [
+            # Game 1 round 1 : BOS gagne
+            {"GAME_ID": "0042300101", "TEAM_ID": 1610612738, "PTS": 114, "WL": "W", "GAME_DATE": "2024-04-21"},
+            {"GAME_ID": "0042300101", "TEAM_ID": 1610612748, "PTS": 94, "WL": "L", "GAME_DATE": "2024-04-21"},
+            # Game 2 round 1 : MIA gagne
+            {"GAME_ID": "0042300102", "TEAM_ID": 1610612738, "PTS": 101, "WL": "L", "GAME_DATE": "2024-04-24"},
+            {"GAME_ID": "0042300102", "TEAM_ID": 1610612748, "PTS": 111, "WL": "W", "GAME_DATE": "2024-04-24"},
+            # Finales : BOS gagne 4-1
+            {"GAME_ID": "0042300401", "TEAM_ID": 1610612738, "PTS": 107, "WL": "W", "GAME_DATE": "2024-06-06"},
+            {"GAME_ID": "0042300401", "TEAM_ID": 1610612742, "PTS": 89, "WL": "L", "GAME_DATE": "2024-06-06"},
+            {"GAME_ID": "0042300402", "TEAM_ID": 1610612738, "PTS": 105, "WL": "W", "GAME_DATE": "2024-06-09"},
+            {"GAME_ID": "0042300402", "TEAM_ID": 1610612742, "PTS": 98, "WL": "L", "GAME_DATE": "2024-06-09"},
+            {"GAME_ID": "0042300403", "TEAM_ID": 1610612738, "PTS": 106, "WL": "W", "GAME_DATE": "2024-06-12"},
+            {"GAME_ID": "0042300403", "TEAM_ID": 1610612742, "PTS": 99, "WL": "L", "GAME_DATE": "2024-06-12"},
+            {"GAME_ID": "0042300404", "TEAM_ID": 1610612738, "PTS": 84, "WL": "L", "GAME_DATE": "2024-06-14"},
+            {"GAME_ID": "0042300404", "TEAM_ID": 1610612742, "PTS": 122, "WL": "W", "GAME_DATE": "2024-06-14"},
+            {"GAME_ID": "0042300405", "TEAM_ID": 1610612738, "PTS": 106, "WL": "W", "GAME_DATE": "2024-06-17"},
+            {"GAME_ID": "0042300405", "TEAM_ID": 1610612742, "PTS": 88, "WL": "L", "GAME_DATE": "2024-06-17"},
+        ]
+        seeds = {1610612738: 1, 1610612748: 8, 1610612742: 5}
+
+        res = nba._build_playoff_bracket("2023-24", cp_rows, gf_rows, seeds)
+        self.assertTrue(res["available"])
+        self.assertEqual(res["season"], "2023-24")
+
+        # Vérification 1er tour
+        s1 = res["series"]["0010"]
+        self.assertEqual(s1["round"], 1)
+        self.assertEqual(s1["topTeam"]["tri"], "BOS")
+        self.assertEqual(s1["topTeam"]["seed"], 1)
+        self.assertEqual(s1["bottomTeam"]["tri"], "MIA")
+        self.assertEqual(s1["topTeam"]["wins"], 1)
+        self.assertEqual(s1["bottomTeam"]["wins"], 1)
+        self.assertEqual(s1["status"], "En cours")
+        self.assertEqual(s1["summary"], "Égalité 1-1")
+
+        # Vérification finales
+        finals = res["finals"]
+        self.assertIsNotNone(finals)
+        self.assertEqual(finals["round"], 4)
+        self.assertEqual(finals["winnerId"], 1610612738)
+        self.assertEqual(finals["status"], "Terminée")
+        self.assertEqual(finals["summary"], "BOS gagne 4-1")
+        self.assertEqual(res["champion"]["tri"], "BOS")
+
+    def test_empty_playoffs(self):
+        res = nba._build_playoff_bracket("2026-27", [], [])
+        self.assertFalse(res["available"])
+        self.assertIsNone(res["champion"])
+
+
 if __name__ == "__main__":
     unittest.main()
