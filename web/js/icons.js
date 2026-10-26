@@ -190,3 +190,55 @@ export function iconInfo(size = 16) {
     s("line", { x1: "12", y1: "8", x2: "12.01", y2: "8" })
   );
 }
+
+function strokeIcon(size, cls, ...children) {
+  return s(
+    "svg",
+    {
+      viewBox: "0 0 24 24",
+      width: size,
+      height: size,
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": "2",
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      "aria-hidden": "true",
+      class: `svg-icon ${cls}`,
+    },
+    ...children
+  );
+}
+
+export function iconCalendar(size = 16) {
+  return strokeIcon(
+    size,
+    "icon-calendar",
+    s("rect", { x: "3", y: "4", width: "18", height: "18", rx: "2" }),
+    s("line", { x1: "16", y1: "2", x2: "16", y2: "6" }),
+    s("line", { x1: "8", y1: "2", x2: "8", y2: "6" }),
+    s("line", { x1: "3", y1: "10", x2: "21", y2: "10" })
+  );
+}
+
+export function iconGrid(size = 16) {
+  return strokeIcon(
+    size,
+    "icon-grid",
+    s("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
+    s("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
+    s("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
+    s("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
+  );
+}
+
+export function iconExpand(size = 16) {
+  return strokeIcon(
+    size,
+    "icon-expand",
+    s("polyline", { points: "15 3 21 3 21 9" }),
+    s("polyline", { points: "9 21 3 21 3 15" }),
+    s("line", { x1: "21", y1: "3", x2: "14", y2: "10" }),
+    s("line", { x1: "3", y1: "21", x2: "10", y2: "14" })
+  );
+}

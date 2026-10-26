@@ -3,9 +3,10 @@
 import { api } from "../api.js";
 import { h, s } from "../dom.js";
 import * as f from "../format.js";
-import { compareRows, shotChart } from "../charts.js";
+import { compareRows, gameFlowChart, leadSeries, leadStats, shotChart } from "../charts.js";
 import { chips, errorState, headshot, loading, playerCell, section, segmented, statTable, staleBanner, tabs, teamLogo, wl } from "../components.js";
 import { team, teamPair } from "../teams.js";
+import { gameKey, isHidden, isRevealed as isRevealedKey, setRevealed } from "../spoiler.js";
 
 const TAB_DEFS = [
   { id: "resume", label: "Résumé" },
@@ -64,7 +65,11 @@ function scoreboard(game, previous, { onToggleReveal, isRevealed } = {}) {
 
     const scoresEl = h(
       "div",
-      { class: "sb-scores num", title: "Cliquer pour révéler ou masquer le score", "aria-label": `${game.away?.score} à ${game.home?.score}` },
+      {
+        class: "sb-scores num",
+        title: onToggleReveal && document.documentElement.dataset.spoiler === "1" ? "Cliquer pour révéler ou masquer le score" : null,
+        "aria-label": onToggleReveal && document.documentElement.dataset.spoiler === "1" && !isRevealed ? "Score masqué" : `${game.away?.score} à ${game.home?.score}`,
+      },
       sc("away"),
       h("span", { class: "dash" }, "–"),
       sc("home")
@@ -417,11 +422,15 @@ export async function render(ctx) {
   let pbp = null;
   let tab = "resume";
   let previous = null;
-  let isRevealed = false;
+  const key = gameKey(id);
+  let isRevealed = isRevealedKey(key);
+  wrapper.classList.toggle("is-revealed", isRevealed);
   const toggleReveal = () => {
     isRevealed = !isRevealed;
+    setRevealed(key, isRevealed);
     wrapper.classList.toggle("is-revealed", isRevealed);
     drawHead();
+    drawBody();
   };
   const pbpState = { period: box.game.status === 2 ? "current" : 0, filter: "all" };
   const shotState = { player: { away: null, home: null } };
@@ -438,9 +447,51 @@ export async function render(ctx) {
     if (!pbp) pbp = (await api(`/game/${id}/pbp`, { signal: ctx.signal })).data;
   };
 
+  // Scénario du match : courbe de l'écart au score, tirée du fil des actions.
+  const drawFlow = async (el) => {
+    if (!pbp) el.replaceChildren(loading("Chargement du scénario du match…"));
+    try {
+      await ensurePbp();
+    } catch (err) {
+      if (err.name !== "AbortError") el.replaceChildren(h("p", { class: "note" }, `Scénario indisponible (${err.message}).`));
+      return;
+    }
+    if (!ctx.active || !pbp.actions?.length) {
+      el.replaceChildren();
+      return;
+    }
+    const g = box.game;
+    const colors = teamPair(g.away?.id, g.home?.id);
+    const { points } = leadSeries(pbp.actions);
+    const st = leadStats(points);
+    const lead = (p, tri) => `${tri} +${Math.abs(p.lead)} (${p.period <= 4 ? `Q${p.period}` : "prolongation"}, ${p.clock})`;
+    const facts = [
+      st.maxAway.lead < 0 ? `Plus gros écart ${g.away?.tri} : ${lead(st.maxAway, g.away?.tri)}` : `${g.away?.tri} n'a jamais mené`,
+      st.maxHome.lead > 0 ? `Plus gros écart ${g.home?.tri} : ${lead(st.maxHome, g.home?.tri)}` : `${g.home?.tri} n'a jamais mené`,
+      `${f.plural(st.changes, "changement", "changements")} de leader`,
+      `${f.plural(st.ties, "égalité", "égalités")}`,
+    ];
+    el.replaceChildren(
+      h("h2", { class: "section-title" }, "Scénario du match"),
+      h(
+        "p",
+        { class: "legend", style: { margin: "-4px 0 10px" } },
+        h("span", null, h("i", { class: "key-swatch", style: { background: colors.home } }), `Au-dessus : ${sideName(g.home).name} mènent`),
+        h("span", null, h("i", { class: "key-swatch", style: { background: colors.away } }), `En dessous : ${sideName(g.away).name} mènent`)
+      ),
+      h("div", { class: "chart-card" }, gameFlowChart(pbp.actions, { awayColor: colors.away, homeColor: colors.home, awayTri: g.away?.tri, homeTri: g.home?.tri, live: g.status === 2 })),
+      h("p", { class: "note", style: { marginTop: "10px" } }, facts.join(". ") + ".")
+    );
+  };
+
   const drawPanel = async () => {
     if (!box.available) return;
-    if (tab === "resume") panel.replaceChildren(...resume(box));
+    if (tab === "resume") {
+      const parts = resume(box);
+      const flow = h("div", { class: "section" });
+      panel.replaceChildren(parts[0], flow, ...parts.slice(1));
+      drawFlow(flow);
+    }
     else if (tab === "box") panel.replaceChildren(boxTable(box, "away"), boxTable(box, "home"));
     else {
       if (!pbp) panel.replaceChildren(loading("Chargement des actions…"));
@@ -455,9 +506,26 @@ export async function render(ctx) {
     }
   };
 
-  drawHead();
-  if (box.available) {
-    body.append(
+  // En mode anti-spoiler, le box score, les actions et les tirs donnent le score :
+  // ils restent cachés derrière un écran tant que le match n'est pas révélé.
+  let gated = null;
+  const drawBody = () => {
+    if (!box.available) return;
+    const hide = isHidden(key) && box.game.status >= 2;
+    if (hide === gated && body.childNodes.length) return;
+    gated = hide;
+    if (hide) {
+      body.replaceChildren(
+        h(
+          "div",
+          { class: "spoiler-gate" },
+          h("p", null, h("strong", null, "Mode anti-spoiler actif. "), "Le box score, le fil des actions et la carte des tirs donnent le résultat : ils restent masqués."),
+          h("button", { class: "btn primary", type: "button", onclick: toggleReveal }, "Révéler le match")
+        )
+      );
+      return;
+    }
+    body.replaceChildren(
       tabs(TAB_DEFS, tab, (t) => {
         tab = t;
         drawPanel();
@@ -465,9 +533,11 @@ export async function render(ctx) {
       panel
     );
     drawPanel();
-  } else {
-    pregame(body, box.game, ctx);
-  }
+  };
+
+  drawHead();
+  if (box.available) drawBody();
+  else pregame(body, box.game, ctx);
 
   // Actualisation automatique pendant le match (et juste avant le coup d'envoi).
   const delay = () => (box.game.status === 2 ? 10000 : box.game.status === 1 ? 30000 : 0);
@@ -484,10 +554,11 @@ export async function render(ctx) {
         drawHead();
         if (!wasAvailable && box.available) {
           // Le match vient de commencer : on bascule vers l'affichage complet.
-          body.replaceChildren(tabs(TAB_DEFS, tab, (t) => { tab = t; drawPanel(); }), panel);
+          gated = null;
+          drawBody();
         }
         if (pbp) pbp = (await api(`/game/${id}/pbp`, { signal: ctx.signal })).data;
-        if (box.available) drawPanel();
+        if (box.available && !gated) drawPanel();
       }
     );
   }

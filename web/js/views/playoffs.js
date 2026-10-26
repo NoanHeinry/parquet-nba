@@ -6,6 +6,7 @@ import * as f from "../format.js";
 import { errorState, loading, segmented, staleBanner, teamLogo } from "../components.js";
 import { team, teamColor } from "../teams.js";
 import { iconEye, iconTrophy } from "../icons.js";
+import { isHidden, isRevealed, seriesKey, setRevealed } from "../spoiler.js";
 
 function renderMatchupCard(series) {
   if (!series) {
@@ -91,7 +92,7 @@ function renderMatchupCard(series) {
 
   const card = h(
     "div",
-    { class: `matchup-card ${isFinished ? "is-finished" : ""}` },
+    { class: `matchup-card ${isFinished ? "is-finished" : ""}${isRevealed(seriesKey(series.id)) ? " is-revealed" : ""}`, dataset: { seriesId: series.id } },
     revealBtn,
     t1Row,
     t2Row,
@@ -108,14 +109,33 @@ function renderMatchupCard(series) {
 
   revealBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    card.classList.toggle("is-revealed");
+    const on = !card.classList.contains("is-revealed");
+    card.classList.toggle("is-revealed", on);
+    setRevealed(seriesKey(series.id), on);
   });
 
   return card;
 }
 
-function renderChampionBanner(champ, finalsSeries) {
+function renderChampionBanner(champ, finalsSeries, season) {
   if (!champ) return null;
+  const key = `champ:${season}`;
+  if (isHidden(key)) {
+    // Mode anti-spoiler : le nom du champion ne s'affiche qu'à la demande.
+    const btn = h("button", { class: "btn", type: "button" }, "Révéler le champion");
+    const card = h(
+      "div",
+      { class: "playoffs-champion-card is-masked" },
+      h("div", { class: "trophy-icon", "aria-hidden": "true" }, iconTrophy(26)),
+      h("div", { class: "champion-info" }, h("span", { class: "label" }, "Champion NBA"), h("h2", { class: "name" }, "Résultat masqué")),
+      btn
+    );
+    btn.addEventListener("click", () => {
+      setRevealed(key, true);
+      card.replaceWith(renderChampionBanner(champ, finalsSeries, season));
+    });
+    return card;
+  }
   const col = teamColor(champ.id);
   return h(
     "div",
@@ -269,8 +289,8 @@ export async function render(ctx) {
       const cards = container.querySelectorAll(".matchup-card");
       const allRev = [...cards].length > 0 && [...cards].every((c) => c.classList.contains("is-revealed"));
       for (const c of cards) {
-        if (allRev) c.classList.remove("is-revealed");
-        else c.classList.add("is-revealed");
+        c.classList.toggle("is-revealed", !allRev);
+        if (c.dataset.seriesId) setRevealed(seriesKey(c.dataset.seriesId), !allRev);
       }
       toggleAllBtn.textContent = allRev ? "Révéler tout" : "Tout masquer";
     });
@@ -331,7 +351,7 @@ export async function render(ctx) {
       )
     );
 
-    const champBanner = renderChampionBanner(data.champion, data.finals);
+    const champBanner = renderChampionBanner(data.champion, data.finals, data.season);
 
     updateView();
 

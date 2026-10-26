@@ -3,8 +3,10 @@
 import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
-import { errorState, favorites, gameTile, loading, scoreMap, section, staleBanner, teamLogo } from "../components.js";
+import { errorState, favorites, gameTile, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
 import { checkScoreboard } from "../notifications.js";
+import { createRecap } from "./recap.js";
+import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
 
 function refreshDelay(data) {
@@ -44,6 +46,7 @@ export async function render(ctx) {
 
   let previous = new Map();
   let last = null;
+  const recap = createRecap(ctx);
   const updatedLine = h("p", { class: "updated", "aria-live": "polite" });
 
   const draw = (data, meta) => {
@@ -67,21 +70,20 @@ export async function render(ctx) {
       },
       "Révéler tout"
     );
+    const startedTiles = () => [...mainCol.querySelectorAll(".game-tile")].filter((el) => el.querySelector(".tile-reveal-btn"));
+    const syncAllBtn = () => {
+      const tiles = startedTiles();
+      const allRev = tiles.length > 0 && tiles.every((el) => el.classList.contains("is-revealed"));
+      toggleAllBtn.textContent = allRev ? "Masquer tout" : "Révéler tout";
+      toggleAllBtn.title = allRev ? "Masquer tous les scores" : "Révéler tous les scores";
+    };
     toggleAllBtn.addEventListener("click", () => {
-      const tiles = mainCol.querySelectorAll(".game-tile");
-      const allRev = [...tiles].length > 0 && [...tiles].every((t) => t.classList.contains("is-revealed"));
-      for (const t of tiles) {
-        if (allRev) t.classList.remove("is-revealed");
-        else t.classList.add("is-revealed");
-        const btn = t.querySelector(".tile-reveal-btn");
-        if (btn) {
-          btn.textContent = allRev ? "Révéler" : "Masquer";
-          btn.setAttribute("aria-label", allRev ? "Révéler le score de ce match" : "Masquer le score de ce match");
-        }
-      }
-      toggleAllBtn.textContent = allRev ? "Révéler tout" : "Masquer tout";
-      toggleAllBtn.title = allRev ? "Révéler tous les scores" : "Masquer tous les scores";
+      const tiles = startedTiles();
+      const allRev = tiles.length > 0 && tiles.every((el) => el.classList.contains("is-revealed"));
+      for (const el of tiles) setTileRevealed(el, !allRev);
+      syncAllBtn();
     });
+    queueMicrotask(syncAllBtn);
 
     const nav = h(
       "div",
@@ -116,13 +118,17 @@ export async function render(ctx) {
       ? `Mis à jour à ${f.updatedAt(meta.fetchedAt)}. Les scores se rafraîchissent toutes les 15 secondes.`
       : `Mis à jour à ${f.updatedAt(meta.fetchedAt)}.`;
 
-    mainCol.replaceChildren(
-      head,
-      staleBanner(meta) || "",
-      live ? h("p", { class: "live-strip", style: { margin: "0 0 14px" } }, h("span", { class: "live-dot", "aria-hidden": "true" }), live > 1 ? `${live} matchs en cours` : "1 match en cours") : "",
-      content,
-      updatedLine
-    );
+    const liveStrip = live
+      ? h(
+          "div",
+          { class: "live-row" },
+          h("p", { class: "live-strip" }, h("span", { class: "live-dot", "aria-hidden": "true" }), live > 1 ? `${live} matchs en cours` : "1 match en cours"),
+          h("a", { class: "btn", href: "#/multi" }, iconGrid(15), "Mode multi-matchs")
+        )
+      : "";
+
+    mainCol.replaceChildren(head, staleBanner(meta) || "", liveStrip, recap.el, content, updatedLine);
+    recap.update(data);
   };
 
   const load = async () => {

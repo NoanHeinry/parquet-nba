@@ -6,7 +6,7 @@ import * as f from "../format.js";
 import { columnChart } from "../charts.js";
 import { favorites, loading, playerCell, section, segmented, statTable, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
 import { team, teamBand, teamColor } from "../teams.js";
-import { iconStar } from "../icons.js";
+import { iconCalendar, iconStar } from "../icons.js";
 
 const SOCIAL = { Facebook: "Facebook", Instagram: "Instagram", Twitter: "X (Twitter)", X: "X", Website: "Site officiel", Tiktok: "TikTok", YouTube: "YouTube" };
 
@@ -128,7 +128,17 @@ function scheduleView(container, t, ctx) {
             "Matchs affichés"
           )
         ),
-        h("p", { class: "note", style: { margin: "0 0 8px" } }, `Saison ${data.season}. Horaires à l'heure de Paris.`),
+        h(
+          "div",
+          { class: "ics-row" },
+          h("p", { class: "note", style: { margin: 0 } }, `Saison ${data.season}. Horaires à l'heure de Paris.`),
+          h(
+            "a",
+            { class: "btn", href: `/api/team/${t.id}/calendar.ics`, download: `parquet-${t.tri.toLowerCase()}-${data.season}.ics`, title: "Fichier à importer dans Google Agenda, Apple Calendrier ou Outlook" },
+            iconCalendar(15),
+            "Ajouter à mon agenda"
+          )
+        ),
         list,
       ];
     }

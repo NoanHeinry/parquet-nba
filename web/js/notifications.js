@@ -5,6 +5,7 @@ import { api } from "./api.js";
 import { favorites } from "./components.js";
 import { h } from "./dom.js";
 import { iconBasketball, iconLightning, iconFlag, iconAlertCircle, iconInfo } from "./icons.js";
+import { isSpoilerFree } from "./spoiler.js";
 
 function resolveIcon(icon) {
   if (icon instanceof Node) return icon;
@@ -38,9 +39,57 @@ function saveSettings() {
   }
 }
 
-// Suivi des états de match pour éviter les notifications en double
+// Suivi des états de match pour éviter les notifications en double.
+// Les alertes déjà envoyées sont mémorisées deux jours : un rechargement de page ne les renvoie pas.
 const seenGameStates = new Map();
-const notifiedEvents = new Set();
+const NOTIFIED_KEY = "parquet-notified";
+const notifiedEvents = new Map();
+try {
+  const saved = JSON.parse(localStorage.getItem(NOTIFIED_KEY) || "{}");
+  const limit = Date.now() - 2 * 24 * 3600 * 1000;
+  for (const [k, at] of Object.entries(saved)) if (at > limit) notifiedEvents.set(k, at);
+} catch {
+  /* mémoire des alertes indisponible */
+}
+
+function markNotified(key) {
+  notifiedEvents.set(key, Date.now());
+  try {
+    localStorage.setItem(NOTIFIED_KEY, JSON.stringify(Object.fromEntries(notifiedEvents)));
+  } catch {
+    /* rien */
+  }
+}
+
+// Secondes restantes à partir de l'horloge affichée (« 4:32 » ou « 48.2 »).
+function clockSeconds(clock) {
+  if (!clock) return null;
+  if (clock.includes(":")) {
+    const [m, s] = clock.split(":");
+    return Number(m) * 60 + Number(s);
+  }
+  const v = Number(clock);
+  return Number.isFinite(v) ? v : null;
+}
+
+// Définition officielle de la NBA : 5 dernières minutes du 4e quart-temps
+// (ou d'une prolongation) avec 5 points d'écart ou moins.
+export function isClutch(game) {
+  if (game.status !== 2 || (game.period || 0) < 4) return false;
+  const h = game.home?.score;
+  const a = game.away?.score;
+  if (h === null || h === undefined || a === null || a === undefined) return false;
+  const left = clockSeconds(game.clock);
+  if (left === null || left > 300) return false;
+  return Math.abs(h - a) <= 5;
+}
+
+// Notifications système : réservées par les navigateurs aux connexions sécurisées
+// (HTTPS ou localhost). Depuis un téléphone en http://192.168.x.x, seules les alertes
+// affichées dans la page fonctionnent.
+export function systemNotificationsPossible() {
+  return window.isSecureContext && "Notification" in window;
+}
 
 let toastContainer = null;
 function getToastContainer() {
@@ -95,7 +144,7 @@ export async function sendNotification({ icon = "basketball", title, body, gameI
   showToast({ icon, title, body, gameId });
 
   // 2. Si le navigateur autorise les notifications et que l'utilisateur les a activées
-  if (!currentSettings.enabled || !("Notification" in window) || Notification.permission !== "granted") {
+  if (!currentSettings.enabled || !systemNotificationsPossible() || Notification.permission !== "granted") {
     return;
   }
 
@@ -131,8 +180,10 @@ export async function sendNotification({ icon = "basketball", title, body, gameI
 }
 
 export function checkScoreboard(games) {
-  if (!games || !games.length) return;
+  // L'interrupteur « Activer les alertes » coupe tout, y compris les alertes dans la page.
+  if (!currentSettings.enabled || !games || !games.length) return;
   const favs = favorites();
+  const hide = isSpoilerFree();
 
   for (const g of games) {
     const gid = g.id;
@@ -141,65 +192,59 @@ export function checkScoreboard(games) {
     const isFav = favs.has(g.home?.id) || favs.has(g.away?.id);
     const prev = seenGameStates.get(gid);
     const status = g.status;
-    const period = g.period || 0;
     const hScore = g.home?.score ?? null;
     const aScore = g.away?.score ?? null;
+    const matchup = `${g.away?.tri || "EXT"} – ${g.home?.tri || "DOM"}`;
+    const scoreLine = `${g.away?.tri} ${aScore} - ${hScore} ${g.home?.tri}`;
 
-    // Mise en mémoire de l'état
-    seenGameStates.set(gid, { status, period, hScore, aScore });
-    if (!prev) continue; // Premier passage : on initialise les états sans notifier en masse
+    seenGameStates.set(gid, { status });
+    if (!prev) continue; // premier passage : on mémorise l'état sans notifier en masse
 
-    // 1. Alerte coup d'envoi pour équipes favorites
-    if (currentSettings.onStart && isFav) {
-      const startKey = `start:${gid}`;
-      if (prev.status === 1 && status === 2 && !notifiedEvents.has(startKey)) {
-        notifiedEvents.add(startKey);
-        sendNotification({
-          icon: "basketball",
-          title: `Coup d'envoi : ${g.away?.tri || "EXT"} @ ${g.home?.tri || "DOM"}`,
-          body: `Le match vient de débuter entre les ${g.away?.name || "visiteurs"} et les ${g.home?.name || "locaux"}.`,
-          gameId: gid,
-        });
-      }
+    // 1. Coup d'envoi d'une équipe favorite
+    const startKey = `start:${gid}`;
+    if (currentSettings.onStart && isFav && prev.status === 1 && status === 2 && !notifiedEvents.has(startKey)) {
+      markNotified(startKey);
+      sendNotification({
+        icon: "basketball",
+        title: `Coup d'envoi : ${matchup}`,
+        body: `Le match entre les ${g.away?.name || "visiteurs"} et les ${g.home?.name || "locaux"} vient de commencer.`,
+        gameId: gid,
+      });
     }
 
-    // 2. Alerte Clutch Time (écart ≤ 5 points au 4e quart-temps ou prolongations)
-    if (currentSettings.onClutch && status === 2 && period >= 4 && hScore !== null && aScore !== null) {
-      const clutchKey = `clutch:${gid}`;
+    // 2. Clutch time (5 dernières minutes, 5 points d'écart ou moins)
+    const clutchKey = `clutch:${gid}`;
+    if (currentSettings.onClutch && (!currentSettings.clutchOnlyFavs || isFav) && isClutch(g) && !notifiedEvents.has(clutchKey)) {
+      markNotified(clutchKey);
       const diff = Math.abs(hScore - aScore);
-      const shouldAlert = (!currentSettings.clutchOnlyFavs || isFav) && diff <= 5;
-
-      if (shouldAlert && !notifiedEvents.has(clutchKey)) {
-        notifiedEvents.add(clutchKey);
-        const leader = hScore > aScore ? g.home?.tri : aScore > hScore ? g.away?.tri : null;
-        const scoreLine = `${g.away?.tri} ${aScore} - ${hScore} ${g.home?.tri}`;
-        const clockText = g.statusText ? ` (${g.statusText})` : "";
-        sendNotification({
-          icon: "lightning",
-          title: `Fin de match serrée : ${scoreLine}`,
-          body: leader
-            ? `Écart de ${diff} pt(s)${clockText}. Suis la fin du match en direct !`
-            : `Égalité parfaite${clockText} ! Suis la fin du match en direct !`,
-          gameId: gid,
-        });
-      }
+      const when = g.statusText ? ` (${g.statusText})` : "";
+      sendNotification({
+        icon: "lightning",
+        title: hide ? `Fin de match serrée : ${matchup}` : `Fin de match serrée : ${scoreLine}`,
+        body: hide
+          ? `Les 5 dernières minutes se jouent avec 5 points d'écart ou moins${when}.`
+          : diff === 0
+          ? `Égalité${when}. Suis la fin du match en direct.`
+          : `${diff} point${diff > 1 ? "s" : ""} d'écart${when}. Suis la fin du match en direct.`,
+        gameId: gid,
+      });
     }
 
-    // 3. Alerte résultat final pour équipes favorites
-    if (currentSettings.onEnd && isFav) {
-      const endKey = `end:${gid}`;
-      if (prev.status === 2 && status === 3 && !notifiedEvents.has(endKey)) {
-        notifiedEvents.add(endKey);
-        const homeWon = (hScore || 0) > (aScore || 0);
-        const winTeam = homeWon ? g.home : g.away;
-        const loseTeam = homeWon ? g.away : g.home;
-        sendNotification({
-          icon: "flag",
-          title: `Fin du match : ${g.away?.tri} ${aScore} - ${hScore} ${g.home?.tri}`,
-          body: `Victoire des ${winTeam?.name || "vainqueurs"} face aux ${loseTeam?.name || "vaincus"}.`,
-          gameId: gid,
-        });
-      }
+    // 3. Résultat final d'une équipe favorite
+    const endKey = `end:${gid}`;
+    if (currentSettings.onEnd && isFav && prev.status === 2 && status === 3 && !notifiedEvents.has(endKey)) {
+      markNotified(endKey);
+      const homeWon = (hScore || 0) > (aScore || 0);
+      const winTeam = homeWon ? g.home : g.away;
+      const loseTeam = homeWon ? g.away : g.home;
+      sendNotification({
+        icon: "flag",
+        title: hide ? `Match terminé : ${matchup}` : `Fin du match : ${scoreLine}`,
+        body: hide
+          ? "Le résultat est masqué (mode anti-spoiler). Ouvre le match pour le découvrir."
+          : `Victoire des ${winTeam?.name || "vainqueurs"} face aux ${loseTeam?.name || "vaincus"}.`,
+        gameId: gid,
+      });
     }
   }
 }
@@ -252,13 +297,31 @@ export function initNotificationsUI() {
       return;
     }
 
-    const perm = "Notification" in window ? Notification.permission : "unsupported";
+    const perm = !window.isSecureContext ? "insecure" : "Notification" in window ? Notification.permission : "unsupported";
 
     const chkEnabled = h("input", { type: "checkbox", checked: currentSettings.enabled || null });
     const chkStart = h("input", { type: "checkbox", checked: currentSettings.onStart || null });
     const chkClutch = h("input", { type: "checkbox", checked: currentSettings.onClutch || null });
     const chkEnd = h("input", { type: "checkbox", checked: currentSettings.onEnd || null });
     const chkClutchFavs = h("input", { type: "checkbox", checked: currentSettings.clutchOnlyFavs || null });
+
+    const insecureNotice =
+      perm === "insecure"
+        ? h(
+            "div",
+            { class: "note note-warning notif-insecure" },
+            h("p", { style: { margin: "0 0 6px", display: "flex", alignItems: "center", gap: "6px" } }, iconAlertCircle(15), "Connexion non sécurisée : les notifications du téléphone sont bloquées."),
+            h(
+              "p",
+              { style: { margin: 0 } },
+              "Les alertes s'afficheront dans la page. Pour les recevoir aussi en notification (et installer l'application), ouvre ",
+              h("code", null, "chrome://flags/#unsafely-treat-insecure-origin-as-secure"),
+              " dans Chrome, ajoute ",
+              h("code", null, location.origin),
+              ", active l'option puis relance Chrome."
+            )
+          )
+        : null;
 
     const permNotice =
       perm === "denied"
@@ -276,13 +339,13 @@ export function initNotificationsUI() {
     testBtn.addEventListener("click", () => {
       sendNotification({
         icon: "basketball",
-        title: "Alerte NBA Parquet",
-        body: "Les alertes fonctionnent ! Tu recevras les coups d'envoi et les fins de match serrées.",
+        title: "Alerte de test Parquet",
+        body: "Les alertes fonctionnent. Tu recevras les coups d'envoi, les fins de match serrées et les résultats.",
       });
     });
 
     chkEnabled.addEventListener("change", async () => {
-      if (chkEnabled.checked && "Notification" in window && Notification.permission === "default") {
+      if (chkEnabled.checked && systemNotificationsPossible() && Notification.permission === "default") {
         const p = await Notification.requestPermission();
         if (p !== "granted") {
           chkEnabled.checked = false;
@@ -319,17 +382,17 @@ export function initNotificationsUI() {
       "div",
       { class: "notif-panel", role: "dialog", "aria-label": "Réglages des alertes" },
       h("div", { class: "notif-panel-head" }, h("strong", null, "Alertes & Notifications"), h("button", { class: "toast-close", type: "button", "aria-label": "Fermer" }, "✕")),
-      permNotice || "",
+      insecureNotice || permNotice || "",
       h(
         "label",
         { class: "notif-opt main-opt" },
         chkEnabled,
-        h("span", null, h("strong", null, "Activer les alertes"), h("small", null, "Notifications navigateur et alertes en direct"))
+        h("span", null, h("strong", null, "Activer les alertes"), h("small", null, "Tant qu'un onglet Parquet reste ouvert"))
       ),
       h("hr", { class: "notif-sep" }),
       h("label", { class: "notif-opt" }, chkStart, h("span", null, "Coup d'envoi des équipes favorites")),
-      h("label", { class: "notif-opt" }, chkClutch, h("span", null, "Fin de match serrée (Clutch Time ≤ 5 pts)")),
-      h("label", { class: "notif-opt" }, chkClutchFavs, h("span", null, "Clutch Time : uniquement mes favoris")),
+      h("label", { class: "notif-opt" }, chkClutch, h("span", null, "Fin de match serrée (5 dernières minutes, 5 pts d'écart ou moins)")),
+      h("label", { class: "notif-opt" }, chkClutchFavs, h("span", null, "Fins de match serrées : uniquement mes favoris")),
       h("label", { class: "notif-opt" }, chkEnd, h("span", null, "Résultat final des équipes favorites")),
       h("p", { class: "note", style: { margin: "8px 0 0", fontSize: "11px" } }, "Conseil : marque tes équipes préférées sur leur page pour recevoir leurs alertes."),
       testBtn

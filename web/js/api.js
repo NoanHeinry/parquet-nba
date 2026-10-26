@@ -41,3 +41,8 @@ export function once(key, loader) {
 export function forget(key) {
   memo.delete(key);
 }
+
+// État du serveur (version, saison, mode démonstration), chargé une fois.
+export function appStatus() {
+  return once("status", async () => (await api("/status")).data);
+}

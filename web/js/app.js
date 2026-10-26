@@ -1,9 +1,11 @@
 import { route, start } from "./router.js";
 import { loadTeams } from "./teams.js";
+import { appStatus } from "./api.js";
 import { initGlobalSearch } from "./search.js";
 import { errorState, refreshLogos } from "./components.js";
 import * as home from "./views/home.js";
 import * as game from "./views/game.js";
+import * as multi from "./views/multi.js";
 import * as teamsView from "./views/teams.js";
 import * as teamView from "./views/team.js";
 import * as players from "./views/players.js";
@@ -139,6 +141,7 @@ function initPwa() {
 route("/", home.render, "matchs");
 route("/matchs/(\\d{4}-\\d{2}-\\d{2})", home.render, "matchs");
 route("/match/(\\d{10})", game.render, "matchs");
+route("/multi", multi.render, "matchs");
 route("/equipes", teamsView.render, "equipes");
 route("/equipe/(\\d+)", teamView.render, "equipes");
 route("/joueurs", players.render, "joueurs");
@@ -157,6 +160,19 @@ initSpoilerMode();
 initPwa();
 initNotificationsUI();
 const outlet = document.getElementById("main");
+
+// Mode démonstration (python run.py --demo) : un bandeau rappelle que les données sont fictives.
+appStatus()
+  .then((st) => {
+    if (!st.demo) return;
+    document.documentElement.dataset.demo = "1";
+    const banner = document.createElement("div");
+    banner.className = "demo-banner";
+    banner.textContent = "Mode démonstration : joueurs, scores et statistiques fictifs, sans connexion à NBA.com.";
+    document.querySelector(".topbar").after(banner);
+  })
+  .catch(() => {});
+
 loadTeams()
   .then(() => {
     initGlobalSearch();

@@ -171,14 +171,51 @@ const STAT_CHOICES = [
   { value: "min", label: "Minutes" },
   { value: "fgPct", label: "% aux tirs" },
   { value: "tpPct", label: "% à 3 points" },
+  { value: "ts", label: "Adresse réelle (TS%)" },
 ];
-const PCT_KEYS = new Set(["fgPct", "tpPct", "ftPct"]);
+const PCT_KEYS = new Set(["fgPct", "tpPct", "ftPct", "ts", "efg"]);
 
 function perGame(row, key) {
   const v = row[key];
   if (v === null || v === undefined) return null;
   if (PCT_KEYS.has(key)) return v;
   return row.gp ? v / row.gp : null;
+}
+
+// Ramené à 36 minutes de jeu : compare des joueurs au temps de jeu différent.
+function per36(row, key) {
+  const v = row[key];
+  if (v === null || v === undefined) return null;
+  if (PCT_KEYS.has(key)) return v;
+  if (key === "min") return row.gp ? row.min / row.gp : null;
+  return row.min ? (v * 36) / row.min : null;
+}
+
+const MODE_LABEL = { avg: " par match", tot: " sur la saison", per36: " sur 36 minutes" };
+
+function advancedTiles(total) {
+  if (!total || !total.gp) return null;
+  const tile = (k, v, s) => h("div", { class: "tile" }, h("div", { class: "k" }, k), h("div", { class: "v" }, v), s ? h("div", { class: "s" }, s) : null);
+  const pct = (v) => (v === null || v === undefined ? "–" : `${f.pct(v)} %`);
+  const ratio = total.tov ? total.ast / total.tov : null;
+  const threeRate = total.fga ? total.tpa / total.fga : null;
+  const ftRate = total.fga ? total.fta / total.fga : null;
+  return h(
+    "div",
+    { class: "section" },
+    h("h2", { class: "section-title" }, "Stats avancées en carrière"),
+    h(
+      "div",
+      { class: "tiles" },
+      tile("Adresse réelle (TS%)", pct(total.ts), "intègre 3 points et lancers francs"),
+      tile("Adresse effective (eFG%)", pct(total.efg), "un tir à 3 pts vaut 1,5 tir"),
+      tile("Points sur 36 min", f.num(per36(total, "pts")), `pour ${f.num(per36(total, "min"))} min par match`),
+      tile("Passes / balles perdues", ratio === null ? "–" : f.num(ratio, 2), "plus c'est haut, mieux c'est"),
+      tile("Part de tirs à 3 pts", pct(threeRate), "des tirs tentés"),
+      tile("Lancers francs obtenus", ftRate === null ? "–" : f.num(ftRate, 2), "lancers tentés par tir tenté")
+    ),
+    h("p", { class: "note", style: { marginTop: "10px" } }, "Repère : la moyenne de la ligue tourne autour de 57 à 58 % d'adresse réelle ces dernières saisons ; au-delà de 62 %, c'est excellent.")
+  );
 }
 
 function careerSeries(rows) {
@@ -196,6 +233,7 @@ function statsView(container, career) {
   const chartBox = h("div", { class: "chart-card" });
   const tableBox = h("div");
   const summary = h("p", { class: "note", style: { margin: "0 0 14px" } });
+  const advancedBox = h("div");
 
   const draw = () => {
     const rows = state.type === "regular" ? career.regular : career.playoffs;
@@ -204,15 +242,16 @@ function statsView(container, career) {
       chartBox.replaceChildren(h("p", { class: "note" }, state.type === "regular" ? "Aucune saison régulière jouée." : "Pas encore de match de playoffs."));
       tableBox.replaceChildren();
       summary.textContent = "";
+      advancedBox.replaceChildren();
       return;
     }
-    const value = (r, key) => (state.mode === "avg" ? perGame(r, key) : PCT_KEYS.has(key) ? r[key] : r[key]);
-    const fmt = (key, v) => (PCT_KEYS.has(key) ? `${f.pct(v)} %` : state.mode === "avg" ? f.num(v) : f.int(v));
+    const value = (r, key) => (state.mode === "avg" ? perGame(r, key) : state.mode === "per36" ? per36(r, key) : r[key]);
+    const fmt = (key, v) => (PCT_KEYS.has(key) ? `${f.pct(v)} %` : state.mode === "tot" ? f.int(v) : f.num(v));
     const series = careerSeries(rows);
     const choice = STAT_CHOICES.find((c) => c.value === state.stat);
     chartBox.replaceChildren(
       h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "6px" } },
-        h("strong", null, `${choice.label}${PCT_KEYS.has(state.stat) ? "" : state.mode === "avg" ? " par match" : " sur la saison"}`),
+        h("strong", null, `${choice.label}${PCT_KEYS.has(state.stat) ? "" : MODE_LABEL[state.mode]}`),
         h("span", { class: "note" }, "Survole la courbe pour le détail de chaque saison.")
       ),
       lineChart(
@@ -222,7 +261,7 @@ function statsView(container, career) {
           tip: [`Saison ${r.season}`, `${r.tri === "TOT" ? "Plusieurs équipes" : team(r.teamId)?.fullName || r.tri}, ${f.plural(r.gp, "match", "matchs")}`],
         })),
         {
-          format: (v) => (PCT_KEYS.has(state.stat) ? `${f.pct(v)} %` : state.mode === "avg" ? f.num(v) : f.int(v)),
+          format: (v) => (PCT_KEYS.has(state.stat) ? `${f.pct(v)} %` : state.mode === "tot" ? f.int(v) : f.num(v)),
           tickFormat: (v) => (PCT_KEYS.has(state.stat) ? `${f.pct(v, 0)} %` : Number.isInteger(v) ? f.int(v) : f.num(v)),
         }
       )
@@ -249,7 +288,10 @@ function statsView(container, career) {
       { key: "fgPct", label: "% tirs", title: "Adresse aux tirs", render: (r) => f.pct(r.fgPct) },
       { key: "tpPct", label: "% 3 pts", title: "Adresse à 3 points", render: (r) => f.pct(r.tpPct) },
       { key: "ftPct", label: "% LF", title: "Adresse aux lancers francs", render: (r) => f.pct(r.ftPct) },
+      { key: "ts", label: "TS%", title: "Adresse réelle : points / (2 × (tirs tentés + 0,44 × lancers tentés))", render: (r) => f.pct(r.ts) },
+      { key: "efg", label: "eFG%", title: "Adresse effective : (tirs réussis + 0,5 × tirs à 3 pts réussis) / tirs tentés", render: (r) => f.pct(r.efg) },
     ];
+    advancedBox.replaceChildren(advancedTiles(total) || "");
     const hasTot = new Set(rows.filter((r) => r.tri === "TOT").map((r) => r.season));
     const tableRows = rows.map((r) => ({ ...r }));
     if (total) tableRows.push({ ...total, season: "Carrière", tri: "", teamId: null, age: null, __total: true });
@@ -280,6 +322,7 @@ function statsView(container, career) {
       segmented(
         [
           { value: "avg", label: "Par match" },
+          { value: "per36", label: "Sur 36 min" },
           { value: "tot", label: "Totaux" },
         ],
         state.mode,
@@ -296,6 +339,7 @@ function statsView(container, career) {
       draw();
     }, "Statistique du graphique")),
     chartBox,
+    advancedBox,
     h("div", { class: "section" }, h("h2", { class: "section-title" }, "Saison par saison"), h("p", { class: "note", style: { margin: "-6px 0 12px" } }, "Lignes grisées : détail par équipe d'une saison partagée entre plusieurs clubs."), tableBox)
   );
   draw();

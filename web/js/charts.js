@@ -444,3 +444,160 @@ export function dualLineChart(seriesA, seriesB, { format = (v) => String(v), tic
 
   return svg;
 }
+
+// ------------------------------------------------------------ scénario du match (écart au score)
+
+function clockToSeconds(clock) {
+  if (!clock) return 0;
+  if (String(clock).includes(":")) {
+    const [m, sec] = String(clock).split(":");
+    return Number(m) * 60 + Number(sec);
+  }
+  return Number(clock) || 0;
+}
+
+const periodLength = (p) => (p <= 4 ? 720 : 300);
+const periodStart = (p) => (p <= 4 ? (p - 1) * 720 : 4 * 720 + (p - 5) * 300);
+const periodShort = (p) => (p <= 4 ? `Q${p}` : p === 5 ? "Prol." : `Prol. ${p - 4}`);
+
+// Transforme le fil des actions en points (temps écoulé, écart = domicile - extérieur).
+export function leadSeries(actions) {
+  const pts = [{ t: 0, lead: 0, away: 0, home: 0, period: 1, clock: "12:00" }];
+  let lastPeriod = 1;
+  for (const a of actions || []) {
+    if (a.period) lastPeriod = Math.max(lastPeriod, a.period);
+    if (!a.scoring || !a.period) continue;
+    const t = periodStart(a.period) + periodLength(a.period) - clockToSeconds(a.clock);
+    pts.push({ t, lead: a.home - a.away, away: a.away, home: a.home, period: a.period, clock: a.clock });
+  }
+  return { points: pts, periods: Math.max(4, lastPeriod) };
+}
+
+export function leadStats(points) {
+  let maxHome = { lead: 0 };
+  let maxAway = { lead: 0 };
+  let changes = 0;
+  let ties = 0;
+  let sign = 0;
+  for (const p of points.slice(1)) {
+    if (p.lead > maxHome.lead) maxHome = p;
+    if (p.lead < maxAway.lead) maxAway = p;
+    const s = Math.sign(p.lead);
+    if (s === 0) ties += 1;
+    else {
+      if (sign !== 0 && s !== sign) changes += 1;
+      sign = s;
+    }
+  }
+  return { maxHome, maxAway, changes, ties };
+}
+
+// Graphique en escalier : au-dessus de l'axe, l'équipe à domicile mène ; en dessous, l'équipe à l'extérieur.
+export function gameFlowChart(actions, { awayColor, homeColor, awayTri, homeTri, live = false }) {
+  const { points, periods } = leadSeries(actions);
+  const width = 760;
+  const height = 240;
+  const m = { top: 14, right: 16, bottom: 28, left: 64 };
+  const iw = width - m.left - m.right;
+  const ih = height - m.top - m.bottom;
+  const total = periodStart(periods) + periodLength(periods);
+  const maxAbs = Math.max(5, ...points.map((p) => Math.abs(p.lead)));
+  const step = niceStep(maxAbs, 2);
+  const top = Math.ceil(maxAbs / step) * step;
+  const x = (t) => m.left + (t / total) * iw;
+  const y = (lead) => m.top + ih / 2 - (lead / top) * (ih / 2);
+  const zero = y(0);
+
+  const svg = s("svg", { viewBox: `0 0 ${width} ${height}`, class: "chart flow-chart", role: "img", "aria-label": `Évolution de l'écart au score entre ${awayTri} et ${homeTri}` });
+  const grid = s("g", { class: "grid" });
+  const axis = s("g", { class: "axis" });
+  for (let v = -top; v <= top + 1e-9; v += step) {
+    grid.append(s("line", { x1: m.left, x2: width - m.right, y1: y(v), y2: y(v), style: v === 0 ? { stroke: "var(--line-strong)" } : null }));
+    const label = v === 0 ? "Égalité" : `${v > 0 ? homeTri : awayTri} +${Math.abs(v)}`;
+    axis.append(s("text", { x: m.left - 8, y: y(v) + 4, "text-anchor": "end" }, label));
+  }
+  for (let p = 1; p <= periods; p++) {
+    const x0 = x(periodStart(p));
+    if (p > 1) grid.append(s("line", { x1: x0, x2: x0, y1: m.top, y2: m.top + ih }));
+    axis.append(s("text", { x: x0 + (x(periodStart(p) + periodLength(p)) - x0) / 2, y: height - 8, "text-anchor": "middle" }, periodShort(p)));
+  }
+  svg.append(grid, axis);
+
+  // Tracé en escalier : l'écart reste constant jusqu'au panier suivant.
+  const endT = live ? points.at(-1).t : total;
+  let d = `M${x(0)},${zero}`;
+  for (let i = 1; i < points.length; i++) {
+    d += `H${x(points[i].t).toFixed(1)}V${y(points[i].lead).toFixed(1)}`;
+  }
+  d += `H${x(endT).toFixed(1)}`;
+  const area = `${d}V${zero}H${x(0)}Z`;
+
+  const uid = Math.random().toString(36).slice(2, 9);
+  svg.append(
+    s(
+      "defs",
+      null,
+      s("clipPath", { id: `above-${uid}` }, s("rect", { x: m.left, y: m.top, width: iw, height: zero - m.top })),
+      s("clipPath", { id: `below-${uid}` }, s("rect", { x: m.left, y: zero, width: iw, height: m.top + ih - zero }))
+    ),
+    s("path", { d: area, "clip-path": `url(#above-${uid})`, style: { fill: homeColor, fillOpacity: "0.28" } }),
+    s("path", { d: area, "clip-path": `url(#below-${uid})`, style: { fill: awayColor, fillOpacity: "0.28" } }),
+    s("path", { d, "clip-path": `url(#above-${uid})`, style: { fill: "none", stroke: homeColor, strokeWidth: "2", strokeLinejoin: "round" } }),
+    s("path", { d, "clip-path": `url(#below-${uid})`, style: { fill: "none", stroke: awayColor, strokeWidth: "2", strokeLinejoin: "round" } })
+  );
+
+  // Survol : le réticule s'aimante au panier le plus proche.
+  const cross = s("line", { class: "crosshair", y1: m.top, y2: m.top + ih, visibility: "hidden" });
+  const dot = s("circle", { class: "dot", r: 4.5, visibility: "hidden" });
+  const overlay = s("rect", { x: m.left, y: m.top, width: iw, height: ih, fill: "transparent", tabindex: 0 });
+  svg.append(cross, dot, overlay);
+  let focusIndex = points.length - 1;
+  const show = (i, event) => {
+    const p = points[i];
+    if (!p) return;
+    cross.setAttribute("x1", x(p.t));
+    cross.setAttribute("x2", x(p.t));
+    cross.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x(p.t));
+    dot.setAttribute("cy", y(p.lead));
+    dot.setAttribute("visibility", "visible");
+    const lead = p.lead === 0 ? "Égalité" : `${p.lead > 0 ? homeTri : awayTri} +${Math.abs(p.lead)}`;
+    const lines = [lead, `${awayTri} ${p.away} - ${p.home} ${homeTri}`, i === 0 ? "Coup d'envoi" : `${periodShort(p.period)}, ${p.clock}`];
+    if (event) showTip(event, lines);
+    else tipAt(dot, lines);
+  };
+  const nearest = (clientX) => {
+    const r = svg.getBoundingClientRect();
+    const px = ((clientX - r.left) / r.width) * width;
+    let best = 0;
+    let bestD = Infinity;
+    points.forEach((p, i) => {
+      const dd = Math.abs(x(p.t) - px);
+      if (dd < bestD) {
+        bestD = dd;
+        best = i;
+      }
+    });
+    return best;
+  };
+  const hide = () => {
+    cross.setAttribute("visibility", "hidden");
+    dot.setAttribute("visibility", "hidden");
+    hideTip();
+  };
+  overlay.addEventListener("pointermove", (e) => {
+    focusIndex = nearest(e.clientX);
+    show(focusIndex, e);
+  });
+  overlay.addEventListener("pointerleave", hide);
+  overlay.addEventListener("focus", () => show(focusIndex));
+  overlay.addEventListener("blur", hide);
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") focusIndex = Math.max(0, focusIndex - 1);
+    else if (e.key === "ArrowRight") focusIndex = Math.min(points.length - 1, focusIndex + 1);
+    else return;
+    e.preventDefault();
+    show(focusIndex);
+  });
+  return svg;
+}

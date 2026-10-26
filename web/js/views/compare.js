@@ -1,6 +1,6 @@
 // Comparateur de deux joueurs : face-à-face graphique, moyennes, totaux et palmarès.
 
-import { api } from "../api.js";
+import { api, appStatus } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { compareRows, dualLineChart } from "../charts.js";
@@ -28,6 +28,7 @@ const STAT_COLS = [
   { key: "fgPct", label: "Adresse globale (% FG)", fmt: (v) => `${f.pct(v)} %` },
   { key: "tpPct", label: "Adresse à 3 points (% 3P)", fmt: (v) => `${f.pct(v)} %` },
   { key: "ftPct", label: "Lancers francs (% FT)", fmt: (v) => `${f.pct(v)} %` },
+  { key: "ts", label: "Adresse réelle (TS%)", fmt: (v) => `${f.pct(v)} %` },
   { key: "gp", label: "Matchs disputés", fmt: (v) => f.int(v) },
   { key: "min", label: "Minutes par match", fmt: (v) => f.num(v) },
 ];
@@ -47,7 +48,7 @@ function perGame(row, key) {
   if (!row) return 0;
   const v = row[key];
   if (v === null || v === undefined) return 0;
-  if (key === "fgPct" || key === "tpPct" || key === "ftPct") return v;
+  if (key === "fgPct" || key === "tpPct" || key === "ftPct" || key === "ts") return v;
   if (key === "gp") return v;
   return row.gp ? v / row.gp : 0;
 }
@@ -165,12 +166,27 @@ export async function render(ctx) {
   }
   if (!ctx.active) return;
 
+  // En mode démonstration, les vrais joueurs n'existent pas : duels suggérés entre joueurs fictifs.
+  let presets = PRESETS;
+  try {
+    if ((await appStatus()).demo) {
+      const stars = allPlayers.filter((p) => p.active).sort((a, b) => (b.pts || 0) - (a.pts || 0)).slice(0, 8);
+      presets = [0, 2, 4, 6]
+        .filter((i) => stars[i + 1])
+        .map((i) => ({ label: `${stars[i].full} vs ${stars[i + 1].full}`, p1: stars[i].id, p2: stars[i + 1].id }));
+    }
+  } catch {
+    /* duels suggérés par défaut */
+  }
+
   let mode = "avg"; // "avg" | "tot" | "playoffs"
 
+  // Changer de joueurs = changer d'adresse : le routeur redessine la page lui-même.
+  // On ne redessine ici que si l'adresse ne change pas (sinon tout serait chargé deux fois).
   const updateUrl = () => {
-    if (p1Id && p2Id) location.hash = `#/comparer/${p1Id}/${p2Id}`;
-    else if (p1Id) location.hash = `#/comparer/${p1Id}`;
-    else location.hash = "#/comparer";
+    const next = p1Id && p2Id ? `#/comparer/${p1Id}/${p2Id}` : p1Id ? `#/comparer/${p1Id}` : p2Id ? `#/comparer/${p2Id}` : "#/comparer";
+    if (location.hash !== next) location.hash = next;
+    else draw();
   };
 
   const draw = async () => {
@@ -191,13 +207,12 @@ export async function render(ctx) {
       "div",
       { class: "compare-presets" },
       h("span", { class: "presets-label" }, "Duels suggérés :"),
-      ...PRESETS.map((pr) => {
+      ...presets.map((pr) => {
         const btn = h("button", { type: "button", class: "btn preset-chip" }, pr.label);
         btn.addEventListener("click", () => {
           p1Id = pr.p1;
           p2Id = pr.p2;
           updateUrl();
-          draw();
         });
         return btn;
       })
@@ -208,34 +223,35 @@ export async function render(ctx) {
     const p2Obj = allPlayers.find((p) => p.id === p2Id);
 
     // Choix des couleurs pour le duel
+    // Couleurs des deux équipes, différenciées si elles se ressemblent trop (teamPair).
     let c1 = p1Obj?.teamId ? teamColor(p1Obj.teamId) : "#3b82f6";
     let c2 = p2Obj?.teamId ? teamColor(p2Obj.teamId) : "#f97316";
-    if (c1 === c2) {
+    if (p1Obj?.teamId && p2Obj?.teamId && p1Obj.teamId !== p2Obj.teamId) {
+      ({ away: c1, home: c2 } = teamPair(p1Obj.teamId, p2Obj.teamId));
+    } else if (c1 === c2) {
       c2 = "#f59e0b";
     }
 
     const col1 = h("div", { class: "compare-col" });
     if (p1Obj) {
-      col1.append(playerCard(p1Obj, () => { p1Id = null; updateUrl(); draw(); }, c1));
+      col1.append(playerCard(p1Obj, () => { p1Id = null; updateUrl(); }, c1));
     } else {
       col1.append(
         searchSlot("Joueur 1", (selected) => {
           p1Id = selected.id;
           updateUrl();
-          draw();
         }, allPlayers, "Choisir le premier joueur…")
       );
     }
 
     const col2 = h("div", { class: "compare-col" });
     if (p2Obj) {
-      col2.append(playerCard(p2Obj, () => { p2Id = null; updateUrl(); draw(); }, c2));
+      col2.append(playerCard(p2Obj, () => { p2Id = null; updateUrl(); }, c2));
     } else {
       col2.append(
         searchSlot("Joueur 2", (selected) => {
           p2Id = selected.id;
           updateUrl();
-          draw();
         }, allPlayers, "Choisir le second joueur…")
       );
     }
@@ -287,8 +303,8 @@ export async function render(ctx) {
           let a = 0;
           let b = 0;
           if (mode === "tot") {
-            a = col.key === "fgPct" || col.key === "tpPct" || col.key === "ftPct" ? (d1 ? d1[col.key] : 0) : (d1 ? d1[col.key] : 0);
-            b = col.key === "fgPct" || col.key === "tpPct" || col.key === "ftPct" ? (d2 ? d2[col.key] : 0) : (d2 ? d2[col.key] : 0);
+            a = d1 ? d1[col.key] ?? 0 : 0;
+            b = d2 ? d2[col.key] ?? 0 : 0;
           } else {
             a = perGame(d1, col.key);
             b = perGame(d2, col.key);

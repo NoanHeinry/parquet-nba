@@ -4,6 +4,7 @@ import { h } from "./dom.js";
 import * as f from "./format.js";
 import { headshotUrl, isDarkTheme, logoUrl, team, teamPair } from "./teams.js";
 import { iconStar } from "./icons.js";
+import { gameKey, isRevealed, isSpoilerFree, setRevealed } from "./spoiler.js";
 
 // ------------------------------------------------------------ images
 
@@ -179,9 +180,7 @@ export function toggleFavorite(teamId) {
 
 // ------------------------------------------------------------ matchs
 
-export function isSpoilerFree() {
-  return document.documentElement.dataset.spoiler === "1";
-}
+export { isSpoilerFree } from "./spoiler.js";
 
 function teamName(side) {
   return side?.name || team(side?.id)?.name || "À déterminer";
@@ -193,8 +192,9 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   const colors = teamPair(game.away?.id, game.home?.id);
   const isFav = favs.has(game.away?.id) || favs.has(game.home?.id);
   const tile = h("a", {
-    class: `game-tile${status.live ? " is-live" : ""}${isFav ? " is-fav" : ""}`,
+    class: `game-tile${status.live ? " is-live" : ""}${isFav ? " is-fav" : ""}${isRevealed(gameKey(game.id)) ? " is-revealed" : ""}`,
     href: `#/match/${game.id}`,
+    dataset: { gameId: game.id },
     style: { "--away": colors.away, "--home": colors.home },
     "aria-label": `${teamName(game.away)} contre ${teamName(game.home)}, ${status.text}`,
   });
@@ -210,8 +210,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
         if (isSpoilerFree()) {
           e.preventDefault();
           e.stopPropagation();
-          tile.classList.toggle("is-revealed");
-          syncRevealBtn();
+          toggleReveal();
         }
       });
     }
@@ -261,8 +260,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
       if (isSpoilerFree()) {
         e.preventDefault();
         e.stopPropagation();
-        tile.classList.toggle("is-revealed");
-        syncRevealBtn();
+        toggleReveal();
       }
     });
   }
@@ -282,13 +280,10 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   if (extra.childNodes.length) tile.append(extra);
 
   let revealBtn = null;
-  const syncRevealBtn = () => {
-    if (!revealBtn) return;
-    const isRev = tile.classList.contains("is-revealed");
-    revealBtn.textContent = isRev ? "Masquer" : "Révéler";
-    revealBtn.setAttribute("aria-label", isRev ? "Masquer le score de ce match" : "Révéler le score de ce match");
-    revealBtn.title = isRev ? "Masquer le score" : "Révéler le score";
-  };
+  const syncRevealBtn = () => syncTileReveal(tile);
+  function toggleReveal() {
+    setTileRevealed(tile, !tile.classList.contains("is-revealed"));
+  }
 
   if (started) {
     revealBtn = h("button", {
@@ -300,8 +295,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
     revealBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      tile.classList.toggle("is-revealed");
-      syncRevealBtn();
+      toggleReveal();
     });
   }
 
@@ -312,6 +306,11 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
     h("span", { class: "tile-label" }, game.series || f.gameLabel(game))
   );
 
+  if (revealBtn) {
+    // Le bouton doit exister dans la tuile pour que syncTileReveal le retrouve.
+    queueMicrotask(syncRevealBtn);
+  }
+
   tile.append(
     h(
       "div",
@@ -321,6 +320,22 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
     )
   );
   return tile;
+}
+
+// Révèle ou masque le score d'une tuile, et s'en souvient pour les actualisations suivantes.
+export function setTileRevealed(tile, on) {
+  tile.classList.toggle("is-revealed", on);
+  if (tile.dataset.gameId) setRevealed(gameKey(tile.dataset.gameId), on);
+  syncTileReveal(tile);
+}
+
+export function syncTileReveal(tile) {
+  const btn = tile.querySelector(".tile-reveal-btn");
+  if (!btn) return;
+  const isRev = tile.classList.contains("is-revealed");
+  btn.textContent = isRev ? "Masquer" : "Révéler";
+  btn.setAttribute("aria-label", isRev ? "Masquer le score de ce match" : "Révéler le score de ce match");
+  btn.title = isRev ? "Masquer le score" : "Révéler le score";
 }
 
 export function scoreMap(games) {
