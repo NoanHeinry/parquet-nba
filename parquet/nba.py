@@ -1633,24 +1633,76 @@ LEADER_CATEGORIES = [
 
 
 def _fetch_leaders(season: str) -> list[dict]:
-    raw = stats_json(
-        "leagueleaders",
-        {
-            "LeagueID": "00", "PerMode": "PerGame", "Scope": "S", "Season": season,
-            "SeasonType": "Regular Season", "StatCategory": "PTS", "ActiveFlag": "",
-        },
-    )
+    params = {
+        "College": "",
+        "Conference": "",
+        "Country": "",
+        "DateFrom": "",
+        "DateTo": "",
+        "Division": "",
+        "DraftPick": "",
+        "DraftYear": "",
+        "GameScope": "",
+        "GameSegment": "",
+        "Height": "",
+        "LastNGames": 0,
+        "LeagueID": "00",
+        "Location": "",
+        "MeasureType": "Base",
+        "Month": 0,
+        "OpponentTeamID": 0,
+        "Outcome": "",
+        "PaceAdjust": "N",
+        "PerMode": "PerGame",
+        "Period": 0,
+        "PlayerExperience": "",
+        "PlayerPosition": "",
+        "PlusMinus": "N",
+        "Rank": "N",
+        "Season": season,
+        "SeasonSegment": "",
+        "SeasonType": "Regular Season",
+        "ShotClockRange": "",
+        "StarterBench": "",
+        "TeamID": 0,
+        "TwoWay": "",
+        "VsConference": "",
+        "VsDivision": "",
+        "Weight": "",
+    }
+    raw = stats_json("leaguedashplayerstats", params)
     rows = []
-    for r in result_sets(raw).get("LeagueLeaders", []):
+    for r in result_sets(raw).get("LeagueDashPlayerStats", []):
+        pts = _num(r.get("PTS")) or 0.0
+        reb = _num(r.get("REB")) or 0.0
+        ast = _num(r.get("AST")) or 0.0
+        stl = _num(r.get("STL")) or 0.0
+        blk = _num(r.get("BLK")) or 0.0
+        fga = _num(r.get("FGA")) or 0.0
+        fgm = _num(r.get("FGM")) or 0.0
+        fta = _num(r.get("FTA")) or 0.0
+        ftm = _num(r.get("FTM")) or 0.0
+        tov = _num(r.get("TOV")) or 0.0
+        eff = _num(r.get("EFF"))
+        if eff is None:
+            eff = round((pts + reb + ast + stl + blk) - (fga - fgm) - (fta - ftm) - tov, 1)
         rows.append(
             {
                 "id": _int(r.get("PLAYER_ID")),
-                "name": r.get("PLAYER") or "",
+                "name": r.get("PLAYER_NAME") or r.get("PLAYER") or "",
                 "teamId": _int(r.get("TEAM_ID"), None),
-                "tri": r.get("TEAM") or "",
+                "tri": r.get("TEAM_ABBREVIATION") or r.get("TEAM") or "",
                 "gp": _int(r.get("GP")),
                 "min": _num(r.get("MIN")),
-                **{key: _num(r.get(col)) for key, col in LEADER_CATEGORIES},
+                "fgm": fgm,
+                "pts": _num(r.get("PTS")),
+                "reb": _num(r.get("REB")),
+                "ast": _num(r.get("AST")),
+                "stl": _num(r.get("STL")),
+                "blk": _num(r.get("BLK")),
+                "tpm": _num(r.get("FG3M")),
+                "fgPct": _num(r.get("FG_PCT")),
+                "eff": eff,
             }
         )
     return rows
@@ -1665,9 +1717,32 @@ def leaders(season: str | None = None) -> tuple[dict, dict]:
         prev = previous_season()
         rows, meta = _cache().get(f"leaders:{prev}", 24 * 3600, lambda: _fetch_leaders(prev))
         shown, fallback = prev, True
+
+    max_gp = max((r.get("gp") or 0) for r in rows) if rows else 0
+    min_gp = max(1, int(max_gp * 0.70)) if max_gp > 0 else 0
+    min_fgm = max(1, int(max_gp * (300 / 82))) if max_gp > 0 else 0
+
     boards = {}
     for key, _ in LEADER_CATEGORIES:
-        ranked = sorted((r for r in rows if r.get(key) is not None), key=lambda r: r[key], reverse=True)[:10]
+        if key == "fgPct":
+            candidates = [
+                r for r in rows
+                if r.get(key) is not None and ((r.get("fgm") or 0) * (r.get("gp") or 0)) >= min_fgm
+            ]
+            if len(candidates) < 10:
+                candidates = [
+                    r for r in rows
+                    if r.get(key) is not None and (r.get("gp") or 0) >= min_gp
+                ]
+        else:
+            candidates = [
+                r for r in rows
+                if r.get(key) is not None and (r.get("gp") or 0) >= min_gp
+            ]
+        if not candidates and rows:
+            candidates = [r for r in rows if r.get(key) is not None]
+
+        ranked = sorted(candidates, key=lambda r: r[key], reverse=True)[:10]
         boards[key] = [{k: r[k] for k in ("id", "name", "teamId", "tri", "gp")} | {"value": r[key]} for r in ranked]
     return {"season": shown, "requested": season, "fallback": fallback, "boards": boards}, meta
 

@@ -56,8 +56,9 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/player/{id}/awards` | Récompenses regroupées | `playerawards` |
 | `GET /api/player/{id}/gamelog` | Derniers matchs (saison, présaison ou saison précédente) | `playergamelog` |
 | `GET /api/player/{id}/bio` | Biographie Wikipédia | Wikidata (P3647) puis Wikipédia |
-| `GET /api/leaders?season=AAAA-AA` | Top 10 par catégorie | `leagueleaders` |
+| `GET /api/leaders?season=AAAA-AA` | Top 10 par catégorie | `leaguedashplayerstats` |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
+
 
 ## Durées de cache
 

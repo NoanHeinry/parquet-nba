@@ -224,6 +224,33 @@ class PlayoffTests(unittest.TestCase):
         self.assertFalse(res["available"])
         self.assertIsNone(res["champion"])
 
+    def test_leaders_ranking_and_qualification(self):
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            c = Cache(Path(tmp.name) / "cache.sqlite3")
+            nba.init(c)
+            sample_rows = [
+                {"id": 1, "name": "Player High PPG Low GP", "teamId": 10, "tri": "AAA", "gp": 10, "pts": 35.0, "reb": 5.0, "ast": 5.0, "stl": 1.0, "blk": 1.0, "tpm": 3.0, "fgm": 12.0, "fgPct": 0.55, "eff": 35.0},
+                {"id": 2, "name": "Player Qualified", "teamId": 20, "tri": "BBB", "gp": 80, "pts": 30.0, "reb": 8.0, "ast": 7.0, "stl": 1.5, "blk": 0.8, "tpm": 2.5, "fgm": 10.0, "fgPct": 0.50, "eff": 32.0},
+                {"id": 3, "name": "Player FG High Volume", "teamId": 30, "tri": "CCC", "gp": 75, "pts": 25.0, "reb": 12.0, "ast": 4.0, "stl": 0.8, "blk": 2.2, "tpm": 0.2, "fgm": 10.0, "fgPct": 0.65, "eff": 30.0},
+            ]
+            c._write("leaders:2023-24", sample_rows, True)
+            data, _ = nba.leaders("2023-24")
+            self.assertEqual(data["season"], "2023-24")
+            # Le joueur 1 n'a que 10 matchs (seuil 70% de 80 = 56), il ne doit pas être dans le top points
+            pts_board = data["boards"]["pts"]
+            self.assertEqual(pts_board[0]["id"], 2)
+            self.assertEqual(pts_board[0]["value"], 30.0)
+            # Pour l'adresse au tir, le joueur 3 a 75 * 10 = 750 FGM >= min_fgm (~292) et 65% FG%
+            fg_board = data["boards"]["fgPct"]
+            self.assertEqual(fg_board[0]["id"], 3)
+            self.assertEqual(fg_board[0]["value"], 0.65)
+        finally:
+            c._db.close()
+            tmp.cleanup()
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
