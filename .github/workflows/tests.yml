@@ -5,7 +5,8 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  unitaires:
+    name: Tests unitaires (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -17,3 +18,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -t . -v
+
+  interface:
+    name: Tests d'interface (Chromium, mode démo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m unittest tests.test_ui -v

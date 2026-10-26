@@ -254,3 +254,111 @@ class PlayoffTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AdvancedStatsTests(unittest.TestCase):
+    def test_true_shooting_and_effective_fg(self):
+        # 30 points sur 20 tirs (dont 4 à 3 pts réussis sur 10 réussis) et 6 lancers tentés.
+        rates = nba.advanced_rates(30, 10, 20, 4, 6)
+        self.assertAlmostEqual(rates["ts"], 30 / (2 * (20 + 0.44 * 6)), places=4)
+        self.assertAlmostEqual(rates["efg"], (10 + 0.5 * 4) / 20, places=4)
+
+    def test_rates_without_attempts(self):
+        self.assertEqual(nba.advanced_rates(0, 0, 0, 0, 0), {"ts": None, "efg": None})
+
+
+class PlayInSeedTests(unittest.TestCase):
+    def test_seed_follows_first_round_opponent(self):
+        # Le 10e de la saison régulière a gagné le play-in et affronte le 1er : il est tête de série n° 8.
+        series = {
+            "0010": {"round": 1, "topTeam": {"id": 1, "seed": 1}, "bottomTeam": {"id": 10, "seed": 10}},
+            "0011": {"round": 1, "topTeam": {"id": 2, "seed": 2}, "bottomTeam": {"id": 8, "seed": 8}},
+            "0020": {"round": 2, "topTeam": {"id": 1, "seed": 1}, "bottomTeam": {"id": 10, "seed": 10}},
+        }
+        nba._fix_playin_seeds(series)
+        self.assertEqual(series["0010"]["bottomTeam"]["seed"], 8)
+        self.assertEqual(series["0011"]["bottomTeam"]["seed"], 7)
+        self.assertEqual(series["0020"]["bottomTeam"]["seed"], 8)
+
+
+class RecapTests(unittest.TestCase):
+    @staticmethod
+    def player(pid, pts, reb, ast, **extra):
+        base = {"id": pid, "name": f"Joueur {pid}", "played": True, "pts": pts, "reb": reb, "ast": ast, "stl": 0, "blk": 0,
+                "tpm": 0, "fgm": pts // 2, "fga": pts // 2 + 5, "ftm": 0, "fta": 0, "oreb": 1, "dreb": reb - 1, "tov": 2, "pf": 2}
+        base.update(extra)
+        return base
+
+    def test_recap_highlights(self):
+        games = [
+            {"id": "A", "status": 3, "period": 4, "away": {"id": 1, "tri": "AAA", "score": 100}, "home": {"id": 2, "tri": "BBB", "score": 98}},
+            {"id": "B", "status": 3, "period": 5, "away": {"id": 3, "tri": "CCC", "score": 130}, "home": {"id": 4, "tri": "DDD", "score": 101}},
+            {"id": "C", "status": 1, "away": {"id": 5, "tri": "EEE"}, "home": {"id": 6, "tri": "FFF"}},
+        ]
+        boxes = {
+            "A": {"teams": {"away": {"players": [self.player(11, 41, 5, 3)]}, "home": {"players": [self.player(21, 12, 14, 11)]}}},
+            "B": {"teams": {"away": {"players": [self.player(31, 20, 4, 12, tpm=8)]}, "home": {"players": [self.player(41, 8, 3, 2, played=False)]}}},
+        }
+        recap = nba.build_recap("2026-10-14", games, boxes)
+        self.assertEqual((recap["finished"], recap["upcoming"]), (2, 1))
+        self.assertEqual(recap["topScorer"]["id"], 11)
+        self.assertEqual(recap["topScorer"]["won"], True)
+        self.assertEqual(recap["topShooter"]["tpm"], 8)
+        self.assertEqual([p["id"] for p in recap["tripleDoubles"]], [21])
+        self.assertEqual(recap["closest"]["id"], "A")
+        self.assertEqual(recap["blowout"]["margin"], 29)
+        self.assertEqual([g["id"] for g in recap["overtimes"]], ["B"])
+        self.assertNotIn(41, [p["id"] for p in recap["best"]])  # joueur qui n'a pas joué
+
+
+class CalendarTests(unittest.TestCase):
+    def test_ics_folding_and_escaping(self):
+        self.assertEqual(nba._ics_escape("Paris, France; salle"), "Paris\\, France\; salle")
+        folded = nba._ics_fold("DESCRIPTION:" + "é" * 80)
+        self.assertTrue(all(len(line.encode("utf-8")) <= 75 for line in folded))
+        self.assertTrue(all(line.startswith(" ") for line in folded[1:]))
+
+
+class DemoTests(unittest.TestCase):
+    """Le mode démonstration doit fournir des données complètes et cohérentes, sans réseau."""
+
+    @classmethod
+    def setUpClass(cls):
+        from parquet import demo
+
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.saved_get = net._get
+        demo.install()
+        nba.init(Cache(Path(cls.tmp.name) / "demo.sqlite3"))
+
+    @classmethod
+    def tearDownClass(cls):
+        net._get = cls.saved_get
+        net.DEMO = False
+        nba.CACHE._db.close()
+        cls.tmp.cleanup()
+
+    def test_scoreboard_has_live_games(self):
+        data, _ = nba.scoreboard(None)
+        self.assertEqual(data["date"], "2026-10-14")
+        self.assertTrue(any(g["status"] == 2 for g in data["games"]))
+
+    def test_playoff_bracket_is_consistent(self):
+        data, _ = nba.playoffs()
+        self.assertTrue(data["available"])
+        self.assertIsNotNone(data["champion"])
+        seeds = sorted((s["topTeam"]["seed"], s["bottomTeam"]["seed"]) for s in data["east"]["round1"])
+        self.assertEqual(seeds, [(1, 8), (2, 7), (3, 6), (4, 5)])
+
+    def test_recap_and_calendar(self):
+        recap, _ = nba.recap("2026-10-13")
+        self.assertGreater(recap["finished"], 0)
+        self.assertIsNotNone(recap["topScorer"])
+        body, filename = nba.team_calendar_ics(1610612738)
+        self.assertTrue(body.startswith("BEGIN:VCALENDAR\r\n"))
+        self.assertIn("BEGIN:VEVENT", body)
+        self.assertTrue(filename.endswith(".ics"))
+
+    def test_career_has_advanced_rates(self):
+        career, _ = nba.player_career(1790001)
+        self.assertIsNotNone(career["careerRegular"]["ts"])
