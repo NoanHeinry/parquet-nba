@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, nba, teams_meta
+from . import __version__, nba, net, teams_meta
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -47,13 +47,24 @@ def route(pattern: str):
     return register
 
 
+class Raw:
+    """Réponse qui n'est pas du JSON (fichier à télécharger)."""
+
+    def __init__(self, body: str, content_type: str, filename: str | None = None):
+        self.body = body.encode("utf-8")
+        self.content_type = content_type
+        self.filename = filename
+
+
 def _no_meta(data: Any) -> tuple[Any, dict]:
     return data, {"fetchedAt": time.time(), "stale": False}
 
 
 @route(r"/api/status")
 def api_status(q):
-    return _no_meta({"version": __version__, "season": nba.current_season(), "gameDay": nba.game_day_et().isoformat()})
+    return _no_meta(
+        {"version": __version__, "season": nba.current_season(), "gameDay": nba.game_day_et().isoformat(), "demo": net.DEMO}
+    )
 
 
 @route(r"/api/diagnostic")
@@ -114,6 +125,20 @@ def api_team_history(q, team_id):
 @route(r"/api/team/(\d+)/schedule")
 def api_team_schedule(q, team_id):
     return nba.team_schedule(int(team_id))
+
+
+@route(r"/api/team/(\d+)/calendar\.ics")
+def api_team_calendar(q, team_id):
+    body, filename = nba.team_calendar_ics(int(team_id))
+    return Raw(body, "text/calendar; charset=utf-8", filename), {}
+
+
+@route(r"/api/recap")
+def api_recap(q):
+    day = q.get("date")
+    if day and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+        day = None
+    return nba.recap(day)
 
 
 @route(r"/api/team/(\d+)/bio")
@@ -202,7 +227,13 @@ class Handler(BaseHTTPRequestHandler):
                 continue
             try:
                 data, meta = fn(query, *m.groups())
-                self._json(200, {"data": data, "meta": meta})
+                if isinstance(data, Raw):
+                    extra = {"Content-Disposition": f'attachment; filename="{data.filename}"'} if data.filename else None
+                    self._send(200, data.body, data.content_type, extra)
+                else:
+                    self._json(200, {"data": data, "meta": meta})
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                return  # la page a été fermée avant la fin de la réponse
             except SourceError as exc:
                 status = 404 if exc.status == 404 else 502
                 self._json(status, {"error": str(exc), "source": exc.source})
@@ -226,6 +257,14 @@ class Handler(BaseHTTPRequestHandler):
 class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = False
+
+    def handle_error(self, request, client_address):
+        # Un onglet fermé ou un téléphone qui se met en veille coupe la connexion en cours :
+        # ce n'est pas une erreur de Parquet, inutile d'afficher une trace dans la fenêtre.
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError)):
+            return
+        super().handle_error(request, client_address)
 
 
 def make_server(host: str, port: int) -> Server:

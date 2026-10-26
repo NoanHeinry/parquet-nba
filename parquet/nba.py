@@ -1041,6 +1041,8 @@ def _build_playoff_bracket(season: str, cp_rows: list[dict], gf_rows: list[dict]
             "games": parsed_games,
         }
 
+    _fix_playin_seeds(series_dict)
+
     return {
         "season": season,
         "available": bool(series_dict),
@@ -1058,6 +1060,39 @@ def _build_playoff_bracket(season: str, cp_rows: list[dict], gf_rows: list[dict]
         "finals": series_dict.get(BRACKET_ORDER["finals"]),
         "series": series_dict,
     }
+
+
+def _fix_playin_seeds(series_dict: dict) -> None:
+    """Corrige les têtes de série issues du play-in.
+
+    Le classement de saison régulière donne le rang 7 à 10 aux équipes du play-in,
+    alors que leur tête de série en playoffs dépend du résultat du play-in.
+    Au 1er tour, les affiches sont toujours 1-8, 2-7, 3-6 et 4-5 : la tête de série
+    d'une équipe se déduit donc de celle de son adversaire, qui est forcément dans le top 6.
+    """
+    playoff_seed: dict[int, int] = {}
+    for s in series_dict.values():
+        if s["round"] != 1:
+            continue
+        top, bottom = s["topTeam"], s["bottomTeam"]
+        ranks = [(top.get("seed"), top), (bottom.get("seed"), bottom)]
+        known = [(r, team) for r, team in ranks if r and r <= 6]
+        if len(known) != 1:
+            for r, team in ranks:
+                if r:
+                    playoff_seed[team["id"]] = r
+            continue
+        high_rank, high_team = known[0]
+        other = bottom if high_team is top else top
+        playoff_seed[high_team["id"]] = high_rank
+        playoff_seed[other["id"]] = 9 - high_rank
+    if not playoff_seed:
+        return
+    for s in series_dict.values():
+        for side in ("topTeam", "bottomTeam"):
+            team = s[side]
+            if team["id"] in playoff_seed:
+                team["seed"] = playoff_seed[team["id"]]
 
 
 def _fetch_playoffs(season: str) -> dict:
@@ -1098,7 +1133,7 @@ def playoffs(season: str | None = None) -> tuple[dict, dict]:
     target = requested
     fallback = False
 
-    data, meta = _cache().get(f"playoffs:{target}", 3600, lambda: _fetch_playoffs(target))
+    data, meta = _cache().get(f"playoffs:{target}", 3600 if target == cur else 24 * 3600, lambda: _fetch_playoffs(target))
     if not data.get("available") and target == cur:
         prev = previous_season()
         try:
@@ -1483,6 +1518,22 @@ def _stat_row(r: dict) -> dict:
         "ftm": _num(r.get("FTM")),
         "fta": _num(r.get("FTA")),
         "ftPct": _num(r.get("FT_PCT")),
+        **advanced_rates(r.get("PTS"), r.get("FGM"), r.get("FGA"), r.get("FG3M"), r.get("FTA")),
+    }
+
+
+def advanced_rates(pts: Any, fgm: Any, fga: Any, tpm: Any, fta: Any) -> dict:
+    """Adresse réelle (TS%) et adresse effective (eFG%), calculées à partir des totaux.
+
+    TS% = points / (2 × (tirs tentés + 0,44 × lancers francs tentés)) : tient compte
+    de la valeur des tirs à 3 points et des lancers francs.
+    eFG% = (tirs réussis + 0,5 × tirs à 3 points réussis) / tirs tentés.
+    """
+    pts, fgm, fga, tpm, fta = (_num(v) or 0.0 for v in (pts, fgm, fga, tpm, fta))
+    tsa = 2 * (fga + 0.44 * fta)
+    return {
+        "ts": round(pts / tsa, 4) if tsa else None,
+        "efg": round((fgm + 0.5 * tpm) / fga, 4) if fga else None,
     }
 
 
@@ -1745,6 +1796,199 @@ def leaders(season: str | None = None) -> tuple[dict, dict]:
         ranked = sorted(candidates, key=lambda r: r[key], reverse=True)[:10]
         boards[key] = [{k: r[k] for k in ("id", "name", "teamId", "tri", "gp")} | {"value": r[key]} for r in ranked]
     return {"season": shown, "requested": season, "fallback": fallback, "boards": boards}, meta
+
+
+# ---------------------------------------------------------------------------
+# Export du calendrier d'une équipe (fichier .ics)
+# ---------------------------------------------------------------------------
+
+
+def _ics_escape(text: str) -> str:
+    return (text or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def _ics_fold(line: str) -> list[str]:
+    """Les lignes d'un fichier iCalendar ne doivent pas dépasser 75 octets."""
+    out, current = [], ""
+    for ch in line:
+        if len((current + ch).encode("utf-8")) > (75 if not out else 74):
+            out.append(current)
+            current = ch
+        else:
+            current += ch
+    out.append(current)
+    return [out[0]] + [" " + part for part in out[1:]]
+
+
+def team_calendar_ics(team_id: int) -> tuple[str, str]:
+    """Calendrier de la saison d'une équipe au format iCalendar.
+
+    Les horaires sont écrits en UTC : l'agenda (Google, Apple, Outlook) les affiche
+    à l'heure locale. Les scores ne sont pas inclus, pour ne rien dévoiler dans l'agenda.
+    """
+    meta_team = teams_meta.team(team_id)
+    if not meta_team:
+        raise SourceError("Équipe inconnue", status=404, source="Parquet")
+    sched, _ = schedule()
+    now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Parquet//Calendrier NBA//FR",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:{_ics_escape(meta_team['fullName'])} {sched['season']}",
+        "X-WR-TIMEZONE:Europe/Paris",
+    ]
+    for g in sched["games"]:
+        home, away = g.get("home") or {}, g.get("away") or {}
+        if team_id not in (home.get("id"), away.get("id")):
+            continue
+        away_name = (teams_meta.team(away.get("id")) or {}).get("fullName") or away.get("name") or "À déterminer"
+        home_name = (teams_meta.team(home.get("id")) or {}).get("fullName") or home.get("name") or "À déterminer"
+        label = {"pre": "Présaison", "playoffs": "Playoffs", "playin": "Play-in", "cup": "NBA Cup"}.get(g.get("kind"), "")
+        if g.get("label") and "Cup" in g["label"]:
+            label = "NBA Cup"
+        summary = f"{away.get('tri', '?')} @ {home.get('tri', '?')}" + (f" ({label})" if label else "")
+        details = [f"{away_name} à {home_name}"]
+        if g.get("tv"):
+            details.append("Diffusion aux États-Unis : " + ", ".join(g["tv"]))
+        details.append("Suivre le match dans Parquet : http://localhost:8765/#/match/" + g["id"])
+        start = _parse_utc(g.get("start") or "")
+        lines += ["BEGIN:VEVENT", f"UID:{g['id']}@parquet-nba", f"DTSTAMP:{now}"]
+        if start:
+            end = start + timedelta(hours=2, minutes=30)
+            lines += [f"DTSTART:{start.strftime('%Y%m%dT%H%M%SZ')}", f"DTEND:{end.strftime('%Y%m%dT%H%M%SZ')}"]
+        elif g.get("etDate"):
+            day = g["etDate"].replace("-", "")
+            lines += [f"DTSTART;VALUE=DATE:{day}"]
+        else:
+            lines.pop()
+            lines.pop()
+            lines.pop()
+            continue
+        location = ", ".join(x for x in (g.get("arena"), g.get("arenaCity")) if x)
+        lines.append(f"SUMMARY:{_ics_escape(summary)}")
+        if location:
+            lines.append(f"LOCATION:{_ics_escape(location)}")
+        lines.append(f"DESCRIPTION:{_ics_escape(chr(10).join(details))}")
+        if g.get("postponed"):
+            lines.append("STATUS:CANCELLED")
+        lines.append("END:VEVENT")
+    lines.append("END:VCALENDAR")
+    folded = [part for line in lines for part in _ics_fold(line)]
+    filename = f"parquet-{meta_team['tri'].lower()}-{sched['season']}.ics"
+    return "\r\n".join(folded) + "\r\n", filename
+
+
+# ---------------------------------------------------------------------------
+# Résumé d'une journée (« Cette nuit en NBA »)
+# ---------------------------------------------------------------------------
+
+
+def _double_digits(p: dict) -> int:
+    return sum(1 for k in ("pts", "reb", "ast", "stl", "blk") if (p.get(k) or 0) >= 10)
+
+
+def _game_score(p: dict) -> float:
+    """Game Score de John Hollinger : une note unique de la performance d'un joueur sur un match."""
+    return (
+        p["pts"] + 0.4 * p["fgm"] - 0.7 * p["fga"] - 0.4 * (p["fta"] - p["ftm"]) + 0.7 * p["oreb"]
+        + 0.3 * p["dreb"] + p["stl"] + 0.7 * p["ast"] + 0.7 * p["blk"] - 0.4 * p["pf"] - p["tov"]
+    )
+
+
+def build_recap(day: str, games: list[dict], boxes: dict[str, dict]) -> dict:
+    finished = [g for g in games if g.get("status") == 3 and g.get("home") and g.get("away")]
+    performers = []
+    for g in finished:
+        box = boxes.get(g["id"])
+        if not box or not box.get("teams"):
+            continue
+        for side in ("away", "home"):
+            me = g[side]
+            opp = g["home" if side == "away" else "away"]
+            won = (me.get("score") or 0) > (opp.get("score") or 0)
+            for p in box["teams"][side]["players"]:
+                if not p.get("played"):
+                    continue
+                performers.append(
+                    {
+                        "id": p["id"],
+                        "name": p["name"],
+                        "teamId": me.get("id"),
+                        "tri": me.get("tri"),
+                        "oppTri": opp.get("tri"),
+                        "gameId": g["id"],
+                        "won": won,
+                        **{k: p.get(k) or 0 for k in ("pts", "reb", "ast", "stl", "blk", "tpm", "fgm", "fga", "ftm", "fta", "oreb", "dreb", "tov", "pf")},
+                        "doubles": _double_digits(p),
+                        "gameScore": round(_game_score({k: p.get(k) or 0 for k in ("pts", "fgm", "fga", "fta", "ftm", "oreb", "dreb", "stl", "ast", "blk", "pf", "tov")}), 1),
+                    }
+                )
+
+    def top(key: str, n: int = 1) -> list[dict]:
+        return sorted(performers, key=lambda x: (x[key], x["gameScore"]), reverse=True)[:n]
+
+    def game_line(g: dict) -> dict:
+        margin = abs((g["home"].get("score") or 0) - (g["away"].get("score") or 0))
+        return {
+            "id": g["id"],
+            "away": {k: g["away"].get(k) for k in ("id", "tri", "score")},
+            "home": {k: g["home"].get(k) for k in ("id", "tri", "score")},
+            "margin": margin,
+            "overtime": (g.get("period") or 4) > 4,
+            "total": (g["home"].get("score") or 0) + (g["away"].get("score") or 0),
+        }
+
+    lines = [game_line(g) for g in finished]
+    return {
+        "date": day,
+        "total": len(games),
+        "finished": len(finished),
+        "live": sum(1 for g in games if g.get("status") == 2),
+        "upcoming": sum(1 for g in games if g.get("status") == 1),
+        "best": sorted(performers, key=lambda x: x["gameScore"], reverse=True)[:5],
+        "topScorer": top("pts")[0] if performers else None,
+        "topRebounder": top("reb")[0] if performers else None,
+        "topPasser": top("ast")[0] if performers else None,
+        "topShooter": top("tpm")[0] if performers else None,
+        "tripleDoubles": [p for p in performers if p["doubles"] >= 3],
+        "closest": min(lines, key=lambda x: (x["margin"], -x["total"])) if lines else None,
+        "blowout": max(lines, key=lambda x: x["margin"]) if lines else None,
+        "highestScoring": max(lines, key=lambda x: x["total"]) if lines else None,
+        "overtimes": [x for x in lines if x["overtime"]],
+    }
+
+
+def recap(day: str | None) -> tuple[dict, dict]:
+    board, meta = scoreboard(day)
+    day = board["date"]
+    games = board["games"]
+    finished_ids = tuple(sorted(g["id"] for g in games if g.get("status") == 3))
+
+    def fetch() -> dict:
+        boxes: dict[str, dict] = {}
+
+        def load(gid: str) -> None:
+            try:
+                boxes[gid] = game_box(gid)[0]
+            except SourceError:
+                pass
+
+        threads = [threading.Thread(target=load, args=(gid,)) for gid in finished_ids]
+        for i in range(0, len(threads), 4):  # quatre box scores à la fois au plus
+            batch = threads[i : i + 4]
+            for th in batch:
+                th.start()
+            for th in batch:
+                th.join()
+        return build_recap(day, games, boxes)
+
+    # La clé change dès qu'un match se termine : le résumé est alors recalculé.
+    key = f"recap:{day}:{len(finished_ids)}"
+    ttl = 6 * 3600 if finished_ids and len(finished_ids) == len(games) else 120
+    return _cache().get(key, ttl, fetch, persist=False)
 
 
 # ---------------------------------------------------------------------------

@@ -62,6 +62,9 @@ WIKI_HEADERS = {
     "Accept-Encoding": "gzip, deflate",
 }
 
+# Passe à True quand le mode démonstration remplace l'accès réseau (parquet/demo.py).
+DEMO = False
+
 CDN_BASE = "https://cdn.nba.com/static/json"
 STATS_BASE = "https://stats.nba.com/stats"
 
