@@ -2,7 +2,9 @@
 
 **Un tableau de bord NBA en direct doublé d'une encyclopédie, en français, qui tourne sur ton ordinateur.**
 
-Parquet affiche les scores des matchs en temps réel, le détail de chaque rencontre (box score, fil des actions, carte des tirs) et une fiche complète pour les 30 franchises et les plus de 5 000 joueurs passés par la NBA depuis 1946. Toutes les données viennent des sources publiques de NBA.com et de Wikipédia, sans compte ni clé d'API.
+Parquet affiche les scores des matchs en temps réel, le détail de chaque rencontre (box score, scénario du match, fil des actions, carte des tirs) et une fiche complète pour les 30 franchises et les plus de 5 000 joueurs passés par la NBA depuis 1946. Toutes les données viennent des sources publiques de NBA.com et de Wikipédia, sans compte ni clé d'API.
+
+Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur des données fictives.
 
 ![Page des matchs avec deux rencontres en direct](docs/captures/01-matchs.png)
 
@@ -12,34 +14,43 @@ Parquet affiche les scores des matchs en temps réel, le détail de chaque renco
 
 **Suivi des matchs**
 - Scores de la journée rafraîchis automatiquement pendant les matchs, avec l'avancement de chaque quart-temps.
+- « Cette nuit en NBA » : au réveil, le résumé des matchs de la nuit (performance de la nuit selon le Game Score, meilleurs marqueurs, rebondeurs et passeurs, triples-doubles, match le plus serré, plus large victoire, prolongations).
 - Horaires convertis à l'heure de Paris, navigation de jour en jour jusque dans les saisons passées.
-- Page de match : score par quart-temps, duel statistique des deux équipes, meilleurs joueurs, box score complet, fil des actions filtrable et carte des tirs.
+- Page de match : score par quart-temps, scénario du match (courbe de l'écart au score, plus gros écarts, changements de leader), duel statistique des deux équipes, meilleurs joueurs, box score complet, fil des actions filtrable et carte des tirs.
+- Mode multi-matchs : plusieurs rencontres en direct côte à côte, en plein écran, avec les dernières actions et un signal des fins de match serrées.
 - Avant le coup d'envoi : forme récente des deux équipes. La page bascule seule en mode direct au début du match.
 
 **Encyclopédie et analyse**
 - Équipes : effectif, staff, calendrier, résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
-- Joueurs : recherche dans toute l'histoire de la ligue, filtres (équipe, poste, pays), biographie, palmarès, parcours, records, statistiques de carrière en graphique et en tableau, derniers matchs.
+- Équipes : export du calendrier de la saison au format `.ics`, à importer dans Google Agenda, Apple Calendrier ou Outlook.
+- Joueurs : recherche dans toute l'histoire de la ligue, filtres (équipe, poste, pays), biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées (adresse réelle TS%, adresse effective eFG%, passes par balle perdue, part de tirs à 3 points), derniers matchs.
 - Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.
 - Tableau des playoffs : arbre complet de la post-saison NBA (1er tour, demi-finales, finales de conférence, Finales NBA), statut et avancement des séries (4-1, 4-2...), détail match par match avec scores, lien vers les box scores et sélecteur de saisons historiques.
 - Classement par conférence et leaders statistiques de la saison.
 
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
-- Alertes et notifications en direct : notifications navigateur et toasts in-app pour le coup d'envoi et le score final des équipes favorites, ou lorsqu'un match entre dans le *Clutch Time* (écart ≤ 5 points au 4e quart-temps).
-- Mode anti-spoiler pour masquer les scores et regarder les matchs en différé sans révélation involontaire (révélation match par match ou globale).
-- Progressive Web App (PWA) : installable sur smartphone (iOS/Android) ou PC/Mac, icône d'application dédiée, affichage plein écran autonome, gestion des encoches et mise en cache locale des ressources statiques.
+- Alertes en direct, tant qu'un onglet Parquet est ouvert : coup d'envoi et résultat des équipes favorites, fins de match serrées selon la définition de la NBA (5 dernières minutes, 5 points d'écart ou moins). Notifications système quand la connexion le permet, alertes dans la page sinon ; une alerte n'est jamais envoyée deux fois.
+- Mode anti-spoiler pour regarder les matchs en différé : scores, box score, fil des actions, résumé de la nuit, champion des playoffs et alertes restent masqués jusqu'à ce qu'on les révèle, match par match ou d'un coup. Les révélations sont retenues pendant la session.
+- Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
 ## Captures
 
-| Match en direct | Carte des tirs |
+| Cette nuit en NBA | Scénario du match |
 | --- | --- |
-| ![Résumé d'un match en direct](docs/captures/02-match-resume.png) | ![Carte des tirs des deux équipes](docs/captures/03-carte-des-tirs.png) |
-| **Statistiques d'un joueur** | **Classement** |
-| ![Courbe de carrière d'un joueur](docs/captures/04-fiche-joueur.png) | ![Classement de la conférence Est](docs/captures/05-classement.png) |
+| ![Résumé d'une journée de matchs](docs/captures/02-resume-de-la-nuit.png) | ![Courbe de l'écart au score d'un match](docs/captures/03-scenario-du-match.png) |
+| **Carte des tirs** | **Multi-matchs** |
+| ![Carte des tirs des deux équipes](docs/captures/04-carte-des-tirs.png) | ![Plusieurs matchs en direct côte à côte](docs/captures/05-multi-matchs.png) |
+| **Arbre des playoffs** | **Statistiques d'un joueur** |
+| ![Arbre complet des playoffs](docs/captures/06-playoffs.png) | ![Courbe de carrière et stats avancées d'un joueur](docs/captures/07-fiche-joueur.png) |
+| **Comparateur** | **Mode anti-spoiler** |
+| ![Face-à-face statistique de deux joueurs](docs/captures/08-comparateur.png) | ![Scores masqués sur la page des matchs](docs/captures/09-anti-spoiler.png) |
 | **Fiche d'équipe, thème clair** | **Sur téléphone** |
-| ![Fiche d'une équipe en thème clair](docs/captures/06-equipe-theme-clair.png) | <img src="docs/captures/07-mobile.png" alt="Page des matchs sur téléphone" width="260"> |
+| ![Fiche d'une équipe en thème clair](docs/captures/10-equipe-theme-clair.png) | <img src="docs/captures/11-mobile.png" alt="Page des matchs sur téléphone" width="260"> |
+
+Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 
 ## Stack technique
 
@@ -89,11 +100,15 @@ Le navigateur ne parle qu'au serveur local, qui interroge les sources, normalise
 
 **Le bon article Wikipédia.** Plusieurs joueurs portent le même nom. Plutôt qu'une recherche textuelle, Parquet interroge Wikidata avec l'identifiant NBA.com du joueur (propriété P3647) pour trouver l'article exact, en français s'il existe.
 
-**Visualisation.** Courbe de carrière avec réticule et infobulle, colonnes de victoires par saison, duel des équipes en barres opposées, carte des tirs dessinée dans le système de coordonnées de la NBA (dixièmes de pied, panier en origine). Les couleurs d'équipe sont choisies selon leur contraste avec le fond, et deux équipes aux couleurs trop proches sont différenciées (distance mesurée dans l'espace OKLab).
+**Visualisation.** Courbe de carrière avec réticule et infobulle, scénario du match en escalier (l'écart reste constant jusqu'au panier suivant) coloré par équipe de part et d'autre de l'égalité, colonnes de victoires par saison, duel des équipes en barres opposées, carte des tirs dessinée dans le système de coordonnées de la NBA (dixièmes de pied, panier en origine). Les couleurs d'équipe sont choisies selon leur contraste avec le fond, et deux équipes aux couleurs trop proches sont différenciées (distance mesurée dans l'espace OKLab).
 
 **Localisation.** Dates et nombres au format français, tailles en mètres, poids en kilos, postes, récompenses et indicateurs de classement traduits, horaires à l'heure locale.
 
-**Sécurité et accessibilité.** Les textes issus des sources sont toujours insérés comme du texte (jamais via `innerHTML`). Le serveur n'écoute que sur la machine locale par défaut et refuse toute sortie du dossier `web/`. Navigation au clavier, focus visible, mouvements réduits respectés.
+**Mode démo et tests de bout en bout.** Un module de données fictives reproduit fidèlement la structure des réponses de NBA.com (scores en direct, box scores, actions, carrières, playoffs…), avec un générateur à graine fixe. Il permet d'essayer Parquet hors ligne, de faire tourner les tests d'interface dans un vrai navigateur et de régénérer les captures de cette page.
+
+**Calendrier et notifications.** Le calendrier d'une équipe est exporté au format iCalendar (RFC 5545 : lignes repliées à 75 octets, échappement, horaires en UTC convertis par l'agenda). Les notifications tiennent compte des contraintes des navigateurs : elles ne sont autorisées que sur une connexion sécurisée, ce que l'interface détecte pour expliquer la marche à suivre.
+
+**Sécurité et accessibilité.** Les textes issus des sources sont toujours insérés comme du texte (jamais via `innerHTML`). Le serveur n'écoute que sur la machine locale par défaut (l'accès depuis le téléphone est une option explicite) et refuse toute sortie du dossier `web/`. Navigation au clavier, focus visible, mouvements réduits respectés.
 
 ## Lancer le projet
 
@@ -104,17 +119,24 @@ python -m pip install -r requirements.txt
 python run.py
 ```
 
-L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les lanceurs `lancer.bat` et `lancer.command` créent l'environnement Python et démarrent tout en un double-clic. Le [guide d'utilisation](docs/GUIDE-UTILISATEUR.md) détaille l'installation, l'accès depuis un téléphone et le dépannage.
+L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les lanceurs `lancer.bat` et `lancer.command` créent l'environnement Python et démarrent tout en un double-clic ; `lancer-telephone.bat` et `lancer-telephone.command` font de même en rendant Parquet accessible depuis le téléphone. Le [guide d'utilisation](docs/GUIDE-UTILISATEUR.md) détaille l'installation, l'accès depuis un téléphone et le dépannage.
 
-Options de `run.py` : `--port`, `--lan` (accès depuis le réseau local), `--no-browser`, `--diagnostic` (teste les sources puis s'arrête), `--vider-cache`.
+Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--diagnostic` (teste les sources puis s'arrête), `--vider-cache`.
 
 ## Tests
 
 ```bash
-python -m unittest discover -s tests -t . -v
+python -m unittest discover -s tests -t . -v        # tests unitaires (sans réseau)
+
+pip install playwright && python -m playwright install chromium
+python -m unittest tests.test_ui -v                 # tests d'interface dans Chromium
 ```
 
-Les tests couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers dans le fil des actions et le comportement du cache, y compris le repli sur des données périmées. Ils tournent sans accès réseau et sont lancés par GitHub Actions sur Python 3.9, 3.11 et 3.13.
+Les tests unitaires couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers, l'arbre des playoffs et les têtes de série issues du play-in, le résumé d'une journée, les stats avancées, l'export iCalendar, le cache (y compris le repli sur des données périmées) et la cohérence du mode démo.
+
+Les tests d'interface lancent le serveur en mode démo et pilotent un vrai navigateur : affichage des matchs et du résumé, onglets d'un match, mode anti-spoiler (masquage et mémoire des révélations), arbre des playoffs replié, stats avancées, comparateur (chaque fiche chargée une seule fois), export du calendrier, multi-matchs et absence de défilement horizontal sur téléphone.
+
+GitHub Actions lance les tests unitaires sur Python 3.9, 3.11 et 3.13, et les tests d'interface dans Chromium.
 
 ## Organisation du code
 
@@ -127,11 +149,13 @@ parquet-nba/
 │   ├── net.py              accès réseau : en-têtes, cadence, gestion des erreurs
 │   ├── cache.py            cache mémoire + SQLite avec repli sur données périmées
 │   ├── wiki.py             biographies via Wikidata et Wikipédia
+│   ├── demo.py             données de démonstration (mode --demo, tests, captures)
 │   └── teams_meta.py       les 30 franchises (couleurs, conférences, articles)
 ├── web/                    interface
-│   ├── index.html, css/, fonts/
-│   └── js/                 routeur, composants, graphiques SVG, une vue par page
-├── tests/                  tests unitaires
+│   ├── index.html, manifest.webmanifest, sw.js (PWA), css/, fonts/, img/
+│   └── js/                 routeur, composants, graphiques SVG, anti-spoiler, alertes, une vue par page
+├── tests/                  tests unitaires et tests d'interface (Playwright)
+├── scripts/captures.py     régénère les captures de la documentation
 └── docs/                   guide d'utilisation, architecture, captures
 ```
 
@@ -146,7 +170,6 @@ Parquet est un projet personnel indépendant, sans lien avec la NBA ni ses équi
 
 ## Pistes d'amélioration
 
-- Mode multilingue (anglais/espagnol) pour les statistiques et récompenses.
-- Widget de bureau ou résumé compact pour suivre les scores en arrière-plan.
-- Statistiques avancées (True Shooting %, Net Rating, Pace, Shot chart comparé).
-- Graphiques avancés et cartes de tir comparées.
+- Notifications même quand Parquet est fermé (notifications push, qui demandent un serveur en ligne).
+- Mode multilingue (anglais, espagnol) pour les statistiques et les récompenses.
+- Statistiques d'équipe avancées (Net Rating, Pace) et cartes de tirs comparées entre deux joueurs.

@@ -2,9 +2,10 @@
 
 Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 
-- **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, puis pour chaque match le score par quart-temps, le duel des équipes, le box score complet, le fil des actions et la carte des tirs. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
-- **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier, leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
-- **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
+- **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, et au réveil le résumé « Cette nuit en NBA ». Pour chaque match : score par quart-temps, scénario du match (l'écart au score minute par minute), duel des équipes, box score complet, fil des actions et carte des tirs. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
+- **Multi-matchs** : plusieurs matchs en direct côte à côte, en plein écran si tu veux, pour les grosses soirées.
+- **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier (exportable dans ton agenda), leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
+- **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
 
@@ -34,33 +35,40 @@ Le premier lancement prépare un environnement Python dans le dossier (une minut
 
 **Laisse la fenêtre noire ouverte** pendant que tu utilises Parquet ; la fermer arrête l'application.
 
+Pour découvrir l'application sans connexion, ou si NBA.com ne répond pas chez toi, lance-la en **mode démo** : `.\lancer.bat --demo` (Windows) ou `bash lancer.command --demo` (Mac, Linux). Les équipes sont les vraies, mais les joueurs, les scores et les statistiques sont fictifs.
+
 ## Astuces
 
 - Appuie sur `/` n'importe où pour chercher un joueur ou une équipe.
 - Depuis la fiche d'un joueur, clique sur « Comparer ce joueur » pour lancer un face-à-face immédiat avec un rival.
 - Ajoute tes équipes favorites (bouton en haut de leur page) : leurs matchs passent en premier.
-- Clique sur l'icône de cloche dans la barre du haut pour activer les alertes (coup d'envoi et résultat de tes favoris, alertes de fin de match serrée en Clutch Time).
-- Le bouton en forme d'œil active le mode anti-spoiler pour masquer les scores avant visionnage.
+- Clique sur la cloche dans la barre du haut pour activer les alertes : coup d'envoi et résultat de tes favoris, fins de match serrées (5 dernières minutes avec 5 points d'écart ou moins). Les alertes fonctionnent **tant qu'un onglet Parquet est ouvert**, même en arrière-plan ; une alerte n'est jamais envoyée deux fois.
+- Le bouton en forme d'œil active le mode anti-spoiler, pour regarder un match en différé : les scores, le box score, le fil des actions, le résumé de la nuit, le champion des playoffs et le contenu des alertes restent masqués jusqu'à ce que tu cliques sur « Révéler ». Ce que tu as révélé le reste jusqu'à la fermeture de l'onglet.
+- Quand des matchs sont en cours, le bouton « Mode multi-matchs » de la page d'accueil les affiche côte à côte.
+- Dans l'onglet *Calendrier* d'une équipe, « Ajouter à mon agenda » télécharge un fichier `.ics` à importer dans Google Agenda, Apple Calendrier ou Outlook. Les horaires s'affichent à l'heure de ton agenda ; les scores n'y figurent pas.
 - Le bouton en forme de lune ou de soleil change le thème.
 
-### Sur votre téléphone Android et installation en application (PWA)
+### Sur ton téléphone
 
-1. **Sur votre ordinateur** : double-cliquez simplement sur `lancer.bat`.
-   La fenêtre noire affiche directement l'adresse pour votre smartphone :
-   `Sur votre smartphone Android (même Wi-Fi) : http://192.168.x.x:8765/`
-   *(Si Windows vous demande une autorisation pare-feu pour les réseaux privés, acceptez).*
+Par défaut, seul ton ordinateur peut ouvrir Parquet. Pour l'utiliser aussi sur ton téléphone :
 
-2. **Sur votre téléphone Android** :
-   - Assurez-vous d'être connecté au même réseau Wi-Fi que l'ordinateur.
-   - Ouvrez **Google Chrome** et tapez l'adresse affichée (ex. `http://192.168.1.5:8765`).
+1. **Sur l'ordinateur**, double-clique sur **`lancer-telephone.bat`** (Windows) ou **`lancer-telephone.command`** (Mac). La fenêtre noire affiche l'adresse à ouvrir sur le téléphone, du type `http://192.168.1.20:8765/`. Si Windows demande une autorisation du pare-feu, accepte pour les **réseaux privés** uniquement.
+2. **Sur le téléphone**, connecté au même Wi-Fi que l'ordinateur, ouvre cette adresse dans Chrome (Android) ou Safari (iPhone).
 
-3. **Installer Parquet comme une vraie application :**
-   - Appuyez sur le menu de Chrome (les 3 points verticaux en haut à droite).
-   - Choisissez **« Installer l'application »** (ou « Ajouter à l'écran d'accueil »).
-   - Parquet s'installe sur votre écran d'accueil avec son icône officielle, sans barre de navigation et en plein écran comme une application du Play Store !
+N'utilise ce mode que sur le Wi-Fi de la maison : sur un réseau public, n'importe quel appareil connecté pourrait ouvrir ton Parquet.
 
-- **Sur iPhone / iPad (Safari)** : ouvrez l'adresse dans Safari, appuyez sur le bouton Partager puis sélectionnez *Sur l'écran d'accueil*.
-- **Sur PC / Mac (Chrome, Edge)** : cliquez sur l'icône d'installation dans la barre d'adresse pour ouvrir Parquet dans sa propre fenêtre d'application autonome.
+#### Installer Parquet comme une application
+
+- **Sur ordinateur (Chrome, Edge)** : clique sur l'icône d'installation dans la barre d'adresse. Parquet s'ouvre alors dans sa propre fenêtre.
+- **Sur téléphone**, une limite des navigateurs s'applique : l'installation complète et les notifications ne sont autorisées que sur une connexion sécurisée (HTTPS), ce que n'est pas une adresse en `http://192.168.…`. Sans réglage, tu peux toujours ajouter un raccourci sur l'écran d'accueil (menu de Chrome, *Ajouter à l'écran d'accueil* ; sur iPhone, bouton Partager, *Sur l'écran d'accueil*), et les alertes s'affichent dans la page.
+
+Pour avoir la vraie application et les notifications sur un téléphone Android, autorise l'adresse de ton ordinateur dans Chrome :
+
+1. Ouvre `chrome://flags/#unsafely-treat-insecure-origin-as-secure` dans Chrome sur le téléphone.
+2. Dans le champ, saisis l'adresse affichée par la fenêtre noire (par exemple `http://192.168.1.20:8765`), puis passe l'option sur *Enabled*.
+3. Touche *Relaunch* pour relancer Chrome, rouvre Parquet, puis menu de Chrome, *Installer l'application*.
+
+Le panneau des alertes (la cloche) rappelle ces étapes quand la connexion n'est pas sécurisée. Sur iPhone, ce réglage n'existe pas : il faudrait servir Parquet en HTTPS, par exemple avec [Tailscale](https://tailscale.com/kb/1153/enabling-https), ce qui sort du cadre de ce guide.
 
 ## Si quelque chose ne s'affiche pas
 
@@ -70,6 +78,7 @@ Ouvre **État des sources** (lien en bas de chaque page). Le test indique si NBA
 - NBA.com limite parfois les requêtes trop rapprochées : attends quelques minutes.
 - Quand NBA.com ne répond pas, Parquet affiche les dernières données gardées en mémoire et le signale par un bandeau.
 - Pour repartir de zéro, supprime le dossier `data` (ou lance `.\lancer.bat --vider-cache`).
+- Après une mise à jour de Parquet, l'application installée récupère les nouveaux fichiers dès le lancement suivant. Si l'affichage semble ancien, recharge la page une fois.
 
 Tu peux aussi tester les sources sans ouvrir l'application, depuis un terminal ouvert dans le dossier : `.\lancer.bat --diagnostic` (Windows) ou `bash lancer.command --diagnostic` (Mac/Linux).
 

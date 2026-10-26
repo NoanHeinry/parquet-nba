@@ -57,6 +57,10 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/player/{id}/gamelog` | Derniers matchs (saison, présaison ou saison précédente) | `playergamelog` |
 | `GET /api/player/{id}/bio` | Biographie Wikipédia | Wikidata (P3647) puis Wikipédia |
 | `GET /api/leaders?season=AAAA-AA` | Top 10 par catégorie | `leaguedashplayerstats` |
+| `GET /api/playoffs?season=AAAA-AA` | Arbre des playoffs, séries et matchs (bascule sur la saison précédente avant les playoffs) | `commonplayoffseries`, `leaguegamefinder` |
+| `GET /api/recap?date=AAAA-MM-JJ` | Résumé d'une journée : Game Score, meilleurs par catégorie, triples-doubles, match le plus serré, plus large victoire, prolongations | box scores des matchs terminés |
+| `GET /api/team/{id}/calendar.ics` | Calendrier de la saison au format iCalendar (fichier à télécharger) | CDN calendrier |
+| `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
 
 
@@ -73,6 +77,8 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | Fiche, carrière d'un joueur | 6 h |
 | Derniers matchs d'un joueur | 20 min |
 | Leaders | 1 h |
+| Playoffs | 1 h (saison en cours), 24 h (saisons passées) |
+| Résumé d'une journée | recalculé dès qu'un match se termine ; 6 h une fois tous les matchs terminés (mémoire seule) |
 | Histoire, palmarès, index des joueurs | 24 h |
 | Textes Wikipédia | 7 jours |
 
@@ -84,6 +90,10 @@ Le cache (`parquet/cache.py`) garde les entrées récentes en mémoire et toutes
 - **Cadence** : au plus deux requêtes simultanées vers `stats.nba.com`, espacées d'au moins 350 ms. Les paramètres sont envoyés triés, l'API y étant sensible.
 - **Bascule** : si le scoreboard du CDN est refusé, le CDN est mis de côté pendant 10 minutes et toutes les données de match passent par `stats.nba.com`.
 - **Ressources pas encore publiées** : un 403 du CDN sur le box score d'un match à venir n'est pas une erreur ; la page affiche l'avant-match et se met à jour seule au coup d'envoi.
+
+## Mode démonstration
+
+`python run.py --demo` remplace la fonction d'accès réseau de `net.py` par `parquet/demo.py`, qui répond à la place de NBA.com et de Wikipédia avec des données fictives au même format : scores en direct, box scores, fil des actions, calendrier, carrières, palmarès, classements, leaders, playoffs, biographies. Le générateur pseudo-aléatoire a une graine fixe : les données sont identiques à chaque lancement, ce qui permet les tests d'interface et la génération des captures. Les identifiants des joueurs fictifs ne correspondent à aucun vrai joueur, pour ne jamais associer la photo d'un joueur réel à des données inventées.
 
 ## Modèle de données normalisé
 
@@ -122,6 +132,12 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/format.js` | Formats français : nombres, dates, tailles, postes, pays, statuts de match |
 | `js/teams.js` | Données des équipes, choix de couleurs lisibles (contraste, distance OKLab) |
 | `js/search.js` | Recherche globale (joueurs et équipes, sans accents) |
+| `js/spoiler.js` | Mode anti-spoiler : état global et mémoire de session des scores révélés |
+| `js/notifications.js` | Alertes de match (coup d'envoi, fin serrée selon la définition NBA, résultat), mémoire des alertes envoyées, détection des connexions non sécurisées |
+| `js/icons.js` | Icônes SVG |
+| `js/views/recap.js` | Bloc « Cette nuit en NBA » de la page d'accueil |
+| `js/views/multi.js` | Mode multi-matchs |
 | `js/views/*.js` | Une vue par page |
+| `sw.js` | Service worker : réseau d'abord, cache en secours hors ligne, cache d'API limité à 150 réponses, version par numéro de version |
 
 Les logos existent en deux versions sur le CDN de NBA.com, pour fond clair (`L`) et pour fond sombre (`D`) : l'interface choisit selon le thème et revient à la version claire si l'autre manque. Sur les bandeaux aux couleurs d'une équipe, le logo est posé sur une pastille claire pour rester lisible.
