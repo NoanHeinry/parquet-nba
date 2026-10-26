@@ -4,7 +4,7 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 
 - **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, et au réveil le résumé « Cette nuit en NBA ». Pour chaque match : score par quart-temps, scénario du match (l'écart au score minute par minute), duel des équipes, box score complet, fil des actions et carte des tirs. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
 - **Multi-matchs** : plusieurs matchs en direct côte à côte, en plein écran si tu veux, pour les grosses soirées.
-- **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier (exportable dans ton agenda), leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
+- **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier présenté mois par mois (un V vert ou un D rouge avec le score pour chaque match joué, l'horaire pour les prochains, exportable dans ton agenda), leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
 - **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
@@ -45,7 +45,7 @@ Pour découvrir l'application sans connexion, ou si NBA.com ne répond pas chez 
 - Clique sur la cloche dans la barre du haut pour activer les alertes : coup d'envoi et résultat de tes favoris, fins de match serrées (5 dernières minutes avec 5 points d'écart ou moins). Les alertes fonctionnent **tant qu'un onglet Parquet est ouvert**, même en arrière-plan ; une alerte n'est jamais envoyée deux fois.
 - Le bouton en forme d'œil active le mode anti-spoiler, pour regarder un match en différé : les scores, le box score, le fil des actions, le résumé de la nuit, le champion des playoffs et le contenu des alertes restent masqués jusqu'à ce que tu cliques sur « Révéler ». Ce que tu as révélé le reste jusqu'à la fermeture de l'onglet.
 - Quand des matchs sont en cours, le bouton « Mode multi-matchs » de la page d'accueil les affiche côte à côte.
-- Dans l'onglet *Calendrier* d'une équipe, « Ajouter à mon agenda » télécharge un fichier `.ics` à importer dans Google Agenda, Apple Calendrier ou Outlook. Les horaires s'affichent à l'heure de ton agenda ; les scores n'y figurent pas.
+- Dans l'onglet *Calendrier* d'une équipe, passe d'un mois à l'autre avec les flèches ou les mois de la saison ; clique sur un match pour l'ouvrir. Les boutons « À venir » et « Résultats » affichent la même chose sous forme de liste. « Ajouter à mon agenda » télécharge un fichier `.ics` à importer dans Google Agenda, Apple Calendrier ou Outlook. Les horaires s'affichent à l'heure de ton agenda ; les scores n'y figurent pas.
 - Le bouton en forme de lune ou de soleil change le thème.
 
 ### Sur ton téléphone

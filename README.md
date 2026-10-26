@@ -21,7 +21,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Avant le coup d'envoi : forme récente des deux équipes. La page bascule seule en mode direct au début du match.
 
 **Encyclopédie et analyse**
-- Équipes : effectif, staff, calendrier, résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
+- Équipes : effectif, staff, calendrier mois par mois (V vert ou D rouge et score pour les matchs joués, horaire pour les prochains), résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
 - Équipes : export du calendrier de la saison au format `.ics`, à importer dans Google Agenda, Apple Calendrier ou Outlook.
 - Joueurs : recherche dans toute l'histoire de la ligue, filtres (équipe, poste, pays), biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées (adresse réelle TS%, adresse effective eFG%, passes par balle perdue, part de tirs à 3 points), derniers matchs.
 - Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.
@@ -134,7 +134,7 @@ python -m unittest tests.test_ui -v                 # tests d'interface dans Chr
 
 Les tests unitaires couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers, l'arbre des playoffs et les têtes de série issues du play-in, le résumé d'une journée, les stats avancées, l'export iCalendar, le cache (y compris le repli sur des données périmées) et la cohérence du mode démo.
 
-Les tests d'interface lancent le serveur en mode démo et pilotent un vrai navigateur : affichage des matchs et du résumé, onglets d'un match, mode anti-spoiler (masquage et mémoire des révélations), arbre des playoffs replié, stats avancées, comparateur (chaque fiche chargée une seule fois), export du calendrier, multi-matchs et absence de défilement horizontal sur téléphone.
+Les tests d'interface lancent le serveur en mode démo et pilotent un vrai navigateur : affichage des matchs et du résumé, onglets d'un match, mode anti-spoiler (masquage et mémoire des révélations), arbre des playoffs replié, stats avancées, comparateur (chaque fiche chargée une seule fois), calendrier mensuel et export du calendrier, multi-matchs et absence de défilement horizontal sur téléphone.
 
 GitHub Actions lance les tests unitaires sur Python 3.9, 3.11 et 3.13, et les tests d'interface dans Chromium.
 

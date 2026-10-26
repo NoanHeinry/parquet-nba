@@ -91,6 +91,173 @@ function translateHow(text) {
     .replace(/ via (.+)$/i, " ($1)");
 }
 
+// ---------------------------------------------------------------- calendrier mensuel
+
+const MONTH = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" });
+const DAY_LONG = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const pad = (n) => String(n).padStart(2, "0");
+const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const monthKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+
+// Jour du match à l'heure locale (celle des horaires affichés) ; date américaine en secours.
+function gameDay(g) {
+  const d = g.start ? new Date(g.start) : null;
+  if (d && !Number.isNaN(d.getTime())) return dayKey(d);
+  return g.etDate || null;
+}
+
+function sides(g, teamId) {
+  const home = g.home?.id === teamId;
+  return { home, me: home ? g.home : g.away, opp: home ? g.away : g.home };
+}
+
+function calendarCell(g, teamId) {
+  const { home, me, opp } = sides(g, teamId);
+  const oppTeam = team(opp?.id);
+  const oppName = oppTeam?.name || opp?.name || "À déterminer";
+  const label = f.gameLabel(g);
+  let result;
+  let aria;
+  if (g.status === 3) {
+    const won = me.score > opp.score;
+    result = h(
+      "span",
+      { class: "cal-res" },
+      h("span", { class: `cal-wl ${won ? "w" : "l"}`, title: won ? "Victoire" : "Défaite" }, won ? "V" : "D"),
+      h("span", { class: "cal-score num" }, `${me.score}-${opp.score}`)
+    );
+    aria = `${won ? "victoire" : "défaite"} ${me.score} à ${opp.score}`;
+  } else if (g.status === 2) {
+    result = h("span", { class: "cal-res cal-live" }, h("span", { class: "live-dot" }), h("span", { class: "cal-score num" }, `${me.score}-${opp.score}`));
+    aria = `en cours, ${me.score} à ${opp.score}`;
+  } else {
+    const time = g.start ? f.clockTime(g.start) : "";
+    result = h("span", { class: "cal-res cal-time num" }, time || "Horaire à venir");
+    aria = time ? `à ${time}` : "horaire à venir";
+  }
+  const special = g.kind && g.kind !== "reg" ? h("span", { class: "cal-tag" }, label) : null;
+  return h(
+    "a",
+    {
+      class: `cal-game${g.status === 3 ? (me.score > opp.score ? " is-w" : " is-l") : ""}${g.status === 2 ? " is-live" : ""}${g.status === 1 || !g.status ? " is-upcoming" : ""}`,
+      href: `#/match/${g.id}`,
+      "aria-label": `${home ? "Contre" : "À"} ${oppName}${label ? ` (${label})` : ""}, ${aria}`,
+      title: `${home ? "Contre" : "À"} ${oppName}${label ? ` · ${label}` : ""}`,
+    },
+    h("span", { class: "cal-opp" }, teamLogo(opp?.id, 26), h("span", { class: "cal-tri" }, h("small", null, home ? "vs" : "@"), opp?.tri || "?")),
+    result,
+    special
+  );
+}
+
+function monthGrid(month, byDay, teamId) {
+  const [y, m] = month.split("-").map(Number);
+  const first = new Date(y, m - 1, 1);
+  const days = new Date(y, m, 0).getDate();
+  const offset = (first.getDay() + 6) % 7; // lundi en premier
+  const today = dayKey(new Date());
+  const cells = [];
+  for (let i = 0; i < offset; i++) cells.push(h("div", { class: "cal-day is-out", "aria-hidden": "true" }));
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(y, m - 1, d);
+    const key = dayKey(date);
+    const games = byDay.get(key) || [];
+    cells.push(
+      h(
+        "div",
+        {
+          class: `cal-day${games.length ? " has-game" : ""}${key === today ? " is-today" : ""}${key < today ? " is-past" : ""}`,
+          role: "gridcell",
+          "aria-label": DAY_LONG.format(date) + (games.length ? "" : ", pas de match"),
+        },
+        h("span", { class: "cal-num" }, d),
+        games.map((g) => calendarCell(g, teamId))
+      )
+    );
+  }
+  while (cells.length % 7) cells.push(h("div", { class: "cal-day is-out", "aria-hidden": "true" }));
+  const rows = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(h("div", { class: "cal-week", role: "row" }, cells.slice(i, i + 7)));
+  return h(
+    "div",
+    { class: "cal-grid", role: "grid", "aria-label": `Matchs de ${MONTH.format(first)}` },
+    h("div", { class: "cal-week cal-head", role: "row" }, WEEKDAYS.map((w) => h("span", { role: "columnheader" }, w))),
+    rows
+  );
+}
+
+function teamCalendar(games, teamId) {
+  const byDay = new Map();
+  for (const g of games) {
+    const key = gameDay(g);
+    if (!key) continue;
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key).push(g);
+  }
+  const months = [...new Set([...byDay.keys()].map((k) => k.slice(0, 7)))].sort();
+  const el = h("div", { class: "team-cal" });
+  if (!months.length) {
+    el.append(h("p", { class: "note" }, "Aucun match au calendrier pour l'instant."));
+    return el;
+  }
+
+  // Mois affiché au départ : le mois en cours s'il a des matchs, sinon celui du prochain match, sinon le dernier.
+  const now = monthKey(new Date());
+  const next = games.find((g) => g.status !== 3);
+  let current = months.includes(now) ? now : next && gameDay(next) ? gameDay(next).slice(0, 7) : months[months.length - 1];
+  if (!months.includes(current)) current = months[0];
+
+  const prev = h("button", { class: "btn cal-nav", type: "button", "aria-label": "Mois précédent" }, "‹");
+  const nextBtn = h("button", { class: "btn cal-nav", type: "button", "aria-label": "Mois suivant" }, "›");
+  const title = h("h3", { class: "cal-title", "aria-live": "polite" });
+  const record = h("span", { class: "cal-record" });
+  const body = h("div");
+  const picker = h("div", { class: "cal-months", role: "group", "aria-label": "Choisir un mois" });
+
+  const draw = () => {
+    const i = months.indexOf(current);
+    const [y, m] = current.split("-").map(Number);
+    title.textContent = MONTH.format(new Date(y, m - 1, 1)).replace(/^./, (c) => c.toUpperCase());
+    prev.disabled = i <= 0;
+    nextBtn.disabled = i >= months.length - 1;
+
+    const inMonth = games.filter((g) => gameDay(g)?.startsWith(current));
+    const done = inMonth.filter((g) => g.status === 3);
+    const w = done.filter((g) => { const s = sides(g, teamId); return s.me.score > s.opp.score; }).length;
+    record.replaceChildren(
+      done.length
+        ? h("span", { class: "cal-rec" }, h("span", { class: "cal-wl w" }, "V"), ` ${w}`, h("span", { class: "cal-wl l" }, "D"), ` ${done.length - w}`)
+        : "",
+      h("span", { class: "muted" }, `${done.length ? " · " : ""}${f.plural(inMonth.length, "match", "matchs")}`)
+    );
+    for (const b of picker.children) b.setAttribute("aria-pressed", b.dataset.month === current ? "true" : "false");
+    body.replaceChildren(monthGrid(current, byDay, teamId));
+  };
+
+  for (const mk of months) {
+    const [y, m] = mk.split("-").map(Number);
+    const b = h("button", { type: "button", class: "chip", "data-month": mk }, new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(new Date(y, m - 1, 1)).replace(".", ""));
+    b.addEventListener("click", () => {
+      current = mk;
+      draw();
+    });
+    picker.append(b);
+  }
+  prev.addEventListener("click", () => {
+    current = months[Math.max(0, months.indexOf(current) - 1)];
+    draw();
+  });
+  nextBtn.addEventListener("click", () => {
+    current = months[Math.min(months.length - 1, months.indexOf(current) + 1)];
+    draw();
+  });
+  draw();
+
+  el.append(h("div", { class: "cal-bar" }, prev, h("div", { class: "cal-heading" }, title, record), nextBtn), picker, body);
+  return el;
+}
+
 function scheduleView(container, t, ctx) {
   section(
     container,
@@ -99,9 +266,13 @@ function scheduleView(container, t, ctx) {
       const games = data.games;
       const upcoming = games.filter((g) => g.status !== 3);
       const results = games.filter((g) => g.status === 3).reverse();
-      let mode = upcoming.length ? "next" : "results";
+      let mode = "calendar";
       const list = h("div");
       const draw = () => {
+        if (mode === "calendar") {
+          list.replaceChildren(teamCalendar(games, t.id));
+          return;
+        }
         const rows = mode === "next" ? upcoming : mode === "results" ? results : games;
         list.replaceChildren(
           ...(rows.length
@@ -116,16 +287,17 @@ function scheduleView(container, t, ctx) {
           { class: "toolbar" },
           segmented(
             [
+              { value: "calendar", label: "Calendrier" },
               { value: "next", label: `À venir (${upcoming.length})` },
               { value: "results", label: `Résultats (${results.length})` },
-              { value: "all", label: "Toute la saison" },
+              { value: "all", label: "Liste complète" },
             ],
             mode,
             (v) => {
               mode = v;
               draw();
             },
-            "Matchs affichés"
+            "Affichage des matchs"
           )
         ),
         h(

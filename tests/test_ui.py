@@ -131,6 +131,22 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("text/calendar", response.headers["content-type"])
         self.assertTrue(response.text().startswith("BEGIN:VCALENDAR"))
 
+    def test_team_month_calendar(self):
+        self.open("#/equipe/1610612738")
+        self.page.click('[role="tab"][data-tab="schedule"]')
+        self.page.wait_for_selector(".cal-grid")
+        self.assertEqual(self.page.locator(".cal-head [role=columnheader]").count(), 7)
+        self.assertGreater(self.page.locator(".cal-game").count(), 0)
+        # Chaque match terminé affiche un V (victoire) ou un D (défaite) et le score.
+        for badge in self.page.locator(".cal-game.is-w .cal-wl, .cal-game.is-l .cal-wl").all():
+            self.assertIn(badge.inner_text(), ("V", "D"))
+        first = self.page.inner_text(".cal-title")
+        self.page.locator(".cal-months .chip").last.click()
+        self.assertNotEqual(self.page.inner_text(".cal-title"), first)
+        self.assertTrue(self.page.locator(".cal-nav[aria-label='Mois suivant']").is_disabled())
+        self.page.click('.segmented button:has-text("À venir")')
+        self.page.wait_for_selector(".sched-row")
+
     def test_multi_game_view(self):
         self.open("#/multi")
         self.page.wait_for_selector(".multi-panel")
@@ -142,6 +158,10 @@ class InterfaceTests(unittest.TestCase):
             self.open(hash_)
             width = self.page.evaluate("document.documentElement.scrollWidth")
             self.assertLessEqual(width, 390, f"la page {hash_} déborde sur téléphone")
+        self.open("#/equipe/1610612738")
+        self.page.click('[role="tab"][data-tab="schedule"]')
+        self.page.wait_for_selector(".cal-grid")
+        self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"), 390, "le calendrier déborde sur téléphone")
 
 
 if __name__ == "__main__":
