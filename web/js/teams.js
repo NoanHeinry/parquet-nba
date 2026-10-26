@@ -75,7 +75,7 @@ export function colorDistance(a, b) {
 }
 
 function surfaceColor() {
-  return getComputedStyle(document.documentElement).getPropertyValue("--surface").trim() || "#132036";
+  return getComputedStyle(document.documentElement).getPropertyValue("--surface").trim() || "#181b1f";
 }
 
 // Couleur d'une équipe assez contrastée pour être vue sur la surface courante (liserés, barres).
@@ -102,8 +102,8 @@ export function teamPair(awayId, homeId) {
 // Fond plein aux couleurs de l'équipe (bandeaux) et encre lisible dessus.
 export function teamBand(id) {
   const t = team(id);
-  const bg = t ? t.colors[0] : "#1a2943";
-  const ink = contrast(bg, "#ffffff") >= 3 ? "#ffffff" : "#0d1626";
+  const bg = t ? t.colors[0] : "#20242a";
+  const ink = contrast(bg, "#ffffff") >= 3 ? "#ffffff" : "#0f1113";
   const accent = (t?.colors || []).slice(1).find((c) => contrast(c, bg) >= 2.5) || ink;
   return { bg, ink, accent };
 }

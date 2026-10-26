@@ -34,6 +34,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Mode anti-spoiler pour regarder les matchs en différé : scores, box score, fil des actions, résumé de la nuit, champion des playoffs et alertes restent masqués jusqu'à ce qu'on les révèle, match par match ou d'un coup. Les révélations sont retenues pendant la session.
 - Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
+- Habillage « Arena » inspiré des retransmissions sportives : titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
 ## Captures
@@ -162,7 +163,7 @@ parquet-nba/
 ## Données, droits et licence
 
 - **Code** : licence [MIT](LICENSE).
-- **Polices** : Archivo et Big Shoulders Display, incluses sous licence SIL Open Font License (fichiers dans `web/fonts/`).
+- **Polices** : Oswald (titres) et Barlow (texte), incluses sous licence SIL Open Font License (fichiers dans `web/fonts/`).
 - **Données, logos et photos NBA** : ils ne sont pas inclus dans ce dépôt. L'application les télécharge au moment de l'utilisation, depuis les sources publiques de NBA.com, et ils restent la propriété de la NBA et de leurs ayants droit. Les conditions d'utilisation de NBA.com réservent ces contenus à un usage personnel : Parquet est conçu pour être lancé par chacun sur son propre ordinateur, pas pour être hébergé publiquement.
 - **Textes Wikipédia** : affichés avec un lien vers l'article et la mention de la licence CC BY-SA.
 

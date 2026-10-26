@@ -40,7 +40,7 @@ function initTheme() {
     btn.title = dark ? "Thème clair" : "Thème sombre";
     btn.innerHTML = dark ? SUN : MOON;
     const metaTheme = document.getElementById("meta-theme-color");
-    if (metaTheme) metaTheme.setAttribute("content", dark ? "#0b1220" : "#f8fafc");
+    if (metaTheme) metaTheme.setAttribute("content", dark ? "#0f1113" : "#efefec");
   };
   btn.addEventListener("click", () => {
     const next = isDark() ? "light" : "dark";

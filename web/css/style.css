@@ -1,45 +1,59 @@
 /* Parquet — tableau de bord NBA personnel
-   Thème : une salle de basket la nuit. Le décor reste sobre (bleu de salle éteinte),
-   les couleurs des équipes sont les seules couleurs fortes. */
+   Thème « Arena » : l'habillage d'une retransmission de match. Décor neutre (noir carbone
+   ou gris clair), orange ballon pour l'accent ; les couleurs des équipes restent les plus fortes.
+   Titres en Oswald, texte en Barlow. */
 
 /* Polices incluses dans l'application (licence SIL Open Font License, voir fonts/). */
 @font-face {
-  font-family: "Archivo";
-  src: url("../fonts/archivo.woff") format("woff");
-  font-weight: 100 900;
-  font-stretch: 62% 125%;
+  font-family: "Oswald";
+  src: url("../fonts/oswald.woff") format("woff");
+  font-weight: 200 700;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Big Shoulders Display";
-  src: url("../fonts/big-shoulders-display.woff") format("woff");
-  font-weight: 100 900;
+  font-family: "Barlow";
+  src: url("../fonts/barlow-400.woff") format("woff");
+  font-weight: 100 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Barlow";
+  src: url("../fonts/barlow-600.woff") format("woff");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Barlow";
+  src: url("../fonts/barlow-700.woff") format("woff");
+  font-weight: 700 900;
   font-display: swap;
 }
 
 :root {
-  --font-display: "Big Shoulders Display", "Archivo", "Arial Narrow", sans-serif;
-  --font-text: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Oswald", "Arial Narrow", sans-serif;
+  --font-text: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  --bg: #0d1626;
-  --surface: #132036;
-  --surface-2: #1a2943;
-  --surface-3: #22334f;
-  --line: #263753;
-  --line-strong: #3a4f74;
-  --text: #eef1f4;
-  --text-2: #bac4d3;
-  --muted: #8592a6;
-  --accent: #e8a443;
-  --accent-ink: #1a1206;
-  --accent-soft: rgba(232, 164, 67, 0.14);
-  --live: #ff5b4f;
-  --live-soft: rgba(255, 91, 79, 0.14);
-  --win: #4cc38a;
-  --loss: #f0705f;
-  --focus: #f5c46b;
-  --shadow: 0 12px 32px rgba(3, 8, 18, 0.45);
+  --bg: #0f1113;
+  --surface: #181b1f;
+  --surface-2: #20242a;
+  --surface-3: #2a2f36;
+  --line: #2b3038;
+  --line-strong: #3d444f;
+  --text: #f3f2ef;
+  --text-2: #c4c6ca;
+  --muted: #8d9299;
+  --accent: #ff7a1a;
+  --accent-ink: #1a0c00;
+  --accent-soft: rgba(255, 122, 26, 0.14);
+  --live: #ff4438;
+  --live-soft: rgba(255, 68, 56, 0.14);
+  --win: #3fcf8e;
+  --loss: #ff6b5b;
+  --focus: #ffb070;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   --radius: 10px;
   --radius-sm: 6px;
   --page: 1240px;
@@ -48,47 +62,47 @@
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #e8ecf1;
+    --bg: #efefec;
     --surface: #ffffff;
-    --surface-2: #f2f4f7;
-    --surface-3: #e6eaf0;
-    --line: #d5dbe4;
-    --line-strong: #b5c0cf;
-    --text: #101828;
-    --text-2: #364154;
-    --muted: #5e6a7d;
-    --accent: #a45f12;
+    --surface-2: #f5f5f3;
+    --surface-3: #e9e9e5;
+    --line: #dcdcd6;
+    --line-strong: #bdbdb5;
+    --text: #141518;
+    --text-2: #383a40;
+    --muted: #62656c;
+    --accent: #c2410c;
     --accent-ink: #ffffff;
-    --accent-soft: rgba(164, 95, 18, 0.1);
-    --live: #d2342a;
-    --live-soft: rgba(210, 52, 42, 0.1);
-    --win: #13804f;
-    --loss: #c03a2b;
-    --focus: #a45f12;
-    --shadow: 0 12px 32px rgba(16, 24, 40, 0.14);
+    --accent-soft: rgba(194, 65, 12, 0.1);
+    --live: #d62d20;
+    --live-soft: rgba(214, 45, 32, 0.1);
+    --win: #15803d;
+    --loss: #c2361f;
+    --focus: #c2410c;
+    --shadow: 0 12px 32px rgba(20, 20, 18, 0.12);
     color-scheme: light;
   }
 }
 
 :root[data-theme="light"] {
-  --bg: #e8ecf1;
+  --bg: #efefec;
   --surface: #ffffff;
-  --surface-2: #f2f4f7;
-  --surface-3: #e6eaf0;
-  --line: #d5dbe4;
-  --line-strong: #b5c0cf;
-  --text: #101828;
-  --text-2: #364154;
-  --muted: #5e6a7d;
-  --accent: #a45f12;
+  --surface-2: #f5f5f3;
+  --surface-3: #e9e9e5;
+  --line: #dcdcd6;
+  --line-strong: #bdbdb5;
+  --text: #141518;
+  --text-2: #383a40;
+  --muted: #62656c;
+  --accent: #c2410c;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(164, 95, 18, 0.1);
-  --live: #d2342a;
-  --live-soft: rgba(210, 52, 42, 0.1);
-  --win: #13804f;
-  --loss: #c03a2b;
-  --focus: #a45f12;
-  --shadow: 0 12px 32px rgba(16, 24, 40, 0.14);
+  --accent-soft: rgba(194, 65, 12, 0.1);
+  --live: #d62d20;
+  --live-soft: rgba(214, 45, 32, 0.1);
+  --win: #15803d;
+  --loss: #c2361f;
+  --focus: #c2410c;
+  --shadow: 0 12px 32px rgba(20, 20, 18, 0.12);
   color-scheme: light;
 }
 
@@ -184,7 +198,6 @@ h3 {
 
 .display {
   font-family: var(--font-display);
-  font-stretch: 72%;
   letter-spacing: 0.01em;
 }
 
@@ -222,10 +235,9 @@ h3 {
   align-items: center;
   gap: 9px;
   font-family: var(--font-display);
-  font-stretch: 72%;
-  font-weight: 800;
-  font-size: 27px;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.01em;
   line-height: 1;
   flex: none;
 }
@@ -425,11 +437,11 @@ main:focus {
 
 .page-title {
   font-family: var(--font-display);
-  font-stretch: 72%;
-  font-weight: 800;
+  font-weight: 600;
   font-size: clamp(36px, 5vw, 52px);
-  line-height: 0.95;
-  letter-spacing: 0.005em;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .page-sub {
@@ -444,11 +456,12 @@ main:focus {
 
 .section-title {
   font-family: var(--font-display);
-  font-stretch: 72%;
-  font-weight: 700;
-  font-size: 27px;
-  line-height: 1.05;
+  font-weight: 600;
+  font-size: 25px;
+  line-height: 1.1;
   margin-bottom: 14px;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 
 .section-title .count {
@@ -706,7 +719,6 @@ main:focus {
   background: var(--surface-3);
   color: var(--text-2);
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 12px;
   flex: none;
@@ -832,7 +844,6 @@ html[data-spoiler="1"] .spoiler-all-btn {
 
 .tile-team .tri {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 23px;
   letter-spacing: 0.02em;
@@ -848,7 +859,6 @@ html[data-spoiler="1"] .spoiler-all-btn {
 
 .tile-team .score {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 40px;
   line-height: 1;
@@ -888,7 +898,6 @@ html[data-spoiler="1"] .spoiler-all-btn {
   grid-column: 2;
   text-align: right;
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 34px;
   line-height: 1;
@@ -897,7 +906,6 @@ html[data-spoiler="1"] .spoiler-all-btn {
 .tile-upcoming .time small {
   display: block;
   font-family: var(--font-text);
-  font-stretch: 100%;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--muted);
@@ -1102,18 +1110,22 @@ html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
 
 .rail h2 {
   font-family: var(--font-display);
-  font-stretch: 72%;
-  font-size: 23px;
-  font-weight: 700;
+  font-size: 19px;
+  gap: 10px;
+  font-weight: 600;
   margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 
 .rail h2 a {
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
   font-family: var(--font-text);
-  font-stretch: 100%;
   font-size: 13px;
   font-weight: 600;
   color: var(--accent);
@@ -1235,7 +1247,6 @@ html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
 
 .sb-team .nick {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: clamp(26px, 3.6vw, 40px);
   line-height: 1;
@@ -1256,7 +1267,6 @@ html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
   align-items: center;
   gap: 18px;
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: clamp(56px, 8vw, 92px);
   line-height: 0.9;
@@ -1336,7 +1346,6 @@ html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hove
 
 .sb-time {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: clamp(48px, 7vw, 76px);
   line-height: 0.9;
@@ -1345,7 +1354,6 @@ html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hove
 .sb-time small {
   display: block;
   font-family: var(--font-text);
-  font-stretch: 100%;
   font-size: 14px;
   font-weight: 600;
   color: var(--muted);
@@ -1480,7 +1488,6 @@ html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hove
 .leader-line .v {
   margin-left: auto;
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-size: 26px;
   font-weight: 800;
 }
@@ -1669,7 +1676,6 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
 
 .pbp-period {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 700;
   font-size: 21px;
   padding: 16px 0 8px;
@@ -1858,11 +1864,11 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
 
 .hero h1 {
   font-family: var(--font-display);
-  font-stretch: 72%;
-  font-weight: 900;
+  font-weight: 700;
   font-size: clamp(46px, 7vw, 86px);
-  line-height: 0.88;
-  letter-spacing: 0.005em;
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .hero .hero-meta {
@@ -1929,7 +1935,6 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
   right: 4%;
   bottom: -0.16em;
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 900;
   font-size: 300px;
   line-height: 1;
@@ -2039,7 +2044,6 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
 
 .award .times {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 30px;
   line-height: 1;
@@ -2205,7 +2209,6 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
 
 .jersey-card .no {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 900;
   font-size: 40px;
   line-height: 1;
@@ -2238,7 +2241,6 @@ html[data-spoiler="1"] .stat-table tr:focus-within td .wl {
 
 .title-pill b {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-size: 20px;
   margin-right: 6px;
 }
@@ -2328,7 +2330,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
   top: 6px;
   left: 10px;
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 900;
   font-size: 30px;
   line-height: 1;
@@ -2421,9 +2422,10 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 
 .board h2 {
   font-family: var(--font-display);
-  font-stretch: 72%;
-  font-weight: 700;
-  font-size: 23px;
+  font-weight: 600;
+  font-size: 21px;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
 
 .board .unit {
@@ -2447,7 +2449,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 
 .board-top .v {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 900;
   font-size: 44px;
   line-height: 1;
@@ -2599,7 +2600,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
   background: var(--surface-2);
   border: 2px solid var(--line-strong);
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 17px;
   color: var(--accent);
@@ -2641,7 +2641,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 
 .compare-player-card .name {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 24px;
   line-height: 1.1;
@@ -2803,7 +2802,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 
 .playoffs-champion-card .champion-info .name {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-size: 26px;
   font-weight: 800;
   margin: 2px 0 0;
@@ -2832,7 +2830,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 
 .conf-tag {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-size: 14px;
   font-weight: 800;
   text-transform: uppercase;
@@ -2967,7 +2964,6 @@ html[data-spoiler="1"] .sched-row:focus-within .res {
 
 .matchup-team .wins {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-size: 17px;
   font-weight: 800;
   min-width: 14px;
@@ -3652,7 +3648,6 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 
 .recap-hero .nm {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 32px;
   line-height: 1;
@@ -3725,7 +3720,6 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 
 .recap-tile .v {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 34px;
   line-height: 1;
@@ -3733,7 +3727,6 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 
 .recap-tile .v small {
   font-family: var(--font-text);
-  font-stretch: 100%;
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
@@ -3870,7 +3863,6 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 
 .mp-names strong {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 26px;
 }
@@ -3882,7 +3874,6 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 
 .mp-score {
   font-family: var(--font-display);
-  font-stretch: 72%;
   font-weight: 800;
   font-size: 54px;
   line-height: 0.95;
@@ -4009,10 +4000,10 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
 .cal-title {
   margin: 0;
   font-family: var(--font-display);
-  font-stretch: 80%;
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .cal-record {

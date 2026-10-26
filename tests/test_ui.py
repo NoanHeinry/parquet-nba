@@ -73,7 +73,7 @@ class InterfaceTests(unittest.TestCase):
     def test_home_shows_games_recap_and_demo_banner(self):
         self.open("#/")
         self.assertEqual(self.page.locator(".game-tile").count(), 5)
-        self.assertIn("Cette nuit en NBA", self.page.locator(".recap").inner_text())
+        self.assertIn("Cette nuit en NBA", self.page.locator(".recap").text_content())
         self.assertTrue(self.page.locator(".demo-banner").is_visible())
         self.assertTrue(self.page.locator("a[href='#/multi']").is_visible())
 
