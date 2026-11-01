@@ -13,7 +13,11 @@ from __future__ import annotations
 
 import argparse
 import errno
+import os
+import shutil
+import signal
 import socket
+import subprocess
 import sys
 import threading
 import webbrowser
@@ -28,6 +32,7 @@ except ImportError:
     sys.exit(
         "Il manque la bibliothèque « requests ».\n"
         "Lance plutôt le fichier lancer.bat (Windows) ou lancer.command (Mac), "
+        "installer-android.sh sur un téléphone Android (Termux), "
         "ou tape : python -m pip install -r requirements.txt"
     )
 
@@ -45,6 +50,20 @@ def lan_address() -> str | None:
             return s.getsockname()[0]
     except OSError:
         return None
+
+
+def on_termux() -> bool:
+    """Vrai quand Parquet tourne sur un téléphone Android, dans l'application Termux."""
+    return "com.termux" in os.environ.get("PREFIX", "")
+
+
+def open_browser(url: str) -> None:
+    # Sur Android, le module webbrowser ne trouve pas le navigateur : Termux fournit termux-open-url.
+    opener = shutil.which("termux-open-url") if on_termux() else None
+    if opener:
+        subprocess.run([opener, url], check=False)
+    else:
+        webbrowser.open(url)
 
 
 def run_diagnostic() -> int:
@@ -75,6 +94,7 @@ def main() -> int:
     parser.add_argument("--local-only", action="store_true", help=argparse.SUPPRESS)  # ancienne option, c'est désormais le comportement par défaut
     parser.add_argument("--demo", action="store_true", help="données de démonstration, sans accès à NBA.com")
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--port-fixe", action="store_true", help=argparse.SUPPRESS)  # pas de port de secours (lanceur Android)
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--vider-cache", action="store_true")
     args = parser.parse_args()
@@ -101,7 +121,7 @@ def main() -> int:
     host = "0.0.0.0" if args.lan else "127.0.0.1"
     server = None
     port = args.port
-    for candidate in range(args.port, args.port + 20):
+    for candidate in range(args.port, args.port + (1 if args.port_fixe else 20)):
         try:
             server = make_server(host, candidate)
             port = candidate
@@ -110,6 +130,9 @@ def main() -> int:
             if exc.errno not in (errno.EADDRINUSE, getattr(errno, "WSAEADDRINUSE", -1), 10048, 10013):
                 raise
     if server is None:
+        if args.port_fixe:
+            print(f"Le port {args.port} est déjà utilisé par une autre application.")
+            return 1
         print(f"Aucun port libre entre {args.port} et {args.port + 19}.")
         return 1
 
@@ -122,11 +145,22 @@ def main() -> int:
         if ip:
             print(f"  Sur ton téléphone (même Wi-Fi) : http://{ip}:{port}/")
         print("  Parquet est visible des autres appareils de ce réseau : à éviter sur un Wi-Fi public.")
-    print("  Laisse cette fenêtre ouverte pendant que tu utilises l'application.")
-    print("  Pour arrêter : ferme la fenêtre ou appuie sur Ctrl+C.\n")
+    if on_termux():
+        print("  Tu peux passer au navigateur : Termux garde Parquet allumé en arrière-plan.")
+        print("  Pour arrêter : tape « parquet stop », ou touche « Exit » dans la notification de Termux.\n")
+    else:
+        print("  Laisse cette fenêtre ouverte pendant que tu utilises l'application.")
+        print("  Pour arrêter : ferme la fenêtre ou appuie sur Ctrl+C.\n")
 
     if not args.no_browser:
-        threading.Timer(0.8, webbrowser.open, args=(url,)).start()
+        threading.Timer(0.8, open_browser, args=(url,)).start()
+
+    # « parquet stop » (Android) et les gestionnaires de processus envoient SIGTERM :
+    # même arrêt propre qu'avec Ctrl+C.
+    def stop(_signum, _frame):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, stop)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

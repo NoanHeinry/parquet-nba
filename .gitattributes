@@ -3,3 +3,5 @@
 *.command text eol=lf
 *.woff binary
 *.png binary
+*.sh text eol=lf
+android/parquet text eol=lf

@@ -1,0 +1,104 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Commande « parquet » pour Termux (Android) : Parquet tourne entièrement sur le téléphone.
+#
+#   parquet                lance Parquet et l'ouvre dans le navigateur (ou l'ouvre s'il tourne déjà)
+#   parquet demo           lance Parquet en mode démonstration
+#   parquet stop           arrête Parquet
+#   parquet maj            met Parquet à jour
+#   parquet diagnostic     teste l'accès à NBA.com et à Wikipédia
+#
+# Installée par installer-android.sh dans $PREFIX/bin.
+
+set -u
+APP="${PARQUET_DIR:-$HOME/parquet-nba}"
+PORT="${PARQUET_PORT:-8765}"
+URL="http://localhost:$PORT/"
+PY="${PARQUET_PYTHON:-$APP/.venv/bin/python}"
+
+running() {
+  python - "$URL" <<'PY' 2>/dev/null
+import json, sys, urllib.request
+try:
+    with urllib.request.urlopen(sys.argv[1] + "api/status", timeout=2) as r:
+        sys.exit(0 if "version" in json.load(r)["data"] else 1)
+except Exception:
+    sys.exit(1)
+PY
+}
+
+open_url() {
+  if command -v termux-open-url >/dev/null 2>&1; then
+    termux-open-url "$URL"
+  else
+    echo "Ouvre $URL dans ton navigateur."
+  fi
+}
+
+need_app() {
+  if [ ! -f "$APP/run.py" ] || [ ! -x "$PY" ]; then
+    echo "Parquet n'est pas installé dans $APP."
+    echo "Relance l'installation : voir docs/GUIDE-UTILISATEUR.md, section « Sans ordinateur »."
+    exit 1
+  fi
+}
+
+start() {
+  need_app
+  if running; then
+    echo "Parquet tourne déjà : ouverture de $URL"
+    open_url
+    exit 0
+  fi
+  # Empêche Android de mettre Termux en veille tant que Parquet tourne.
+  command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock
+  # Ouvre le navigateur dès que le serveur répond.
+  (
+    for _ in $(seq 1 40); do
+      if running; then open_url; exit 0; fi
+      sleep 0.5
+    done
+  ) &
+  opener=$!
+  trap 'kill "$opener" 2>/dev/null; command -v termux-wake-unlock >/dev/null 2>&1 && termux-wake-unlock' EXIT
+  cd "$APP" || exit 1
+  "$PY" run.py --no-browser --port "$PORT" --port-fixe "$@"
+}
+
+case "${1:-}" in
+  ""|start|lancer)
+    [ $# -gt 0 ] && shift
+    start "$@"
+    ;;
+  demo)
+    shift
+    start --demo "$@"
+    ;;
+  stop|arreter|arrêter)
+    if pkill -TERM -f "run.py --no-browser --port $PORT" 2>/dev/null; then
+      echo "Parquet est arrêté."
+    else
+      echo "Parquet ne tournait pas."
+    fi
+    command -v termux-wake-unlock >/dev/null 2>&1 && termux-wake-unlock
+    ;;
+  maj|update)
+    need_app
+    cd "$APP" || exit 1
+    git pull --ff-only && "$PY" -m pip install --disable-pip-version-check -q -r requirements.txt && echo "Parquet est à jour."
+    # La commande elle-même peut avoir changé. Remplacement par renommage : le fichier en cours
+    # d'exécution n'est jamais modifié sur place (bash le lit au fur et à mesure).
+    cp "$APP/android/parquet" "$PREFIX/bin/.parquet.new" && chmod 755 "$PREFIX/bin/.parquet.new" \
+      && mv -f "$PREFIX/bin/.parquet.new" "$PREFIX/bin/parquet"
+    ;;
+  diagnostic)
+    need_app
+    cd "$APP" && "$PY" run.py --diagnostic
+    ;;
+  -h|--help|aide)
+    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    echo "Commande inconnue : $1 (tape « parquet aide »)"
+    exit 2
+    ;;
+esac

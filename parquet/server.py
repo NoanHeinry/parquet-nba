@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 import re
 import sys
 import time
@@ -256,7 +257,10 @@ class Handler(BaseHTTPRequestHandler):
 
 class Server(ThreadingHTTPServer):
     daemon_threads = True
-    allow_reuse_address = False
+    # Linux, Mac, Android : relancer juste après un arrêt doit reprendre le même port (même adresse,
+    # donc mêmes favoris et réglages). Sous Windows, cette option permettrait au contraire à deux
+    # programmes d'écouter le même port : elle y reste désactivée.
+    allow_reuse_address = os.name != "nt"
 
     def handle_error(self, request, client_address):
         # Un onglet fermé ou un téléphone qui se met en veille coupe la connexion en cours :

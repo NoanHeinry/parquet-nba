@@ -91,6 +91,14 @@ Le cache (`parquet/cache.py`) garde les entrées récentes en mémoire et toutes
 - **Bascule** : si le scoreboard du CDN est refusé, le CDN est mis de côté pendant 10 minutes et toutes les données de match passent par `stats.nba.com`.
 - **Ressources pas encore publiées** : un 403 du CDN sur le box score d'un match à venir n'est pas une erreur ; la page affiche l'avant-match et se met à jour seule au coup d'envoi.
 
+## Sur Android, sans ordinateur
+
+Le serveur est en Python standard (plus `requests`) : il tourne tel quel dans Termux, l'environnement Linux pour Android. `installer-android.sh` installe Python et Git avec le gestionnaire de paquets de Termux, sans aucune question (le script est lu depuis `curl | bash`, aucune commande ne doit lire l'entrée). Il clone le dépôt, crée un environnement Python dédié et installe la commande `parquet` (`android/parquet`) ainsi que deux raccourcis pour le widget Termux:Widget.
+
+`parquet` vérifie d'abord si une instance répond déjà sur `/api/status` ; sinon il prend un verrou de veille (`termux-wake-lock`), lance `run.py` sur un port fixe (`--port-fixe` : pas de port de secours, qui ferait ouvrir une page vide) et ouvre le navigateur avec `termux-open-url` dès que le serveur répond. `parquet stop` envoie SIGTERM, que `run.py` traite comme Ctrl+C. Le serveur réutilise son adresse après un arrêt (`SO_REUSEADDR`, hors Windows), pour qu'un redémarrage immédiat retrouve le même port, donc la même origine, les mêmes favoris et la même application installée.
+
+Sur le téléphone, l'adresse est `http://localhost` : les navigateurs la considèrent comme sécurisée, l'application s'installe et les notifications fonctionnent sans HTTPS.
+
 ## Mode démonstration
 
 `python run.py --demo` remplace la fonction d'accès réseau de `net.py` par `parquet/demo.py`, qui répond à la place de NBA.com et de Wikipédia avec des données fictives au même format : scores en direct, box scores, fil des actions, calendrier, carrières, palmarès, classements, leaders, playoffs, biographies. Le générateur pseudo-aléatoire a une graine fixe : les données sont identiques à chaque lancement, ce qui permet les tests d'interface et la génération des captures. Les identifiants des joueurs fictifs ne correspondent à aucun vrai joueur, pour ne jamais associer la photo d'un joueur réel à des données inventées.

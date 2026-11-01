@@ -33,6 +33,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Alertes en direct, tant qu'un onglet Parquet est ouvert : coup d'envoi et résultat des équipes favorites, fins de match serrées selon la définition de la NBA (5 dernières minutes, 5 points d'écart ou moins). Notifications système quand la connexion le permet, alertes dans la page sinon ; une alerte n'est jamais envoyée deux fois.
 - Mode anti-spoiler pour regarder les matchs en différé : scores, box score, fil des actions, résumé de la nuit, champion des playoffs et alertes restent masqués jusqu'à ce qu'on les révèle, match par match ou d'un coup. Les révélations sont retenues pendant la session.
 - Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.
+- Fonctionne aussi **sans ordinateur sur Android** : le serveur tourne sur le téléphone dans Termux, installé en une commande, lancé depuis un widget de l'écran d'accueil.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
 - Habillage « Arena » inspiré des retransmissions sportives : titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
@@ -120,7 +121,7 @@ python -m pip install -r requirements.txt
 python run.py
 ```
 
-L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les lanceurs `lancer.bat` et `lancer.command` créent l'environnement Python et démarrent tout en un double-clic ; `lancer-telephone.bat` et `lancer-telephone.command` font de même en rendant Parquet accessible depuis le téléphone. Le [guide d'utilisation](docs/GUIDE-UTILISATEUR.md) détaille l'installation, l'accès depuis un téléphone et le dépannage.
+L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les lanceurs `lancer.bat` et `lancer.command` créent l'environnement Python et démarrent tout en un double-clic ; `lancer-telephone.bat` et `lancer-telephone.command` font de même en rendant Parquet accessible depuis le téléphone. Sur Android, sans ordinateur, `installer-android.sh` installe Parquet dans Termux et ajoute la commande `parquet` (lancer, arrêter, mettre à jour) et un widget d'écran d'accueil. Le [guide d'utilisation](docs/GUIDE-UTILISATEUR.md) détaille l'installation, l'accès depuis un téléphone et le dépannage.
 
 Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--diagnostic` (teste les sources puis s'arrête), `--vider-cache`.
 
@@ -133,7 +134,7 @@ pip install playwright && python -m playwright install chromium
 python -m unittest tests.test_ui -v                 # tests d'interface dans Chromium
 ```
 
-Les tests unitaires couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers, l'arbre des playoffs et les têtes de série issues du play-in, le résumé d'une journée, les stats avancées, l'export iCalendar, le cache (y compris le repli sur des données périmées) et la cohérence du mode démo.
+Les tests unitaires couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers, l'arbre des playoffs et les têtes de série issues du play-in, le résumé d'une journée, les stats avancées, l'export iCalendar, le cache (y compris le repli sur des données périmées), la cohérence du mode démo, et le lancement sur Android dans un Termux simulé (ouverture du navigateur du téléphone, réutilisation d'une instance déjà lancée, arrêt propre, même port après un redémarrage).
 
 Les tests d'interface lancent le serveur en mode démo et pilotent un vrai navigateur : affichage des matchs et du résumé, onglets d'un match, mode anti-spoiler (masquage et mémoire des révélations), arbre des playoffs replié, stats avancées, comparateur (chaque fiche chargée une seule fois), calendrier mensuel et export du calendrier, multi-matchs et absence de défilement horizontal sur téléphone.
 
@@ -144,6 +145,8 @@ GitHub Actions lance les tests unitaires sur Python 3.9, 3.11 et 3.13, et les te
 ```
 parquet-nba/
 ├── run.py                  point d'entrée (serveur, ouverture du navigateur, diagnostic)
+├── installer-android.sh    installation sur téléphone Android (Termux), sans ordinateur
+├── android/parquet         commande « parquet » pour Termux (lancer, arrêter, mettre à jour)
 ├── parquet/                serveur Python
 │   ├── server.py           serveur HTTP, routes /api, fichiers statiques
 │   ├── nba.py              récupération et normalisation des données NBA

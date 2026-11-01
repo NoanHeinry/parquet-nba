@@ -9,11 +9,11 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
 
-L'application tourne sur ton ordinateur et va chercher les données publiques de NBA.com et de Wikipédia. Rien n'est hébergé ailleurs, aucun compte n'est nécessaire.
+L'application tourne sur ton ordinateur, ou directement sur ton téléphone Android (voir [Sans ordinateur](#sans-ordinateur-sur-un-téléphone-android)), et va chercher les données publiques de NBA.com et de Wikipédia. Rien n'est hébergé ailleurs, aucun compte n'est nécessaire.
 
 ## Installation
 
-Il te faut **Python 3.9 ou plus récent** (gratuit) et une connexion Internet.
+Il te faut **Python 3.9 ou plus récent** (gratuit) et une connexion Internet. Pas d'ordinateur ? Sur Android, va directement à la section [Sans ordinateur](#sans-ordinateur-sur-un-téléphone-android).
 
 ### Windows
 
@@ -50,7 +50,7 @@ Pour découvrir l'application sans connexion, ou si NBA.com ne répond pas chez 
 
 ### Sur ton téléphone
 
-Par défaut, seul ton ordinateur peut ouvrir Parquet. Pour l'utiliser aussi sur ton téléphone :
+Par défaut, seul ton ordinateur peut ouvrir Parquet. Pour l'utiliser aussi sur ton téléphone, en gardant l'ordinateur allumé (sur Android, tu peux aussi t'en passer complètement : voir la section suivante) :
 
 1. **Sur l'ordinateur**, double-clique sur **`lancer-telephone.bat`** (Windows) ou **`lancer-telephone.command`** (Mac). La fenêtre noire affiche l'adresse à ouvrir sur le téléphone, du type `http://192.168.1.20:8765/`. Si Windows demande une autorisation du pare-feu, accepte pour les **réseaux privés** uniquement.
 2. **Sur le téléphone**, connecté au même Wi-Fi que l'ordinateur, ouvre cette adresse dans Chrome (Android) ou Safari (iPhone).
@@ -69,6 +69,42 @@ Pour avoir la vraie application et les notifications sur un téléphone Android,
 3. Touche *Relaunch* pour relancer Chrome, rouvre Parquet, puis menu de Chrome, *Installer l'application*.
 
 Le panneau des alertes (la cloche) rappelle ces étapes quand la connexion n'est pas sécurisée. Sur iPhone, ce réglage n'existe pas : il faudrait servir Parquet en HTTPS, par exemple avec [Tailscale](https://tailscale.com/kb/1153/enabling-https), ce qui sort du cadre de ce guide.
+
+## Sans ordinateur, sur un téléphone Android
+
+Parquet peut tourner entièrement sur un téléphone Android, grâce à **Termux**, une application gratuite qui permet d'y faire tourner des programmes comme sur un ordinateur. Rien n'est hébergé ailleurs : c'est ton téléphone qui va chercher les données sur NBA.com.
+
+### Installation (une seule fois, environ 5 minutes)
+
+1. Installe **F-Droid**, le magasin d'applications libres, depuis [f-droid.org](https://f-droid.org/). Dans F-Droid, installe **Termux** et **Termux:Widget**.
+   Ne prends pas Termux sur le Play Store : cette version n'y est plus mise à jour. Termux et Termux:Widget doivent venir du même endroit.
+2. Ouvre Termux, colle ces deux lignes (appui long, puis *Coller*) et valide avec Entrée :
+
+   ```
+   pkg install -y curl
+   curl -fsSL https://raw.githubusercontent.com/NoanHeinry/parquet-nba/main/installer-android.sh | bash
+   ```
+
+   L'installation télécharge Python et Parquet, puis affiche « Parquet est installé ». Si une question s'affiche au tout début, réponds `Y` puis Entrée.
+3. Ajoute le raccourci sur ton écran d'accueil : appui long sur un espace vide, *Widgets*, **Termux:Widget**, puis place-le. Il propose « Parquet » et « Arrêter Parquet ».
+
+### Au quotidien
+
+- **Lancer :** touche « Parquet » dans le widget, ou tape `parquet` dans Termux. Parquet démarre et s'ouvre dans Chrome. Si Parquet tourne déjà, il s'ouvre simplement.
+- **Pendant l'utilisation :** une notification de Termux reste affichée, c'est normal. Elle indique que Parquet tourne et empêche Android de le mettre en veille.
+- **Arrêter :** touche « Arrêter Parquet » dans le widget, tape `parquet stop`, ou touche *Exit* dans la notification de Termux. Pense à l'arrêter quand tu as fini, pour économiser la batterie.
+- **Installer comme une vraie application :** une fois Parquet ouvert dans Chrome, menu ⋮, puis *Installer l'application* (ou *Ajouter à l'écran d'accueil*). Comme tout se passe sur le téléphone, l'adresse `http://localhost:8765` est considérée comme sécurisée : l'application complète et les notifications fonctionnent, sans aucun réglage de Chrome. L'icône ne s'ouvre que si Parquet tourne : lance-le d'abord avec le widget.
+- **Mettre à jour :** tape `parquet maj` dans Termux.
+- **Autres commandes :** `parquet demo` (mode démonstration), `parquet diagnostic` (tester l'accès à NBA.com), `parquet aide`.
+
+### Si ça ne marche pas
+
+- **Le widget ne fait rien :** dans les paramètres d'Android, *Applications*, *Termux*, autorise *Afficher par-dessus d'autres applications*.
+- **Parquet s'arrête tout seul en arrière-plan :** dans les paramètres d'Android, *Applications*, *Termux*, *Batterie*, choisis *Non restreinte* (le nom varie selon les marques).
+- **« Le port 8765 est déjà utilisé par une autre application » :** lance Parquet sur un autre port avec `PARQUET_PORT=8780 parquet`. L'application s'ouvre alors à `http://localhost:8780`, avec des favoris et des réglages séparés.
+- **Hors Wi-Fi**, Parquet utilise tes données mobiles pour ce que tu consultes, comme n'importe quelle application de sport.
+
+Ce mode n'existe pas sur **iPhone** : iOS ne laisse pas un programme de ce type tourner en arrière-plan. Sur iPhone, il faut passer par l'ordinateur, comme décrit dans la section précédente.
 
 ## Si quelque chose ne s'affiche pas
 
