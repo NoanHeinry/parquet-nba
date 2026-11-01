@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # Installe Parquet sur un téléphone Android, dans l'application Termux, sans ordinateur.
 #
-# Dans Termux, colle ces deux lignes :
-#   pkg install -y curl
+# Dans Termux, colle ces deux lignes, l'une après l'autre (la première met tout Termux à jour :
+# mettre à jour un seul paquet, comme curl, peut casser les autres) :
+#   apt update && apt full-upgrade -y -o Dpkg::Options::=--force-confnew
 #   curl -fsSL https://raw.githubusercontent.com/NoanHeinry/parquet-nba/main/installer-android.sh | bash
 #
 # Le script peut être relancé sans risque : il met à jour ce qui existe déjà.

@@ -78,15 +78,21 @@ Parquet peut tourner entièrement sur un téléphone Android, grâce à **Termux
 
 1. Installe **F-Droid**, le magasin d'applications libres, depuis [f-droid.org](https://f-droid.org/). Dans F-Droid, installe **Termux** et **Termux:Widget**.
    Ne prends pas Termux sur le Play Store : cette version n'y est plus mise à jour. Termux et Termux:Widget doivent venir du même endroit.
-2. Ouvre Termux, colle ces deux lignes (appui long, puis *Coller*) et valide avec Entrée :
+2. Ouvre Termux. Colle cette première ligne (appui long, puis *Coller*), valide avec Entrée et attends qu'elle soit terminée (une à deux minutes) :
 
    ```
-   pkg install -y curl
+   apt update && apt full-upgrade -y -o Dpkg::Options::=--force-confnew
+   ```
+
+   Elle met tout Termux à jour. C'est indispensable : sur un Termux qui vient d'être installé, mettre à jour un seul outil peut casser les autres (erreur « CANNOT LINK EXECUTABLE »).
+3. Colle ensuite la seconde ligne et valide :
+
+   ```
    curl -fsSL https://raw.githubusercontent.com/NoanHeinry/parquet-nba/main/installer-android.sh | bash
    ```
 
-   L'installation télécharge Python et Parquet, puis affiche « Parquet est installé ». Si une question s'affiche au tout début, réponds `Y` puis Entrée.
-3. Ajoute le raccourci sur ton écran d'accueil : appui long sur un espace vide, *Widgets*, **Termux:Widget**, puis place-le. Il propose « Parquet » et « Arrêter Parquet ».
+   L'installation télécharge Python et Parquet, puis affiche « Parquet est installé ».
+4. Ajoute le raccourci sur ton écran d'accueil : appui long sur un espace vide, *Widgets*, **Termux:Widget**, puis place-le. Il propose « Parquet » et « Arrêter Parquet ».
 
 ### Au quotidien
 
@@ -99,6 +105,7 @@ Parquet peut tourner entièrement sur un téléphone Android, grâce à **Termux
 
 ### Si ça ne marche pas
 
+- **« CANNOT LINK EXECUTABLE "curl" : cannot locate symbol… » :** Termux n'est qu'à moitié à jour. Relance la première ligne de l'installation (`apt update && apt full-upgrade -y -o Dpkg::Options::=--force-confnew`), puis la seconde. Si `apt` affiche lui aussi une erreur, tape `termux-change-repo`, choisis un autre miroir, et recommence.
 - **Le widget ne fait rien :** dans les paramètres d'Android, *Applications*, *Termux*, autorise *Afficher par-dessus d'autres applications*.
 - **Parquet s'arrête tout seul en arrière-plan :** dans les paramètres d'Android, *Applications*, *Termux*, *Batterie*, choisis *Non restreinte* (le nom varie selon les marques).
 - **« Le port 8765 est déjà utilisé par une autre application » :** lance Parquet sur un autre port avec `PARQUET_PORT=8780 parquet`. L'application s'ouvre alors à `http://localhost:8780`, avec des favoris et des réglages séparés.
