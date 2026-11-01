@@ -7,8 +7,10 @@ on:
 jobs:
   unitaires:
     name: Tests unitaires (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    # Ubuntu 24.04 : la plus récente à fournir encore Python 3.9, la version minimale de Parquet.
+    runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.11", "3.13"]
     steps:
