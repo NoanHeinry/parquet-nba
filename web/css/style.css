@@ -3507,14 +3507,13 @@ html[data-spoiler="1"] .matchup-card:not(.is-revealed):hover .matchup-game-row .
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+/* Animations réduites : réglage « Animations » de Parquet (par défaut, celui du système). */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
-  }
 }
 
 /* Prise en charge des encoches et zones sécurisées sur mobile (iOS / Android) */
@@ -7401,22 +7400,21 @@ body.menu-open .section-index {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .stage *,
-  .menu-panel,
-  .menu-panel * {
-    animation: none !important;
-    transition: none !important;
-  }
+/* Animations réduites : réglage « Animations » de Parquet (par défaut, celui du système). */
+html[data-motion="reduce"] .stage *,
+html[data-motion="reduce"] .menu-panel,
+html[data-motion="reduce"] .menu-panel * {
+  animation: none !important;
+  transition: none !important;
+}
 
-  .name-layer,
-  .cut-layer {
-    transform: none;
-  }
+html[data-motion="reduce"] .name-layer,
+html[data-motion="reduce"] .cut-layer {
+  transform: none;
+}
 
-  .cut-layer {
-    transform: translateX(-50%);
-  }
+html[data-motion="reduce"] .cut-layer {
+  transform: translateX(-50%);
 }
 
 /* ------------------------------------------------ tablettes et téléphones */
@@ -8158,33 +8156,32 @@ main.page-in > :nth-child(n + 4) {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fx-swap,
-  main.page-in > *,
-  .bump,
-  .score.bump[data-delta]::after,
-  .game-tile:has(.bump),
-  .stage-hint i::after,
-  .reveal .page-title .w > span {
-    animation: none !important;
-  }
+/* Animations réduites : réglage « Animations » de Parquet (par défaut, celui du système). */
+html[data-motion="reduce"] .fx-swap,
+html[data-motion="reduce"] main.page-in > *,
+html[data-motion="reduce"] .bump,
+html[data-motion="reduce"] .score.bump[data-delta]::after,
+html[data-motion="reduce"] .game-tile:has(.bump),
+html[data-motion="reduce"] .stage-hint i::after,
+html[data-motion="reduce"] .reveal .page-title .w > span {
+  animation: none !important;
+}
 
-  .score.bump[data-delta]::after {
-    display: none;
-  }
+html[data-motion="reduce"] .score.bump[data-delta]::after {
+  display: none;
+}
 
-  .reveal {
-    opacity: 1;
-    transform: none;
-  }
+html[data-motion="reduce"] .reveal {
+  opacity: 1;
+  transform: none;
+}
 
-  .home-games .page-title,
-  .nn-big,
-  .nn-cut,
-  .ht-col,
-  .name-layer,
-  .cut-layer,
-  .stage-band {
-    translate: none !important;
-  }
+html[data-motion="reduce"] .home-games .page-title,
+html[data-motion="reduce"] .nn-big,
+html[data-motion="reduce"] .nn-cut,
+html[data-motion="reduce"] .ht-col,
+html[data-motion="reduce"] .name-layer,
+html[data-motion="reduce"] .cut-layer,
+html[data-motion="reduce"] .stage-band {
+  translate: none !important;
 }

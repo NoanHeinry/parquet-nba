@@ -50,6 +50,7 @@ Pour découvrir l'application sans connexion, ou si NBA.com ne répond pas chez 
 - Quand des matchs sont en cours, le bouton « Mode multi-matchs » de la page d'accueil les affiche côte à côte.
 - Dans l'onglet *Calendrier* d'une équipe, passe d'un mois à l'autre avec les flèches ou les mois de la saison ; clique sur un match pour l'ouvrir. Les boutons « À venir » et « Résultats » affichent la même chose sous forme de liste. « Ajouter à mon agenda » télécharge un fichier `.ics` à importer dans Google Agenda, Apple Calendrier ou Outlook. Les horaires s'affichent à l'heure de ton agenda ; les scores n'y figurent pas.
 - Le bouton en forme de lune ou de soleil change le thème.
+- Le bouton en forme de ballon lancé active ou coupe les animations. Par défaut, Parquet suit le réglage de ton système : si Windows a les « Effets d'animation » désactivés (Paramètres > Accessibilité > Effets visuels), les sites reçoivent la consigne de limiter les animations et Parquet n'en montre aucune. Un clic sur ce bouton les remet, et ce choix est retenu.
 
 ### Les vidéos des matchs
 

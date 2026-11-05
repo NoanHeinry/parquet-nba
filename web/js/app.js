@@ -63,6 +63,53 @@ function initTheme() {
   sync();
 }
 
+// Animations : par défaut, Parquet suit le réglage du système (Windows, macOS, Android…).
+// Le bouton permet de les forcer ou de les couper, quel que soit ce réglage.
+function initMotion() {
+  const btn = document.getElementById("motion-toggle");
+  if (!btn) return;
+  const root = document.documentElement;
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const pref = () => {
+    try {
+      return localStorage.getItem("parquet-motion") || "auto";
+    } catch {
+      return "auto";
+    }
+  };
+  const apply = () => {
+    const p = pref();
+    root.dataset.motion = p === "off" || (p !== "on" && media.matches) ? "reduce" : "full";
+  };
+  const ON =
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="15" cy="12" r="6"/><path d="M15 6v12M9.6 9.4c1.6 1.4 1.6 3.8 0 5.2M2 9h4M1 12h4M2 15h4"/></svg>';
+  const OFF =
+    '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 6v12M6.6 9.4c1.6 1.4 1.6 3.8 0 5.2M3 3l18 18"/></svg>';
+  const sync = () => {
+    const on = root.dataset.motion !== "reduce";
+    btn.setAttribute("aria-label", on ? "Réduire les animations" : "Activer les animations");
+    btn.title = on ? "Animations activées (cliquer pour les réduire)" : "Animations réduites (cliquer pour les activer)";
+    btn.innerHTML = on ? ON : OFF;
+  };
+  btn.addEventListener("click", () => {
+    const next = root.dataset.motion === "reduce" ? "on" : "off";
+    try {
+      localStorage.setItem("parquet-motion", next);
+    } catch {
+      /* préférence non mémorisée */
+    }
+    apply();
+    sync();
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+  media.addEventListener("change", () => {
+    apply();
+    sync();
+  });
+  apply();
+  sync();
+}
+
 function initSpoilerMode() {
   const btn = document.getElementById("spoiler-toggle");
   if (!btn) return;
@@ -160,6 +207,7 @@ route("/etat", status.render, null);
 
 initTheme();
 initSpoilerMode();
+initMotion();
 initPwa();
 initNotificationsUI();
 const outlet = document.getElementById("main");

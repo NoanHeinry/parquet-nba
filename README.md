@@ -41,7 +41,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.
 - Fonctionne aussi **sans ordinateur sur Android** : le serveur tourne sur le téléphone dans Termux, installé en une commande, lancé depuis un widget de l'écran d'accueil.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
-- Habillage « Arena » inspiré des retransmissions sportives : grands noms en Anton, titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon. Pages, onglets et chargements apparaissent en fondu ; toutes les animations sont coupées si le système demande de les limiter.
+- Habillage « Arena » inspiré des retransmissions sportives : grands noms en Anton, titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon. Pages, onglets et chargements apparaissent en fondu. Par défaut, les animations suivent le réglage du système (coupées si Windows, macOS ou Android demandent de les limiter) ; un bouton les active ou les coupe quel que soit ce réglage.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
 ## Captures

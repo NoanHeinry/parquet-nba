@@ -1,12 +1,15 @@
 // Défilement de l'accueil : défilement doux à la molette, sommaire numéroté sur le côté
 // (01. 02. 03.), apparition des sections et effets liés à la position dans la page.
 //
-// Tout s'arrête avec la page (ctx.onCleanup). Si l'utilisateur a demandé à limiter les
-// animations dans son système, le défilement reste celui du navigateur et rien n'est animé.
+// Tout s'arrête avec la page (ctx.onCleanup). Quand les animations sont réduites (bouton
+// « Animations » de Parquet, ou réglage du système par défaut), le défilement reste celui du
+// navigateur et rien n'est animé.
 
 import { h } from "./dom.js";
 
-export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Animations réduites : réglage « Animations » de Parquet, ou celui du système par défaut
+// (posé sur <html data-motion> au chargement, voir index.html et app.js).
+export const reducedMotion = () => document.documentElement.dataset.motion === "reduce";
 
 // Défilement doux à la molette (souris ou pavé tactile). Le défilement reste celui de la page :
 // on anime seulement la position, ce qui garde les éléments collants, l'ancre et le clavier.

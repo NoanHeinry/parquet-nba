@@ -118,7 +118,7 @@ function close(restoreFocus = true) {
   const done = () => {
     if (!isOpen) panel.hidden = true;
   };
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) done();
+  if (document.documentElement.dataset.motion === "reduce") done();
   else setTimeout(done, 420);
   if (restoreFocus && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }

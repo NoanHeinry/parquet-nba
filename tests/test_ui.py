@@ -134,6 +134,23 @@ class InterfaceTests(unittest.TestCase):
         self.assertTrue(self.page.locator(".topbar").is_visible())
         self.assertEqual(self.page.locator(".menu-fab, .section-index").count(), 0)
 
+    def test_motion_toggle_overrides_system_setting(self):
+        # Windows peut demander aux sites de limiter les animations : le bouton passe outre.
+        self.page.emulate_media(reduced_motion="reduce")
+        try:
+            self.open("#/equipes")
+            root = "document.documentElement.dataset.motion"
+            self.assertEqual(self.page.evaluate(root), "reduce")
+            self.page.click("#motion-toggle")
+            self.assertEqual(self.page.evaluate(root), "full")
+            self.open("#/equipes")  # le choix est retenu au rechargement
+            self.assertEqual(self.page.evaluate(root), "full")
+            self.page.click("#motion-toggle")
+            self.assertEqual(self.page.evaluate(root), "reduce")
+        finally:
+            self.page.evaluate("localStorage.removeItem('parquet-motion')")
+            self.page.emulate_media(reduced_motion="no-preference")
+
     def test_playoff_series_are_collapsed(self):
         self.open("#/playoffs")
         lists = self.page.locator(".bracket-tree .matchup-games")
