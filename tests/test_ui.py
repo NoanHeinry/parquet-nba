@@ -147,6 +147,48 @@ class InterfaceTests(unittest.TestCase):
         self.page.click('.segmented button:has-text("À venir")')
         self.page.wait_for_selector(".sched-row")
 
+    def test_game_videos_events_and_keys(self):
+        self.open("#/match/0012600050")
+        self.page.wait_for_selector(".events")
+        self.assertEqual(self.page.locator(".events .event").count(), 3)
+        self.assertGreaterEqual(self.page.locator(".key-card").count(), 2)
+        self.page.click('[role="tab"][data-tab="videos"]')
+        self.page.wait_for_selector(".moments")
+        self.assertEqual(self.page.locator(".moment").count(), 5)
+        self.assertTrue(self.page.locator(".nba-recap").is_visible())
+        href = self.page.locator("a.btn", has_text="Chercher sur YouTube").get_attribute("href")
+        self.assertTrue(href.startswith("https://www.youtube.com/results?search_query="))
+
+    def test_pregame_injuries(self):
+        self.open("#/match/0012600053")
+        self.page.wait_for_selector(".inj-team")
+        self.assertGreater(self.page.locator(".inj-status").count(), 0)
+
+    def test_infos_injuries_and_transactions(self):
+        self.open("#/infos")
+        self.page.wait_for_selector(".inj-game")
+        self.page.click('.segmented button:has-text("Transactions")')
+        self.page.wait_for_selector(".move-row")
+        self.assertIn("#/infos/mouvements", self.page.url)
+        self.page.click('.chips button:has-text("Échanges")')
+        self.page.wait_for_selector(".move-type.trade")
+        self.assertEqual(self.page.locator(".move-type").count(), self.page.locator(".move-type.trade").count())
+
+    def test_team_tabs_do_not_mix(self):
+        self.page.goto(self.base + "#/equipe/1610612741")
+        # Changement d'onglet immédiat, avant la fin du chargement de l'effectif.
+        self.page.click('[role="tab"][data-tab="news"]')
+        self.page.wait_for_selector(".move-row")
+        self.page.wait_for_load_state("networkidle")
+        self.assertEqual(self.page.locator("main .stat-table").count(), 0, "l'effectif ne doit pas s'afficher dans l'onglet Infirmerie")
+
+    def test_youtube_key_form(self):
+        self.open("#/etat")
+        self.page.wait_for_selector(".key-form")
+        self.page.fill(".key-form input", "pas une clé")
+        self.page.click(".key-form button")
+        self.page.wait_for_function("document.querySelector('.form-msg').textContent.includes('format')")
+
     def test_multi_game_view(self):
         self.open("#/multi")
         self.page.wait_for_selector(".multi-panel")
@@ -154,7 +196,7 @@ class InterfaceTests(unittest.TestCase):
 
     def test_no_horizontal_scroll_on_phone(self):
         self.page.set_viewport_size({"width": 390, "height": 844})
-        for hash_ in ("#/", "#/playoffs", "#/multi", f"#/joueur/{STAR}", "#/match/0012600050", "#/classement"):
+        for hash_ in ("#/", "#/playoffs", "#/multi", "#/infos", "#/infos/mouvements", f"#/joueur/{STAR}", "#/match/0012600050", "#/classement"):
             self.open(hash_)
             width = self.page.evaluate("document.documentElement.scrollWidth")
             self.assertLessEqual(width, 390, f"la page {hash_} déborde sur téléphone")

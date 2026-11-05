@@ -60,6 +60,12 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/playoffs?season=AAAA-AA` | Arbre des playoffs, séries et matchs (bascule sur la saison précédente avant les playoffs) | `commonplayoffseries`, `leaguegamefinder` |
 | `GET /api/recap?date=AAAA-MM-JJ` | Résumé d'une journée : Game Score, meilleurs par catégorie, triples-doubles, match le plus serré, plus large victoire, prolongations | box scores des matchs terminés |
 | `GET /api/team/{id}/calendar.ics` | Calendrier de la saison au format iCalendar (fichier à télécharger) | CDN calendrier |
+| `GET /api/game/{id}/extras` | Résumé vidéo NBA.com, moments décisifs (extraits vidéo), clés du match, article, faits marquants | page du match sur www.nba.com (données `__NEXT_DATA__`) + fil des actions |
+| `GET /api/game/{id}/video` | Résumé officiel du match sur YouTube (identifiant, intégrable ou non) et lien de recherche | flux de la chaîne NBA, puis API YouTube si une clé est réglée |
+| `GET /api/videos/night?date=AAAA-MM-JJ` | « Nightly Recap » et « Top 10 Plays of the Night » de la journée | idem |
+| `GET /api/injuries?team=&game=` | Dernier rapport officiel des blessures, lu et traduit | PDF publié par la NBA toutes les 15 minutes |
+| `GET /api/transactions?team=&player=&type=&days=` | Signatures, échanges, joueurs libérés, contrats | liste officielle des mouvements (`NBA_Player_Movement.json`) |
+| `GET /api/settings` · `POST /api/settings/youtube` | État de la clé YouTube (jamais la clé elle-même) ; enregistrement après vérification | `data/settings.json` |
 | `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
 
@@ -81,6 +87,11 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | Résumé d'une journée | recalculé dès qu'un match se termine ; 6 h une fois tous les matchs terminés (mémoire seule) |
 | Histoire, palmarès, index des joueurs | 24 h |
 | Textes Wikipédia | 7 jours |
+| Page d'un match sur NBA.com | 5 min pendant le match, 10 min ensuite, 7 jours une fois les vidéos publiées |
+| Vidéo YouTube d'un match | 60 jours une fois trouvée, nouvel essai toutes les 20 min sinon |
+| Flux de la chaîne YouTube de la NBA | 15 min (mémoire seule) |
+| Rapport des blessures | 15 min |
+| Transactions | 1 h |
 
 Le cache (`parquet/cache.py`) garde les entrées récentes en mémoire et toutes les entrées dans `data/cache.sqlite3`. Un verrou par clé évite de lancer deux fois la même requête quand plusieurs onglets demandent la même donnée. Quand la source échoue, la dernière version connue est renvoyée avec `"stale": true`.
 
@@ -90,6 +101,15 @@ Le cache (`parquet/cache.py`) garde les entrées récentes en mémoire et toutes
 - **Cadence** : au plus deux requêtes simultanées vers `stats.nba.com`, espacées d'au moins 350 ms. Les paramètres sont envoyés triés, l'API y étant sensible.
 - **Bascule** : si le scoreboard du CDN est refusé, le CDN est mis de côté pendant 10 minutes et toutes les données de match passent par `stats.nba.com`.
 - **Ressources pas encore publiées** : un 403 du CDN sur le box score d'un match à venir n'est pas une erreur ; la page affiche l'avant-match et se met à jour seule au coup d'envoi.
+
+## Vidéos, blessures et transactions (`parquet/extras.py`)
+
+- **Page d'un match sur www.nba.com.** Elle contient, dans le bloc `__NEXT_DATA__` intégré à la page, le résumé vidéo officiel (lien vers NBA.com : la vidéo elle-même demande un jeton, elle n'est pas intégrable), les « moments décisifs » avec des extraits MP4 lisibles directement depuis `videos.nba.com`, et le rapport d'analyse (meilleur défenseur, difficulté des tirs, hommes du match). Seuls les champs utiles sont extraits, et seuls les liens https vers des domaines de la NBA sont conservés.
+- **Faits marquants.** Ils sont tirés du fil des actions déjà chargé : fautes techniques (sauf les trois secondes défensives), flagrantes 1 et 2, expulsions, challenges des entraîneurs.
+- **YouTube.** Le flux public de la chaîne de la NBA (15 dernières vidéos) suffit pour les matchs de la nuit. Pour les autres, l'API YouTube est interrogée avec la clé de l'utilisateur (recherche limitée à la chaîne de la NBA et aux jours qui suivent le match). Un titre n'est retenu que s'il correspond exactement (« HEAT at CLIPPERS | FULL GAME HIGHLIGHTS | November 4, 2026 »). Le point oEmbed indique si la vidéo peut être intégrée. Dans la page, le lecteur ne se charge qu'au clic, depuis `youtube-nocookie.com`.
+- **Rapport des blessures.** La NBA publie un PDF toutes les 15 minutes. La page officielle de la saison donne les rapports du jour ; à défaut, Parquet remonte le temps par tranches de 15 minutes. Le PDF est lu avec `pypdf` (pur Python, donc aussi sur Android) : chaque mot est récupéré avec sa position, les colonnes sont repérées grâce à l'en-tête du tableau, et les motifs écrits sur plusieurs lignes sont rattachés à la ligne de joueur la plus proche. Date, match et équipe ne sont écrits qu'une fois par bloc et valent pour les lignes suivantes, y compris d'une page à l'autre. Statuts et motifs sont traduits par dictionnaire (partie du corps, côté accordé, type de blessure) ; un motif contenant un mot inconnu reste en anglais plutôt que d'être mal traduit. Les joueurs sont reliés à leur fiche par leur nom, les matchs au calendrier.
+- **Transactions.** Le fichier officiel liste tous les mouvements depuis 2015. Chaque description est réécrite en français quand sa forme est reconnue (signature et type de contrat, joueur libéré, récupéré via les waivers, contrat converti, échange avec choix de draft), sinon le texte original est affiché.
+- **Clé YouTube.** Elle est stockée dans `data/settings.json` (droits limités au propriétaire), ou fournie par la variable `PARQUET_YOUTUBE_KEY`. L'API ne renvoie jamais la clé, seulement ses quatre derniers caractères. L'enregistrement (`POST`) vérifie la clé auprès de YouTube et refuse toute requête dont l'en-tête `Origin` ne correspond pas à Parquet, pour qu'aucun autre site ouvert dans le navigateur ne puisse modifier les réglages.
 
 ## Sur Android, sans ordinateur
 
@@ -101,7 +121,7 @@ Sur le téléphone, l'adresse est `http://localhost` : les navigateurs la consid
 
 ## Mode démonstration
 
-`python run.py --demo` remplace la fonction d'accès réseau de `net.py` par `parquet/demo.py`, qui répond à la place de NBA.com et de Wikipédia avec des données fictives au même format : scores en direct, box scores, fil des actions, calendrier, carrières, palmarès, classements, leaders, playoffs, biographies. Le générateur pseudo-aléatoire a une graine fixe : les données sont identiques à chaque lancement, ce qui permet les tests d'interface et la génération des captures. Les identifiants des joueurs fictifs ne correspondent à aucun vrai joueur, pour ne jamais associer la photo d'un joueur réel à des données inventées.
+`python run.py --demo` remplace la fonction d'accès réseau de `net.py` par `parquet/demo.py`, qui répond à la place de NBA.com et de Wikipédia avec des données fictives au même format : scores en direct, box scores, fil des actions, calendrier, carrières, palmarès, classements, leaders, playoffs, biographies, page d'un match (sans vraie vidéo), rapport des blessures, transactions. Le générateur pseudo-aléatoire a une graine fixe : les données sont identiques à chaque lancement, ce qui permet les tests d'interface et la génération des captures. Les identifiants des joueurs fictifs ne correspondent à aucun vrai joueur, pour ne jamais associer la photo d'un joueur réel à des données inventées.
 
 ## Modèle de données normalisé
 
@@ -143,7 +163,10 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/spoiler.js` | Mode anti-spoiler : état global et mémoire de session des scores révélés |
 | `js/notifications.js` | Alertes de match (coup d'envoi, fin serrée selon la définition NBA, résultat), mémoire des alertes envoyées, détection des connexions non sécurisées |
 | `js/icons.js` | Icônes SVG |
-| `js/views/recap.js` | Bloc « Cette nuit en NBA » de la page d'accueil |
+| `js/views/recap.js` | Bloc « Cette nuit en NBA » de la page d'accueil, avec les vidéos de la nuit |
+| `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
+| `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |
+| `js/news.js` | Affichage partagé des blessures (statuts colorés) et des transactions |
 | `js/views/multi.js` | Mode multi-matchs |
 | `js/views/*.js` | Une vue par page |
 | `sw.js` | Service worker : réseau d'abord, cache en secours hors ligne, cache d'API limité à 150 réponses, version par numéro de version |

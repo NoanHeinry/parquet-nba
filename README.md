@@ -2,7 +2,7 @@
 
 **Un tableau de bord NBA en direct doublé d'une encyclopédie, en français, qui tourne sur ton ordinateur.**
 
-Parquet affiche les scores des matchs en temps réel, le détail de chaque rencontre (box score, scénario du match, fil des actions, carte des tirs) et une fiche complète pour les 30 franchises et les plus de 5 000 joueurs passés par la NBA depuis 1946. Toutes les données viennent des sources publiques de NBA.com et de Wikipédia, sans compte ni clé d'API.
+Parquet affiche les scores des matchs en temps réel, le détail de chaque rencontre (box score, scénario du match, fil des actions, carte des tirs) et une fiche complète pour les 30 franchises et les plus de 5 000 joueurs passés par la NBA depuis 1946. Toutes les données viennent des sources publiques de NBA.com, de Wikipédia et de la chaîne YouTube officielle de la NBA, sans compte. Une clé YouTube gratuite, facultative, permet de retrouver le résumé vidéo de n'importe quel match.
 
 Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur des données fictives.
 
@@ -18,7 +18,10 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Horaires convertis à l'heure de Paris, navigation de jour en jour jusque dans les saisons passées.
 - Page de match : score par quart-temps, scénario du match (courbe de l'écart au score, plus gros écarts, changements de leader), duel statistique des deux équipes, meilleurs joueurs, box score complet, fil des actions filtrable et carte des tirs.
 - Mode multi-matchs : plusieurs rencontres en direct côte à côte, en plein écran, avec les dernières actions et un signal des fins de match serrées.
-- Avant le coup d'envoi : forme récente des deux équipes. La page bascule seule en mode direct au début du match.
+- Vidéos de chaque match : le résumé officiel de la NBA sur YouTube, intégré dans la page (trouvé automatiquement), le résumé de NBA.com et les moments décisifs du match en extraits vidéo de quelques secondes.
+- Faits marquants (fautes techniques et flagrantes, expulsions, challenges des entraîneurs) et clés du match tirées des données de suivi de la NBA : meilleur défenseur, tirs les plus difficiles réussis, hommes du match.
+- Avant le coup d'envoi : joueurs absents ou incertains d'après le rapport officiel des blessures, et forme récente des deux équipes. La page bascule seule en mode direct au début du match.
+- Au réveil, la vidéo « résumé de la nuit » et le top 10 publiés par la NBA, quand ils sont disponibles.
 
 **Encyclopédie et analyse**
 - Équipes : effectif, staff, calendrier mois par mois (V vert ou D rouge et score pour les matchs joués, horaire pour les prochains), résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
@@ -27,6 +30,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.
 - Tableau des playoffs : arbre complet de la post-saison NBA (1er tour, demi-finales, finales de conférence, Finales NBA), statut et avancement des séries (4-1, 4-2...), détail match par match avec scores, lien vers les box scores et sélecteur de saisons historiques.
 - Classement par conférence et leaders statistiques de la saison.
+- Page « Infos » : le rapport officiel des blessures de la NBA (publié toutes les 15 minutes en PDF, lu et traduit en français : statut et blessure de chaque joueur, match par match) et toutes les transactions de la ligue (signatures, échanges, joueurs libérés, contrats), avec des rappels sur les pages des équipes et des joueurs.
 
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
@@ -51,6 +55,10 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 | ![Face-à-face statistique de deux joueurs](docs/captures/08-comparateur.png) | ![Scores masqués sur la page des matchs](docs/captures/09-anti-spoiler.png) |
 | **Fiche d'équipe, thème clair** | **Sur téléphone** |
 | ![Fiche d'une équipe en thème clair](docs/captures/10-equipe-theme-clair.png) | <img src="docs/captures/11-mobile.png" alt="Page des matchs sur téléphone" width="260"> |
+| **Vidéos d'un match** | **Faits marquants et clés du match** |
+| ![Résumé officiel et moments décisifs d'un match](docs/captures/12-videos-du-match.png) | ![Fautes techniques, challenges et clés du match](docs/captures/13-cles-du-match.png) |
+| **Rapport des blessures** | **Transactions** |
+| ![Rapport officiel des blessures traduit en français](docs/captures/14-blessures.png) | ![Signatures, échanges et joueurs libérés](docs/captures/15-transactions.png) |
 
 Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 
@@ -134,9 +142,9 @@ pip install playwright && python -m playwright install chromium
 python -m unittest tests.test_ui -v                 # tests d'interface dans Chromium
 ```
 
-Les tests unitaires couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers, l'arbre des playoffs et les têtes de série issues du play-in, le résumé d'une journée, les stats avancées, l'export iCalendar, le cache (y compris le repli sur des données périmées), la cohérence du mode démo, et le lancement sur Android dans un Termux simulé (ouverture du navigateur du téléphone, réutilisation d'une instance déjà lancée, arrêt propre, même port après un redémarrage).
+Les tests unitaires couvrent la mise en forme des données (à partir d'échantillons au format réel de NBA.com), la détection des paniers, l'arbre des playoffs et les têtes de série issues du play-in, le résumé d'une journée, les stats avancées, l'export iCalendar, le cache (y compris le repli sur des données périmées), la cohérence du mode démo, la lecture du rapport des blessures (à partir de la mise en page d'un vrai rapport, noms anonymisés) et sa traduction, la page d'un match sur NBA.com (dont le refus des liens hors NBA), la recherche des vidéos YouTube, les transactions, la protection du réglage de la clé YouTube, et le lancement sur Android dans un Termux simulé (ouverture du navigateur du téléphone, réutilisation d'une instance déjà lancée, arrêt propre, même port après un redémarrage).
 
-Les tests d'interface lancent le serveur en mode démo et pilotent un vrai navigateur : affichage des matchs et du résumé, onglets d'un match, mode anti-spoiler (masquage et mémoire des révélations), arbre des playoffs replié, stats avancées, comparateur (chaque fiche chargée une seule fois), calendrier mensuel et export du calendrier, multi-matchs et absence de défilement horizontal sur téléphone.
+Les tests d'interface lancent le serveur en mode démo et pilotent un vrai navigateur : affichage des matchs et du résumé, onglets d'un match, mode anti-spoiler (masquage et mémoire des révélations), arbre des playoffs replié, stats avancées, comparateur (chaque fiche chargée une seule fois), calendrier mensuel et export du calendrier, vidéos et clés du match, blessures avant le match, pages Infos, onglets d'équipe qui ne se mélangent pas, réglage de la clé YouTube, multi-matchs et absence de défilement horizontal sur téléphone.
 
 GitHub Actions lance les tests unitaires sur Python 3.9, 3.11 et 3.13, et les tests d'interface dans Chromium.
 
@@ -153,6 +161,8 @@ parquet-nba/
 │   ├── net.py              accès réseau : en-têtes, cadence, gestion des erreurs
 │   ├── cache.py            cache mémoire + SQLite avec repli sur données périmées
 │   ├── wiki.py             biographies via Wikidata et Wikipédia
+│   ├── extras.py           vidéos et clés d'un match, YouTube, rapport des blessures, transactions
+│   ├── settings.py         réglages locaux (clé YouTube) dans data/settings.json
 │   ├── demo.py             données de démonstration (mode --demo, tests, captures)
 │   └── teams_meta.py       les 30 franchises (couleurs, conférences, articles)
 ├── web/                    interface

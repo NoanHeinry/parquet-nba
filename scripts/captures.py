@@ -115,6 +115,24 @@ def main() -> None:
 
         phone = context(390, 844, scale=2).new_page()
         shot(phone, "11-mobile.png", "#/")
+
+        def videos_tab(p):
+            p.click('[role="tab"][data-tab="videos"]')
+            p.wait_for_selector(".moments")
+            top = p.evaluate("document.querySelector('.nba-recap').closest('.section').getBoundingClientRect().top + window.scrollY")
+            p.evaluate(f"window.scrollTo(0, {top} - 80)")
+
+        def keys(p):
+            p.click('[role="tab"][data-tab="resume"]')
+            p.wait_for_selector(".events")
+            top = p.evaluate("document.querySelector('.events').closest('.section').getBoundingClientRect().top + window.scrollY")
+            p.evaluate(f"window.scrollTo(0, {top} - 80)")
+
+        page = context().new_page()
+        shot(page, "12-videos-du-match.png", "#/match/0012600050", before=videos_tab)
+        shot(page, "13-cles-du-match.png", "#/match/0012600050", before=keys)
+        shot(page, "14-blessures.png", "#/infos", before=lambda p: p.wait_for_selector(".inj-game"))
+        shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()
     tmp.cleanup()

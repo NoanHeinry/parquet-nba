@@ -2,10 +2,11 @@
 
 Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 
-- **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, et au réveil le résumé « Cette nuit en NBA ». Pour chaque match : score par quart-temps, scénario du match (l'écart au score minute par minute), duel des équipes, box score complet, fil des actions et carte des tirs. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
+- **Matchs** : les scores de la journée qui se mettent à jour tout seuls pendant les matchs, et au réveil le résumé « Cette nuit en NBA ». Pour chaque match : score par quart-temps, scénario du match (l'écart au score minute par minute), faits marquants (fautes techniques, expulsions, challenges), clés du match, duel des équipes, box score complet, fil des actions, carte des tirs, et un onglet **Vidéos** (résumé officiel sur YouTube, résumé NBA.com, moments décisifs en vidéo). Avant le match : les joueurs absents ou incertains. Les horaires sont à l'heure de Paris, et tu peux remonter dans le temps jour par jour.
 - **Multi-matchs** : plusieurs matchs en direct côte à côte, en plein écran si tu veux, pour les grosses soirées.
 - **Équipes** : les 30 franchises avec leur effectif, leur staff, leur calendrier présenté mois par mois (un V vert ou un D rouge avec le score pour chaque match joué, l'horaire pour les prochains, exportable dans ton agenda), leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
 - **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
+- **Infos** : le rapport officiel des blessures de la NBA, traduit en français, et toutes les transactions (signatures, échanges, joueurs libérés).
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
 
@@ -47,6 +48,22 @@ Pour découvrir l'application sans connexion, ou si NBA.com ne répond pas chez 
 - Quand des matchs sont en cours, le bouton « Mode multi-matchs » de la page d'accueil les affiche côte à côte.
 - Dans l'onglet *Calendrier* d'une équipe, passe d'un mois à l'autre avec les flèches ou les mois de la saison ; clique sur un match pour l'ouvrir. Les boutons « À venir » et « Résultats » affichent la même chose sous forme de liste. « Ajouter à mon agenda » télécharge un fichier `.ics` à importer dans Google Agenda, Apple Calendrier ou Outlook. Les horaires s'affichent à l'heure de ton agenda ; les scores n'y figurent pas.
 - Le bouton en forme de lune ou de soleil change le thème.
+
+### Les vidéos des matchs
+
+Dans l'onglet *Vidéos* d'un match terminé :
+
+- **Le résumé vidéo** officiel de la NBA se lit directement dans la page. Parquet le trouve tout seul pour les matchs des dernières heures. Pour retrouver celui de n'importe quel match, il faut une clé gratuite de l'API YouTube : ouvre **État des sources** (en bas de chaque page), section *Résumés vidéo YouTube*, et suis les étapes (5 minutes avec un compte Google, sans carte bancaire). La clé reste sur ton appareil.
+- **Le résumé NBA.com** s'ouvre sur le site de la NBA (il ne peut pas être intégré).
+- **Les moments décisifs** : les actions qui ont fait basculer le match, en extraits de quelques secondes. Les titres sont en anglais, tels que les écrit la NBA.
+
+La NBA publie le résumé YouTube en général une à deux heures après la fin du match. En mode anti-spoiler, l'onglet reste masqué tant que le match n'est pas révélé.
+
+### Blessures et transactions
+
+La page **Infos** affiche le dernier rapport officiel des blessures, publié par la NBA toutes les 15 minutes : pour chaque match à venir, les joueurs forfait, peu probables, incertains ou probables, avec leur blessure en français. Le filtre *Mes équipes favorites* ne garde que tes équipes. L'onglet *Transactions* liste les signatures, échanges et joueurs libérés des quatre derniers mois.
+
+Ces informations apparaissent aussi sur la page d'un match avant le coup d'envoi, dans l'onglet *Infirmerie et mouvements* d'une équipe, et sur la fiche d'un joueur blessé.
 
 ### Sur ton téléphone
 
@@ -133,6 +150,10 @@ Tu peux aussi tester les sources sans ouvrir l'application, depuis un terminal o
 | Effectifs, fiches joueurs, carrières, palmarès, classements, histoire des franchises | API de statistiques de NBA.com (`stats.nba.com`) |
 | Logos et photos | CDN de NBA.com, chargés directement par ton navigateur |
 | Biographies et histoires des franchises | Wikipédia en français (texte sous licence CC BY-SA), article retrouvé via Wikidata |
+| Résumé NBA.com, moments décisifs, clés du match | Page du match sur `www.nba.com` ; les vidéos sont lues directement depuis NBA.com |
+| Résumé vidéo du match, vidéos de la nuit | Chaîne YouTube officielle de la NBA, lues dans le lecteur YouTube |
+| Blessures | Rapport officiel de la NBA (PDF, `official.nba.com`) |
+| Transactions | Liste officielle des mouvements de joueurs de la NBA |
 
 Ces sources ne sont pas des API officiellement documentées : NBA.com peut les modifier sans prévenir. Si une partie cesse de fonctionner un jour, c'est le plus souvent qu'un format a changé.
 
