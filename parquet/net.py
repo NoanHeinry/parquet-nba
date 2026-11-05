@@ -56,6 +56,31 @@ NBA_API_HEADERS = {
     "Sec-Fetch-Dest": "empty",
 }
 
+# Pages web de nba.com et d'official.nba.com, comme les charge un navigateur.
+PAGE_HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate",
+    "Sec-Ch-Ua": f'"Chromium";v="{CHROME}", "Google Chrome";v="{CHROME}", "Not:A-Brand";v="99"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Upgrade-Insecure-Requests": "1",
+    "Connection": "keep-alive",
+}
+
+# Fichiers (PDF du rapport des blessures) et services tiers (YouTube).
+FILE_HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate",
+    "Referer": "https://official.nba.com/",
+    "Connection": "keep-alive",
+}
+
 WIKI_HEADERS = {
     "User-Agent": "Parquet/1.0 (tableau de bord NBA personnel; python-requests)",
     "Accept": "application/json",
@@ -109,7 +134,12 @@ def _space_stats_calls() -> None:
         _stats_last_start[0] = time.monotonic()
 
 
-def _get(url: str, params: dict | None, headers: dict, timeout: tuple[float, float], source: str) -> Any:
+# Sources pour lesquelles 403 et 404 veulent dire « pas (encore) publié » plutôt qu'une panne.
+NOT_YET_SOURCES = ("cdn.nba.com", "rapport des blessures")
+
+
+def _get(url: str, params: dict | None, headers: dict, timeout: tuple[float, float], source: str, kind: str = "json") -> Any:
+    """Requête GET. kind : "json" (par défaut), "text" ou "bytes"."""
     try:
         response = _session().get(url, params=params, headers=headers, timeout=timeout)
     except requests.exceptions.Timeout as exc:
@@ -117,12 +147,18 @@ def _get(url: str, params: dict | None, headers: dict, timeout: tuple[float, flo
     except requests.exceptions.RequestException as exc:
         raise SourceError(f"{source} est injoignable ({exc.__class__.__name__})", source=source) from exc
 
-    if response.status_code in (403, 404) and source == "cdn.nba.com":
+    if response.status_code in (403, 404) and source in NOT_YET_SOURCES:
         # Sur le CDN, 403 signifie le plus souvent « fichier pas encore publié »
         # (box score d'un match qui n'a pas commencé).
         raise NotAvailable(f"{source} : ressource pas encore disponible", status=response.status_code, source=source)
     if response.status_code != 200:
         raise SourceError(f"{source} a répondu {response.status_code}", status=response.status_code, source=source)
+    if kind == "bytes":
+        return response.content
+    if kind == "text":
+        if not response.encoding or response.encoding.lower() == "iso-8859-1":
+            response.encoding = "utf-8"
+        return response.text
     try:
         return response.json()
     except ValueError as exc:
@@ -158,6 +194,34 @@ def stats_json(endpoint: str, params: dict) -> Any:
                     break
     assert last_error is not None
     raise last_error
+
+
+def nba_page(url: str) -> str:
+    """Page HTML de www.nba.com ou d'official.nba.com."""
+    return _get(url, None, PAGE_HEADERS, (6, 20), "www.nba.com", kind="text")
+
+
+def nba_file_json(url: str) -> Any:
+    """Fichier JSON servi par stats.nba.com hors API (liste des transactions)."""
+    try:
+        return _get(url, None, SITE_HEADERS, (6, 25), "stats.nba.com")
+    except SourceError:
+        return _get(url, None, NBA_API_HEADERS, (6, 25), "stats.nba.com")
+
+
+def injury_pdf(url: str) -> bytes:
+    """Un rapport officiel des blessures (PDF). Lève NotAvailable s'il n'est pas publié."""
+    return _get(url, None, FILE_HEADERS, (6, 20), "rapport des blessures", kind="bytes")
+
+
+def youtube_feed(url: str) -> str:
+    """Flux public (Atom) des dernières vidéos d'une chaîne YouTube."""
+    return _get(url, None, {"User-Agent": USER_AGENT, "Accept": "application/atom+xml,application/xml"}, (6, 12), "YouTube", kind="text")
+
+
+def youtube_json(url: str, params: dict | None = None) -> Any:
+    """API de données YouTube (avec la clé de l'utilisateur) ou point oEmbed."""
+    return _get(url, params, {"User-Agent": USER_AGENT, "Accept": "application/json"}, (6, 12), "YouTube")
 
 
 def wiki_json(url: str, params: dict) -> Any:

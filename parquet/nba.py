@@ -727,6 +727,7 @@ def _pbp_from_live(raw: dict) -> dict:
                 "type": kind,
                 "sub": a.get("subType") or "",
                 "desc": a.get("description") or "",
+                "descr": a.get("descriptor") or "",
                 "fg": a.get("isFieldGoal") == 1,
                 "made": a.get("shotResult") == "Made",
                 "x": _num(a.get("xLegacy")),

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, nba, net, teams_meta
+from . import __version__, extras, nba, net, settings, teams_meta
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -89,6 +89,50 @@ def api_game(q, game_id):
 @route(r"/api/game/(\d{10})/pbp")
 def api_pbp(q, game_id):
     return nba.game_pbp(game_id)
+
+
+@route(r"/api/game/(\d{10})/extras")
+def api_game_extras(q, game_id):
+    return extras.game_extras(game_id)
+
+
+@route(r"/api/game/(\d{10})/video")
+def api_game_video(q, game_id):
+    return extras.game_video(game_id)
+
+
+@route(r"/api/videos/night")
+def api_night_videos(q):
+    day = q.get("date") or ""
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+        day = nba.game_day_et().isoformat()
+    return extras.night_videos(day)
+
+
+def _int_param(q: dict, name: str) -> int | None:
+    value = q.get(name) or ""
+    return int(value) if value.isdigit() else None
+
+
+@route(r"/api/injuries")
+def api_injuries(q):
+    game = q.get("game") if re.fullmatch(r"\d{10}", q.get("game") or "") else None
+    return extras.injuries_for(team_id=_int_param(q, "team"), game_id=game)
+
+
+@route(r"/api/transactions")
+def api_transactions(q):
+    kind = q.get("type") if q.get("type") in extras.TYPE_FR else None
+    days = _int_param(q, "days")
+    return extras.transactions(
+        team_id=_int_param(q, "team"), player_id=_int_param(q, "player"), kind=kind,
+        days=120 if days is None else days, limit=min(_int_param(q, "limit") or 300, 2000),
+    )
+
+
+@route(r"/api/settings")
+def api_settings(q):
+    return _no_meta({"youtube": settings.youtube_status()})
 
 
 @route(r"/api/standings")
@@ -209,6 +253,43 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, status: int, payload: Any) -> None:
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         self._send(status, body, "application/json; charset=utf-8")
+
+    def _same_origin(self) -> bool:
+        """Refuse les envois venant d'un autre site (une page web ne doit pas pouvoir modifier les réglages)."""
+        origin = self.headers.get("Origin")
+        if not origin:
+            return True
+        return urlsplit(origin).netloc == (self.headers.get("Host") or "")
+
+    def do_POST(self) -> None:
+        path = urlsplit(self.path).path
+        if path != "/api/settings/youtube":
+            self._json(404, {"error": "Adresse d'API inconnue"})
+            return
+        if not self._same_origin():
+            self._json(403, {"error": "Requête refusée"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            payload = json.loads(self.rfile.read(min(length, 4096)) or b"{}") if 0 < length <= 4096 else {}
+            key = str(payload.get("key") or "").strip()
+        except (ValueError, AttributeError):
+            self._json(400, {"error": "Requête illisible"})
+            return
+        if key and not re.fullmatch(r"[A-Za-z0-9_\-]{20,80}", key):
+            self._json(400, {"error": "Cette clé n'a pas le bon format : une clé d'API YouTube ressemble à « AIza… » (39 caractères)."})
+            return
+        if key:
+            problem = extras.verify_key(key)
+            if problem:
+                self._json(400, {"error": problem})
+                return
+        try:
+            settings.save({"youtubeKey": key})
+        except (OSError, RuntimeError) as exc:
+            self._json(500, {"error": f"Impossible d'enregistrer la clé ({exc.__class__.__name__})"})
+            return
+        self._json(200, {"data": {"youtube": settings.youtube_status()}, "meta": {}})
 
     def do_HEAD(self) -> None:
         self.do_GET()

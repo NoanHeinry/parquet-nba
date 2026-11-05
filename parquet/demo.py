@@ -402,6 +402,15 @@ def playbyplay(game_id: str) -> dict:
                 add(p, t, side, "substitution", "out", "SUB: in for out", personId=p_["id"])
             if r.random() < 0.05:
                 add(p, t, side, "timeout", "full", f"{g[side]} Timeout: Regular")
+        if p == 2 and g["gameStatus"] == 3:
+            # Quelques faits marquants pour la rubrique du même nom.
+            vilain = ROSTERS[home_id][1]
+            add(p, 301, "home", "foul", "technical", f"{vilain['first'][0]}. {vilain['last']} technical FOUL (1 Tech)", personId=vilain["id"],
+                descriptor="technical", playerNameI=f"{vilain['first'][0]}. {vilain['last']}")
+            add(p, 188, "away", "timeout", "challenge", f"{g['away']} Timeout")
+            dur = ROSTERS[away_id][2]
+            add(p, 95, "away", "foul", "personal", f"{dur['first'][0]}. {dur['last']} flagrant-type-1 personal FOUL (2 PF)", personId=dur["id"],
+                descriptor="flagrant-type-1", playerNameI=f"{dur['first'][0]}. {dur['last']}")
         if p < periods or g["gameStatus"] == 3:
             add(p, 0, None, "period", "end", "Period End")
     if g["gameStatus"] == 3:
@@ -902,7 +911,141 @@ def handle(url: str, params: dict | None):
     return _handle_base(url, params)
 
 
-def _demo_get(url, params, headers, timeout, source):
+# ---------------------------------------------------------------- page d'un match, blessures, transactions, YouTube
+
+INJURY_URL = "https://ak-static.cms.nba.com/referee/injury/Injury-Report_2026-10-14_05_00PM.pdf"
+INJURY_REASONS = [
+    ("Out", "Injury/Illness - Left Ankle Sprain"), ("Questionable", "Injury/Illness - Right Hamstring Strain"),
+    ("Out", "Injury/Illness - Right Knee Injury Management"), ("Doubtful", "Injury/Illness - Low Back; Spasms"),
+    ("Probable", "Injury/Illness - Left Hand Contusion"), ("Out", "G League - Two-Way"), ("Out", "Personal Reasons"),
+]
+
+
+def injury_report_games() -> list[dict]:
+    """Rapport des blessures fictif (même structure que le PDF une fois lu)."""
+    out = []
+    upcoming = [g for g in GAMES if g["gameStatus"] == 1 and g["etDate"] in (TODAY, "2026-10-15")]
+    for g in upcoming[:6]:
+        r = rng("injuries", g["gameId"])
+        teams = []
+        for tri in (g["away"], g["home"]):
+            t = teams_meta.TEAMS_BY_TRI[tri]
+            if r.random() < 0.15:
+                teams.append({"name": f"{t['city']} {t['name']}", "submitted": False, "players": []})
+                continue
+            players = []
+            for p in r.sample(ROSTERS[t["id"]][3:15], r.randint(1, 3)):
+                status, reason = r.choice(INJURY_REASONS)
+                players.append({"name": p["name"], "status": status, "reason": reason})
+            teams.append({"name": f"{t['city']} {t['name']}", "submitted": True, "players": players})
+        y, m, d = g["etDate"].split("-")
+        out.append({"date": f"{m}/{d}/{y}", "time": "07:30 (ET)", "matchup": f"{g['away']}@{g['home']}", "teams": teams})
+    return out
+
+
+def player_movement() -> dict:
+    """Transactions fictives, au format du fichier officiel."""
+    r = rng("moves")
+    rows = []
+    kinds = ["Signing", "Waive", "Signing", "AwardOnWaivers", "ContractConverted", "Signing", "Waive"]
+    contracts = ["a Two-Way Contract", "a 10-Day Contract", "a Rest-of-Season Contract", "a multi-year contract"]
+    day = date(2026, 10, 13)
+    for i in range(40):
+        t = r.choice(TEAMS)
+        p = r.choice(ROSTERS[t["id"]][8:15])
+        kind = kinds[i % len(kinds)]
+        pos = r.choice(["guard", "forward", "center"])
+        full = f"{t['city']} {t['name']}"
+        desc = {
+            "Signing": f"{full} signed {pos} {p['name']} to {r.choice(contracts)}.",
+            "Waive": f"{full} waived {pos} {p['name']}.",
+            "AwardOnWaivers": f"{full} claimed {pos} {p['name']} off waivers.",
+            "ContractConverted": f"{full} converted the contract of {pos} {p['name']} to a Two-Way Contract.",
+        }[kind]
+        rows.append({"Transaction_Type": kind, "TRANSACTION_DATE": f"{day.isoformat()}T00:00:00", "TRANSACTION_DESCRIPTION": desc,
+                     "TEAM_ID": float(t["id"]), "TEAM_SLUG": t["name"].lower(), "PLAYER_ID": float(p["id"]), "PLAYER_SLUG": "",
+                     "Additional_Sort": 0.0, "GroupSort": f"{kind} {900000 + i}"})
+        if i % 3 == 2:
+            day -= timedelta(days=1)
+    a, b = TEAMS[4], TEAMS[11]
+    pa, pb = ROSTERS[a["id"]][6], ROSTERS[b["id"]][7]
+    for team, other, p in ((a, b, pb), (b, a, pa)):
+        rows.append({"Transaction_Type": "Trade", "TRANSACTION_DATE": "2026-10-10T00:00:00",
+                     "TRANSACTION_DESCRIPTION": f"{team['city']} {team['name']} received guard {p['name']} from {other['city']} {other['name']}.",
+                     "TEAM_ID": float(team["id"]), "TEAM_SLUG": "", "PLAYER_ID": float(p["id"]), "PLAYER_SLUG": "", "Additional_Sort": 0.0, "GroupSort": "Trade 2026999"})
+    rows.append({"Transaction_Type": "Trade", "TRANSACTION_DATE": "2026-10-10T00:00:00",
+                 "TRANSACTION_DESCRIPTION": f"{a['city']} {a['name']} received 2028 second round draft pick from {b['city']} {b['name']}.",
+                 "TEAM_ID": float(a["id"]), "TEAM_SLUG": "", "PLAYER_ID": 0.0, "PLAYER_SLUG": "", "Additional_Sort": 0.0, "GroupSort": "Trade 2026999"})
+    return {"NBA_Player_Movement": {"rows": rows}}
+
+
+def game_page_html(game_id: str) -> str:
+    """Page d'un match fictive, avec les mêmes données intégrées que www.nba.com (sans vraie vidéo)."""
+    import json as _json
+
+    g = GAMES_BY_ID.get(game_id)
+    if not g:
+        raise SourceError("www.nba.com a répondu 404", status=404, source="www.nba.com")
+    page: dict = {"game": {}, "highlightVideos": [], "blueprintReport": {}}
+    if g["gameStatus"] == 3:
+        r = rng("page", game_id)
+        away, home = teams_meta.TEAMS_BY_TRI[g["away"]], teams_meta.TEAMS_BY_TRI[g["home"]]
+        win, lose = (home, away) if g["sh"] > g["sa"] else (away, home)
+        high, low = max(g["sa"], g["sh"]), min(g["sa"], g["sh"])
+        page["game"]["gameRecap"] = {"title": f"Game Recap: {win['name']} {high}, {lose['name']} {low}", "permalink": f"https://www.nba.com/watch/video/game-recap-demo-{game_id}",
+                                     "videoDuration": "02:58", "featuredImage": "", "excerpt": f"The {win['name']} hold off the {lose['name']} in a demo game.", "entitlements": "free"}
+        made = [a for a in playbyplay(game_id)["game"]["actions"] if a.get("shotResult") == "Made"]
+        best = sorted(made, key=lambda a: (a["actionType"] != "3pt", -a["period"], a["clock"]))[:5]
+        moments = []
+        for rank, a in enumerate(best, 1):
+            p = PLAYERS.get(a["personId"]) or {"name": "?"}
+            moments.append({"rank": rank, "title": f"{p['name']} {'Drills a Three' if a['actionType'] == '3pt' else 'Scores Inside'}",
+                            "summary": f"{p['name']} scores in period {a['period']}.", "category": "Scoring", "eventNum": a["actionNumber"],
+                            "playerId": a["personId"], "largeDuration": 9000 + 1000 * rank, "mediumUrl": "", "largeUrl": "", "mediumThumbnail": ""})
+        box = boxscore(game_id)["game"]
+        perf = []
+        for side in ("awayTeam", "homeTeam"):
+            top = max(box[side]["players"], key=lambda p: p["statistics"]["points"])
+            perf.append({"teamId": box[side]["teamId"], "teamAbbreviation": box[side]["teamTricode"], "playerId": top["personId"],
+                         "firstName": top["firstName"], "lastName": top["familyName"], "statCategory": "Points", "statValue": str(top["statistics"]["points"]),
+                         "summary": f"{top['firstName']} {top['familyName']} led the team in scoring."})
+        def spot(d_side, o_side):
+            d, o = ROSTERS[box[d_side]["teamId"]][0], ROSTERS[box[o_side]["teamId"]][1]
+            fga = r.randint(4, 8)
+            return {"defPlayerId": str(d["id"]), "defPlayerName": d["name"], "defTeamId": str(box[d_side]["teamId"]), "defTeamAbbreviation": box[d_side]["teamTricode"],
+                    "offPlayerId": str(o["id"]), "offPlayerName": o["name"], "offTeamAbbreviation": box[o_side]["teamTricode"],
+                    "fieldGoalMakes": str(r.randint(0, 2)), "fieldGoalAttempts": str(fga), "threePointMakes": "0", "threePointAttempts": str(r.randint(0, 3)), "matchupTime": f"{r.randint(2, 5)}:{r.randint(10, 59)}"}
+        shots = []
+        for a in made[:30]:
+            p = PLAYERS.get(a["personId"]) or {"name": "?", "first": "", "last": ""}
+            shots.append({"period": a["period"], "gameClockTime": "5:12", "shotType": "3PT" if a["actionType"] == "3pt" else "2PT", "success": True,
+                          "shooter": {"playerId": a["personId"], "firstName": p.get("first", ""), "lastName": p.get("last", "")}, "defender": {},
+                          "expFieldGoalPct": round(r.uniform(0.12, 0.6), 3)})
+        page["blueprintReport"] = {
+            "defining_moments": {"definingMoments": moments},
+            "top_performers": {"topPerformers": perf},
+            "defensive_spotlight": {"awayDefensiveSpotlight": spot("awayTeam", "homeTeam"), "homeDefensiveSpotlight": spot("homeTeam", "awayTeam")},
+            "shot_difficulty": {"shotDifficulty": shots},
+        }
+        page["story"] = {"header": {"headline": f"{win['name']} beat {lose['name']}, {high}-{low}", "byline": "Démo", "bytitle": "Parquet"}}
+    payload = _json.dumps({"props": {"pageProps": page}})
+    return f'<html><body><script id="__NEXT_DATA__" type="application/json">{payload}</script></body></html>'
+
+
+EMPTY_FEED = '<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"></feed>'
+
+
+def _demo_get(url, params, headers, timeout, source, kind="json"):
+    if "www.nba.com/game/" in url:
+        return game_page_html(url.rstrip("/").rsplit("/", 1)[1])
+    if "playermovement" in url:
+        return player_movement()
+    if "youtube.com/feeds" in url:
+        return EMPTY_FEED
+    if "googleapis.com" in url or "youtube.com/oembed" in url:
+        raise SourceError("YouTube n'est pas simulé en mode démo", status=403, source="YouTube")
+    if "official.nba.com" in url or "ak-static.cms.nba.com" in url:
+        raise NotAvailable("rapport des blessures : pas simulé", status=404, source="rapport des blessures")
     return handle(url, params)
 
 
