@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { h, s } from "../dom.js";
 import * as f from "../format.js";
 import { compareRows, gameFlowChart, shotChart } from "../charts.js";
-import { chips, errorState, headshot, loading, playerCell, section, segmented, statTable, staleBanner, tabs, teamLogo, wl } from "../components.js";
+import { chips, errorState, headshot, loading, playerCell, section, segmented, statTable, staleBanner, swapIn, tabs, teamLogo, wl } from "../components.js";
 import { team, teamPair } from "../teams.js";
 import { gameKey, isHidden, isRevealed as isRevealedKey, setRevealed } from "../spoiler.js";
 import { momentCard, nbaRecapCard, youtubeBlock } from "../media.js";
@@ -649,6 +649,7 @@ export async function render(ctx) {
     body.replaceChildren(
       tabs(TAB_DEFS, tab, (t) => {
         tab = t;
+        swapIn(panel);
         drawPanel();
       }),
       panel

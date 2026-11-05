@@ -5,13 +5,54 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, favorites, gameTile, headshot, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
+import { gameKey, isRevealed, isSpoilerFree } from "../spoiler.js";
 import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
 import { createStage } from "./stage.js";
 import { immersive } from "../menu.js";
-import { exitProgress, reveal, sectionIndex, smoothWheel } from "../scroll.js";
+import { countUp, enterFx, exitProgress, marquee, motion, reducedMotion, reveal, sectionIndex, smoothWheel } from "../scroll.js";
 import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
+
+// Un titre découpé en mots, pour les faire monter l'un après l'autre.
+function words(text) {
+  return text.split(" ").flatMap((w, i) => [i ? " " : "", h("span", { class: "w", style: { "--i": i } }, h("span", null, w))]);
+}
+
+// Le bandeau des scores : un élément par match (sans score en mode anti-spoiler).
+function tickerItems(games) {
+  const hideAll = isSpoilerFree();
+  return games.map((g) => {
+    const hidden = hideAll && !isRevealed(gameKey(g.id));
+    const a = g.away || {};
+    const b = g.home || {};
+    let mid;
+    if (g.status === 1) mid = h("span", { class: "tk-time" }, g.start ? f.clockTime(g.start) : "–");
+    else if (hidden) mid = h("span", { class: "tk-time" }, g.status === 2 ? "en cours" : "terminé");
+    else {
+      const loser = g.status === 3 ? (a.score > b.score ? "home" : "away") : null;
+      mid = h(
+        "span",
+        { class: "tk-score" },
+        h("b", { class: loser === "away" ? "lo" : null }, String(a.score ?? 0)),
+        "–",
+        h("b", { class: loser === "home" ? "lo" : null }, String(b.score ?? 0))
+      );
+    }
+    const el = h(
+      "span",
+      { class: `tk-item${g.status === 2 ? " is-live" : ""}` },
+      g.status === 2 ? h("i", { class: "live-dot" }) : null,
+      teamLogo(a.id, 34),
+      h("span", { class: "tk-tri" }, a.tri || "?"),
+      mid,
+      h("span", { class: "tk-tri" }, b.tri || "?"),
+      teamLogo(b.id, 34),
+      h("span", { class: "tk-sep" }, "/")
+    );
+    return { el, text: `${g.id}:${g.status}:${hidden ? "" : `${a.score}-${b.score}`}` };
+  });
+}
 
 function refreshDelay(data) {
   if (!data) return 60000;
@@ -33,7 +74,8 @@ export async function render(ctx) {
   const gamesSec = h("section", { class: "home-sec home-games", id: "matchs", "aria-labelledby": "day-title" });
   const nightSec = h("section", { class: "home-sec home-night", id: "chiffres", "aria-label": "La nuit en chiffres" }, recap.el);
   const tablesSec = h("section", { class: "home-sec home-tables", id: "tableaux", "aria-label": "Classement et leaders" });
-  ctx.outlet.append(stage.el, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec));
+  const ticker = h("div", { class: "ticker", "aria-hidden": "true" }, h("div", { class: "ticker-track" }));
+  ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec));
   gamesSec.append(loading("Chargement des matchs…"));
 
   const scroller = smoothWheel(ctx);
@@ -47,8 +89,39 @@ export async function render(ctx) {
     ],
     scroller
   );
-  reveal(ctx, [gamesSec, nightSec, tablesSec]);
+  // Les sections glissent en place en arrivant ; les chiffres de la nuit comptent à ce moment-là.
+  reveal(ctx, [gamesSec, nightSec, tablesSec], (el) => {
+    if (el === nightSec) for (const b of el.querySelectorAll(".nn-big")) countUp(b, b.textContent, 250);
+  });
   exitProgress(ctx, stage.el);
+  const m = motion(ctx);
+  enterFx(m, [gamesSec, nightSec, tablesSec]);
+  marquee(ctx, m, ticker);
+
+  // Chaque ligne de match apparaît quand elle arrive à l'écran ; une ligne déjà vue reste en
+  // place quand les scores s'actualisent.
+  const seen = new Set();
+  const rowIO = reducedMotion()
+    ? null
+    : new IntersectionObserver(
+        (entries) => {
+          let k = 0;
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            const tile = e.target;
+            rowIO.unobserve(tile);
+            seen.add(tile.dataset.gameId);
+            // Les lignes qui arrivent ensemble montent l'une après l'autre.
+            tile.style.transitionDelay = `${k++ * 70}ms`;
+            tile.classList.add("row-in");
+            setTimeout(() => (tile.style.transitionDelay = ""), 1600);
+            for (const sc of tile.querySelectorAll(".tile-team .score")) countUp(sc.firstChild ? sc.firstChild : sc, Number(sc.firstChild?.textContent ?? sc.textContent), 150);
+          }
+        },
+        { rootMargin: "0px 0px -8% 0px" }
+      );
+  ctx.onCleanup(() => rowIO?.disconnect());
+  let tickerSig = "";
 
   let previous = new Map();
   let last = null;
@@ -107,7 +180,7 @@ export async function render(ctx) {
     const head = h(
       "div",
       { class: "day-head" },
-      h("div", null, h("p", { class: "home-kicker" }, counts.join(" · ") || "Matchs"), h("h1", { class: "page-title", id: "day-title" }, f.dayTitle(data.date))),
+      h("div", null, h("p", { class: "home-kicker" }, counts.join(" · ") || "Matchs"), h("h1", { class: "page-title", id: "day-title" }, words(f.dayTitle(data.date)))),
       nav
     );
 
@@ -139,6 +212,18 @@ export async function render(ctx) {
       : "";
 
     gamesSec.replaceChildren(head, staleBanner(meta) || "", liveStrip, content, updatedLine);
+    for (const tile of gamesSec.querySelectorAll(".game-tile")) {
+      if (!rowIO || seen.has(tile.dataset.gameId)) tile.classList.add("row-in");
+      else rowIO.observe(tile);
+    }
+    const sig = tickerItems(games).map((it) => it.text).join("|");
+    if (sig !== tickerSig) {
+      tickerSig = sig;
+      const items = tickerItems(games);
+      const once = items.map((it) => it.el);
+      ticker.firstChild.replaceChildren(...once, ...items.map((it) => it.el.cloneNode(true)));
+      ticker.hidden = !items.length;
+    }
     stage.update(data);
     recap.update(data).then(() => {
       nightSec.hidden = recap.el.hidden;

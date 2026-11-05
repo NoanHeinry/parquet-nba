@@ -1,5 +1,5 @@
 // Scène d'ouverture de l'accueil : le joueur du match de chaque rencontre de la nuit, en grand.
-// Fond aux couleurs de son équipe, nom en très gros derrière lui, portrait détouré par-dessus
+// Halo à la couleur de son équipe, nom en très gros derrière lui, portrait détouré par-dessus
 // (les portraits officiels de la NBA ont déjà un fond transparent), sa ligne de stats et le match.
 // Un joueur par match ; on passe de l'un à l'autre avec les onglets, les flèches, le clavier ou
 // en glissant le doigt, et la scène avance seule tant qu'on n'y touche pas.
@@ -8,11 +8,9 @@ import { api } from "../api.js";
 import { h, s } from "../dom.js";
 import * as f from "../format.js";
 import { teamLogo } from "../components.js";
-import { contrast, headshotUrl, team, teamBand } from "../teams.js";
+import { headshotUrl, team, teamColor } from "../teams.js";
 import { isHidden, setRevealed } from "../spoiler.js";
-import { reducedMotion } from "../scroll.js";
-
-const AUTOPLAY_MS = 8000;
+import { countUp, reducedMotion } from "../scroll.js";
 
 function arrow(dir) {
   return s(
@@ -52,7 +50,7 @@ function textWidth(text, family) {
 }
 
 function fitName(stage) {
-  const name = stage.querySelector(".stage-name");
+  const name = stage.querySelector(".slide:not(.is-leaving) .stage-name");
   if (!name) return;
   const w = stage.clientWidth;
   const hgt = stage.clientHeight;
@@ -64,21 +62,6 @@ function fitName(stage) {
   name.style.fontSize = `${Math.floor(Math.min(cap, (room / widest) * 100))}px`;
 }
 
-function countUp(el, value) {
-  if (reducedMotion() || !value) {
-    el.textContent = String(value);
-    return;
-  }
-  const t0 = performance.now();
-  const dur = 900;
-  const tick = (t) => {
-    const k = Math.min(1, (t - t0) / dur);
-    el.textContent = String(Math.round(value * (1 - (1 - k) ** 3)));
-    if (k < 1 && el.isConnected) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
-
 export function createStage(ctx) {
   const el = h("section", { class: "stage", id: "joueurs", "aria-label": "Joueurs du match" });
   const scene = h("div", { class: "stage-scene" });
@@ -86,14 +69,12 @@ export function createStage(ctx) {
   const prevBtn = h("button", { type: "button", class: "stage-round", "aria-label": "Joueur précédent" }, arrow(-1));
   const nextBtn = h("button", { type: "button", class: "stage-round", "aria-label": "Joueur suivant" }, arrow(1));
   const arrows = h("div", { class: "stage-arrows" }, prevBtn, nextBtn);
-  el.append(scene, arrows, tabs);
-  ctx.onCleanup(() => document.body.style.removeProperty("--stage-ink"));
+  const hint = h("span", { class: "stage-hint", "aria-hidden": "true" }, h("i"), "Défiler");
+  el.append(scene, arrows, tabs, hint);
 
-  // Deux bandes en biais aux couleurs de l'équipe, derrière le nom et le joueur.
-  const bands = () => [
-    h("div", { class: "stage-band back", "aria-hidden": "true" }),
-    h("div", { class: "stage-band back thin", "aria-hidden": "true" }),
-  ];
+  // Deux bandes en biais derrière le nom et le joueur : l'une teintée par l'équipe, l'autre à
+  // l'orange du site.
+  const bands = () => [h("div", { class: "stage-band back", "aria-hidden": "true" }), h("div", { class: "stage-band back thin", "aria-hidden": "true" })];
 
   let stars = [];
   let index = 0;
@@ -115,14 +96,46 @@ export function createStage(ctx) {
     io.disconnect();
   });
 
+  // Le nom et le joueur suivent légèrement la souris, en sens opposés (effet de profondeur).
+  if (!reducedMotion() && matchMedia("(pointer: fine)").matches) {
+    let tx = 0;
+    let ty = 0;
+    let mx = 0;
+    let my = 0;
+    let raf = 0;
+    const step = () => {
+      mx += (tx - mx) * 0.08;
+      my += (ty - my) * 0.08;
+      el.style.setProperty("--mx", mx.toFixed(3));
+      el.style.setProperty("--my", my.toFixed(3));
+      raf = Math.abs(tx - mx) + Math.abs(ty - my) > 0.002 ? requestAnimationFrame(step) : 0;
+    };
+    const aim = (x, y) => {
+      tx = x;
+      ty = y;
+      if (!raf) raf = requestAnimationFrame(step);
+    };
+    el.addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "mouse") return;
+      const r = el.getBoundingClientRect();
+      aim(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+    });
+    el.addEventListener("pointerleave", () => aim(0, 0));
+    ctx.onCleanup(() => cancelAnimationFrame(raf));
+  }
+
   const go = (i, byUser = false) => {
     if (!stars.length) return;
     if (byUser) {
       manual = true;
       el.classList.add("no-auto");
     }
-    index = (i + stars.length) % stars.length;
-    show();
+    const target = (i + stars.length) % stars.length;
+    if (target === index) return;
+    // Sens du mouvement : vers la droite pour le suivant, vers la gauche pour le précédent.
+    const dir = i > index ? 1 : -1;
+    index = target;
+    show(dir);
   };
   prevBtn.addEventListener("click", () => go(index - 1, true));
   nextBtn.addEventListener("click", () => go(index + 1, true));
@@ -192,16 +205,30 @@ export function createStage(ctx) {
     }
   }
 
-  function paint(bgTeamId) {
-    const band = teamBand(bgTeamId);
-    el.style.setProperty("--c1", band.bg);
-    el.style.setProperty("--ink", band.ink);
-    // La bande prend la deuxième couleur de l'équipe si elle se distingue du texte, sinon un
-    // ton voisin du fond (le texte posé dessus reste lisible).
-    const vivid = band.accent !== band.ink && contrast(band.accent, band.ink) >= 1.6;
-    el.style.setProperty("--c2", vivid ? band.accent : `color-mix(in oklab, ${band.bg} 80%, ${band.ink})`);
-    el.dataset.ink = band.ink === "#ffffff" ? "light" : "dark";
-    document.body.style.setProperty("--stage-ink", band.ink);
+  // La couleur de l'équipe ne sert qu'au halo derrière le joueur et à la bande atténuée.
+  function paint(teamId) {
+    el.style.setProperty("--team", teamId ? teamColor(teamId) : "var(--accent)");
+  }
+
+  // Remplace le contenu de la scène : l'ancien sort (le nom remonte, le joueur glisse dans le
+  // sens du mouvement) pendant que le nouveau entre de l'autre côté.
+  function setSlide(children, dir = 0) {
+    const old = [...scene.querySelectorAll(".slide:not(.is-leaving)")];
+    const slide = h("div", { class: `slide${old.length && dir ? " is-after" : ""}`, style: { "--dir": dir || 1 } }, children);
+    for (const o of old) {
+      if (!dir || reducedMotion()) {
+        o.remove();
+        continue;
+      }
+      o.style.setProperty("--dir", dir);
+      o.classList.add("is-leaving");
+      o.setAttribute("aria-hidden", "true");
+      o.inert = true;
+      setTimeout(() => o.remove(), 700);
+    }
+    scene.append(slide);
+    fitName(el);
+    return slide;
   }
 
   // Le petit encart du match, en bas à gauche : l'action du joueur en vidéo quand NBA.com
@@ -211,7 +238,7 @@ export function createStage(ctx) {
     const media = h(
       "span",
       { class: "sm-media" },
-      h("span", { class: "sm-logos" }, teamLogo(g.away.id, 34, "", { plate: true }), h("b", { class: "num" }, `${g.away.score}-${g.home.score}`), teamLogo(g.home.id, 34, "", { plate: true })),
+      h("span", { class: "sm-logos" }, teamLogo(g.away.id, 34), h("b", { class: "num" }, `${g.away.score}-${g.home.score}`), teamLogo(g.home.id, 34)),
       h("span", { class: "sm-go", "aria-hidden": "true" }, expandIcon())
     );
     const kicker = h("span", { class: "sm-k" }, "Le match");
@@ -262,7 +289,7 @@ export function createStage(ctx) {
     );
   }
 
-  function show() {
+  function show(dir = 0) {
     const p = stars[index];
     paint(p.teamId);
     const g = p.game;
@@ -281,31 +308,39 @@ export function createStage(ctx) {
       "div",
       { class: "stage-stats" },
       statItems(p).map((it, i) => {
-        const v = h("b", { class: "num" }, "0");
-        countUp(v, it.v);
+        const v = h("b", { class: "num" }, String(it.v));
+        countUp(v, it.v, dir ? 350 : 0);
         return h("div", { class: "ss-item", style: { "--i": i } }, h("small", null, it.label), v);
       })
     );
-    scene.replaceChildren(
-      ...bands(),
-      h("div", { class: "stage-top" }, h("span", { class: "k" }, index === 0 && stars.length > 2 ? "Joueur de la nuit" : "Joueur du match"), h("span", { class: "d" }, [f.dayShort(day), label].filter(Boolean).join(" · ")), h("a", { class: "stage-top-score num", href: `#/match/${g.id}` }, `${g.away.tri} ${g.away.score} – ${g.home.score} ${g.home.tri}`)),
-      h("div", { class: "stage-layer name-layer" }, nameBlock([p.first, p.last])),
-      h("a", { class: "stage-layer cut-layer", href: `#/joueur/${p.id}`, tabindex: "-1", "aria-hidden": "true" }, cut),
-      h(
-        "div",
-        { class: "stage-left" },
+    setSlide(
+      [
+        ...bands(),
         h(
-          "a",
-          { class: "stage-bio", href: `#/joueur/${p.id}` },
-          h("span", { class: "plus", "aria-hidden": "true" }, "+"),
-          h("span", { class: "bio-t" }, "Sa fiche"),
-          h("small", null, [team(p.teamId)?.name, p.jersey ? `n° ${p.jersey}` : "", p.min ? `${p.min.split(":")[0]} min` : ""].filter(Boolean).join(" · "))
+          "div",
+          { class: "stage-top" },
+          h("span", { class: "k" }, index === 0 && stars.length > 2 ? "Joueur de la nuit" : "Joueur du match"),
+          h("span", { class: "d" }, [f.dayShort(day), label].filter(Boolean).join(" · ")),
+          h("a", { class: "stage-top-score num", href: `#/match/${g.id}` }, `${g.away.tri} ${g.away.score} – ${g.home.score} ${g.home.tri}`)
         ),
-        matchCard(p)
-      ),
-      stats
+        h("div", { class: "stage-layer name-layer" }, nameBlock([p.first, p.last])),
+        h("a", { class: "stage-layer cut-layer", href: `#/joueur/${p.id}`, tabindex: "-1", "aria-hidden": "true" }, cut),
+        h(
+          "div",
+          { class: "stage-left" },
+          h(
+            "a",
+            { class: "stage-bio", href: `#/joueur/${p.id}` },
+            h("span", { class: "plus", "aria-hidden": "true" }, "+"),
+            h("span", { class: "bio-t" }, "Sa fiche"),
+            h("small", null, [team(p.teamId)?.name, p.jersey ? `n° ${p.jersey}` : "", p.min ? `${p.min.split(":")[0]} min` : ""].filter(Boolean).join(" · "))
+          ),
+          matchCard(p)
+        ),
+        stats,
+      ],
+      dir
     );
-    fitName(el);
     syncTabs();
     // Le portrait suivant est chargé d'avance.
     const next = stars[(index + 1) % stars.length];
@@ -314,49 +349,52 @@ export function createStage(ctx) {
 
   // Sans joueur à montrer (journée pas encore jouée), la date et le programme.
   function showDay(board) {
-    paint(null);
-    el.style.setProperty("--c1", "var(--stage-accent)");
-    el.style.setProperty("--c2", "#d95400");
-    el.dataset.ink = "light";
     const games = board.games || [];
-    const first = games.filter((g) => g.status === 1 && g.start).sort((a, b) => a.start.localeCompare(b.start))[0];
     const live = games.filter((g) => g.status === 2).length;
+    const viewKey = `day:${board.date}:${games.length}:${live}`;
+    if (viewKey === key) return;
+    key = viewKey;
+    paint(null);
+    const first = games.filter((g) => g.status === 1 && g.start).sort((a, b) => a.start.localeCompare(b.start))[0];
     const title = f.dayTitle(board.date).split(" ");
-    const items = [
-      { label: "Matchs", v: games.length },
-      live ? { label: "En direct", v: live } : null,
-    ].filter(Boolean);
-    scene.replaceChildren(
+    const items = [{ label: "Matchs", v: games.length }, live ? { label: "En direct", v: live } : null].filter(Boolean);
+    setSlide([
       ...bands(),
       h("div", { class: "stage-top" }, h("span", { class: "k" }, board.isToday ? "Aujourd'hui en NBA" : "Programme"), first ? h("span", { class: "d" }, `Premier match à ${f.clockTime(first.start)}`) : null),
       h("div", { class: "stage-layer name-layer" }, nameBlock([title[0], title.slice(1).join(" ")])),
-      h("div", { class: "stage-stats centered" }, items.map((it, i) => h("div", { class: "ss-item", style: { "--i": i } }, h("small", null, it.label), h("b", { class: "num" }, String(it.v)))))
-    );
+      h(
+        "div",
+        { class: "stage-stats centered" },
+        items.map((it, i) => {
+          const v = h("b", { class: "num" }, String(it.v));
+          countUp(v, it.v);
+          return h("div", { class: "ss-item", style: { "--i": i } }, h("small", null, it.label), v);
+        })
+      ),
+    ]);
     tabs.hidden = true;
     arrows.hidden = true;
-    fitName(el);
   }
 
   function showGate(board, spoilerKey) {
+    const viewKey = `gate:${day}`;
+    if (viewKey === key) return;
+    key = viewKey;
     paint(null);
-    el.style.setProperty("--c1", "var(--stage-accent)");
-    el.style.setProperty("--c2", "#d95400");
-    el.dataset.ink = "light";
     const btn = h("button", { type: "button", class: "stage-reveal" }, "Révéler les joueurs du match");
     btn.addEventListener("click", () => {
       setRevealed(spoilerKey, true);
       key = null;
       update(board);
     });
-    scene.replaceChildren(
+    setSlide([
       ...bands(),
       h("div", { class: "stage-top" }, h("span", { class: "k" }, "Anti-spoiler actif"), h("span", { class: "d" }, f.dayShort(day))),
       h("div", { class: "stage-layer name-layer" }, nameBlock(["Joueurs", "du match"])),
-      h("div", { class: "stage-gate" }, btn)
-    );
+      h("div", { class: "stage-gate" }, btn),
+    ]);
     tabs.hidden = true;
     arrows.hidden = true;
-    fitName(el);
   }
 
   async function update(board) {
@@ -364,24 +402,21 @@ export function createStage(ctx) {
     // La nuit à raconter : celle de la journée affichée, ou la précédente si rien n'est fini.
     day = finished ? board.date : board.isToday && board.prev ? board.prev : null;
     if (!day) {
-      key = null;
       showDay(board);
       return;
     }
     const spoilerKey = `recap:${day}`;
     if (isHidden(spoilerKey)) {
-      key = null;
       showGate(board, spoilerKey);
       return;
     }
-    const nextKey = `${day}:${finished}`;
+    const nextKey = `stars:${day}:${finished}`;
     if (nextKey === key) return;
     try {
       const { data } = await api(`/recap?date=${day}`, { signal: ctx.signal });
       if (!ctx.active) return;
       const list = data.stars || [];
       if (!list.length) {
-        key = null;
         showDay(board);
         return;
       }
@@ -393,7 +428,6 @@ export function createStage(ctx) {
       show();
     } catch (err) {
       if (err.name === "AbortError") return;
-      key = null;
       showDay(board);
     }
   }

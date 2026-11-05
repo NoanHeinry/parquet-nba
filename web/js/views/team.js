@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { columnChart } from "../charts.js";
-import { favorites, headshot, loading, playerCell, section, segmented, statTable, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
+import { favorites, headshot, loading, playerCell, section, segmented, statTable, swapIn, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
 import { team, teamBand, teamColor } from "../teams.js";
 import { iconCalendar, iconStar } from "../icons.js";
 import { injuryRow, movesByDay, reportSource } from "../news.js";
@@ -616,6 +616,7 @@ export async function render(ctx) {
       (v) => {
         tab = v;
         drawTab();
+        swapIn(panel);
       }
     ),
     panel

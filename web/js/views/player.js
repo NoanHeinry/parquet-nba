@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { lineChart } from "../charts.js";
-import { chips, errorState, headshot, loading, section, segmented, statTable, tabs, teamLogo, wl } from "../components.js";
+import { chips, errorState, headshot, loading, section, segmented, statTable, swapIn, tabs, teamLogo, wl } from "../components.js";
 import { team, teamBand, teamByTri } from "../teams.js";
 import { iconScale } from "../icons.js";
 import { moveRow, statusBadge } from "../news.js";
@@ -572,6 +572,7 @@ export async function render(ctx) {
       (v) => {
         tab = v;
         drawTab();
+        swapIn(panel);
       }
     ),
     panel

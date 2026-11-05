@@ -14,8 +14,8 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 
 **Suivi des matchs**
 - Scores de la journée rafraîchis automatiquement pendant les matchs, avec l'avancement de chaque quart-temps.
-- Accueil façon affiche : le joueur du match de chaque rencontre de la nuit (meilleur Game Score) présenté en plein écran, portrait détouré devant son nom en très grand, aux couleurs de son équipe, avec sa ligne de stats et l'action du match en vidéo quand NBA.com la publie. On passe d'un joueur à l'autre avec les onglets, les flèches, le clavier ou en glissant le doigt ; la scène avance seule tant qu'on n'y touche pas.
-- En descendant : les matchs du jour en grandes lignes, « La nuit en chiffres » (meilleurs marqueur, rebondeur, passeur et tireur à 3 points, match le plus serré, plus large victoire, triples-doubles, prolongations), le classement et les meilleurs marqueurs. Un sommaire numéroté sur le côté suit la lecture, avec un défilement doux à la molette.
+- Accueil façon affiche : le joueur du match de chaque rencontre de la nuit (meilleur Game Score) présenté en plein écran, portrait détouré en noir et blanc devant son nom en très grand, halo discret à la couleur de son équipe, avec sa ligne de stats et l'action du match en vidéo quand NBA.com la publie. On passe d'un joueur à l'autre avec les onglets, les flèches, le clavier ou en glissant le doigt (l'ancien sort pendant que le nouveau entre, dans le sens du mouvement) ; la scène avance seule tant qu'on n'y touche pas, et suit légèrement la souris.
+- En descendant : les matchs du jour en grandes lignes, « La nuit en chiffres » (meilleurs marqueur, rebondeur, passeur et tireur à 3 points, match le plus serré, plus large victoire, triples-doubles, prolongations), le classement et les meilleurs marqueurs. Un sommaire numéroté sur le côté suit la lecture, avec un défilement doux à la molette ; un bandeau des scores défile entre les deux, plus vite quand on fait défiler la page et dans l'autre sens quand on remonte. Titres, lignes de match et chiffres arrivent en mouvement, les scores en direct roulent et affichent les points marqués (+2, +3).
 - Horaires convertis à l'heure de Paris, navigation de jour en jour jusque dans les saisons passées.
 - Page de match : score par quart-temps, scénario du match (courbe de l'écart au score, plus gros écarts, changements de leader), duel statistique des deux équipes, meilleurs joueurs, box score complet, fil des actions filtrable et carte des tirs.
 - Mode multi-matchs : plusieurs rencontres en direct côte à côte, en plein écran, avec les dernières actions et un signal des fins de match serrées.
@@ -41,7 +41,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.
 - Fonctionne aussi **sans ordinateur sur Android** : le serveur tourne sur le téléphone dans Termux, installé en une commande, lancé depuis un widget de l'écran d'accueil.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
-- Habillage « Arena » inspiré des retransmissions sportives : grands noms en Anton, titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon. Les animations sont coupées si le système demande de les limiter.
+- Habillage « Arena » inspiré des retransmissions sportives : grands noms en Anton, titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon. Pages, onglets et chargements apparaissent en fondu ; toutes les animations sont coupées si le système demande de les limiter.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
 ## Captures

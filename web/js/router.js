@@ -67,6 +67,8 @@ async function render(outlet) {
   }
   outlet.replaceChildren();
   window.scrollTo(0, 0);
+  // Chaque nouvelle page entre en fondu (voir .page-in dans la feuille de style).
+  outlet.classList.add("page-in");
   if (!match) {
     location.hash = "#/";
     return;

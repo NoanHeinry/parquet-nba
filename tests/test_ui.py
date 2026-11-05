@@ -115,8 +115,13 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_selector(".stage-tab.is-active")
         self.assertEqual(self.page.locator(".stage-tab").count(), 4)
         first = self.page.inner_text(".stage-tab.is-active .st-name")
+        # Bandeau des scores : chaque match deux fois, pour boucler sans raccord.
+        self.assertEqual(self.page.locator(".ticker .tk-item").count(), 8)
         self.page.click(".stage-arrows .stage-round >> nth=1")
         self.assertNotEqual(self.page.inner_text(".stage-tab.is-active .st-name"), first)
+        # L'ancien joueur sort en animation, puis disparaît de la page.
+        self.assertEqual(self.page.locator(".stage .slide.is-leaving").count(), 1)
+        self.page.wait_for_function("document.querySelectorAll('.stage .slide').length === 1")
         self.assertTrue(self.page.locator(".stage").evaluate("el => el.classList.contains('no-auto')"))
         # Le menu déroulant contient la recherche et les liens ; l'en-tête revient sur les autres pages.
         self.page.click(".menu-fab")

@@ -96,6 +96,14 @@ export function staleBanner(meta) {
   );
 }
 
+// Fait apparaître en douceur un contenu qui vient de changer (onglet, filtre, chargement).
+export function swapIn(el) {
+  if (!el) return;
+  el.classList.remove("fx-swap");
+  void el.offsetWidth;
+  el.classList.add("fx-swap");
+}
+
 // Charge une section de page de façon indépendante (chargement, erreur, réessai).
 export async function section(container, loader, render) {
   container.replaceChildren(loading());
@@ -104,6 +112,7 @@ export async function section(container, loader, render) {
     container.replaceChildren();
     const out = render(result, container);
     if (out) container.append(...[out].flat(Infinity).filter(Boolean));
+    swapIn(container);
   } catch (err) {
     if (err.name === "AbortError") return;
     container.replaceChildren(errorState(err, () => section(container, loader, render)));
@@ -221,7 +230,11 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
       score = h("span", { class: "score num", title: "Cliquer pour révéler ou masquer le score" }, String(s?.score ?? 0));
       revealOnClick(score);
       const prevScore = previous?.get(`${game.id}:${sideKey}`);
-      if (prevScore !== undefined && s?.score > prevScore) score.classList.add("bump");
+      if (prevScore !== undefined && s?.score > prevScore) {
+        // Le score qui change roule, et l'écart marqué s'envole au-dessus (+2, +3).
+        score.classList.add("bump");
+        score.dataset.delta = `+${s.score - prevScore}`;
+      }
       if (winner === sideKey) score.append(h("i", { class: "winmark", "aria-label": "vainqueur" }));
     }
     return h(
