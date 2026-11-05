@@ -68,12 +68,13 @@ class InterfaceTests(unittest.TestCase):
     def open(self, hash_: str):
         self.page.goto(self.base + hash_)
         self.page.wait_for_load_state("networkidle")
-        self.page.wait_for_selector("main > :not(.state)", timeout=10000)
+        self.page.wait_for_selector("main > :not(.state):not(.visually-hidden)", timeout=10000)
 
     def test_home_shows_games_recap_and_demo_banner(self):
         self.open("#/")
         self.assertEqual(self.page.locator(".game-tile").count(), 5)
-        self.assertIn("Cette nuit en NBA", self.page.locator(".recap").text_content())
+        self.assertEqual(self.page.locator(".recap").get_attribute("aria-label"), "Cette nuit en NBA")
+        self.page.wait_for_selector(".recap-feature")
         self.assertTrue(self.page.locator(".demo-banner").is_visible())
         self.assertTrue(self.page.locator("a[href='#/multi']").is_visible())
 
@@ -151,7 +152,7 @@ class InterfaceTests(unittest.TestCase):
         self.open("#/match/0012600050")
         self.page.wait_for_selector(".events")
         self.assertEqual(self.page.locator(".events .event").count(), 3)
-        self.assertGreaterEqual(self.page.locator(".key-card").count(), 2)
+        self.assertGreaterEqual(self.page.locator(".key-line").count(), 2)
         self.page.click('[role="tab"][data-tab="videos"]')
         self.page.wait_for_selector(".moments")
         self.assertEqual(self.page.locator(".moment").count(), 5)
@@ -161,7 +162,7 @@ class InterfaceTests(unittest.TestCase):
 
     def test_pregame_injuries(self):
         self.open("#/match/0012600053")
-        self.page.wait_for_selector(".inj-team")
+        self.page.wait_for_selector(".pregame-team")
         self.assertGreater(self.page.locator(".inj-status").count(), 0)
 
     def test_infos_injuries_and_transactions(self):

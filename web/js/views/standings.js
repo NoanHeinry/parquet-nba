@@ -94,9 +94,7 @@ export async function render(ctx) {
       season = seasonSel.value;
       load();
     });
-    const sub = data.fallback
-      ? `La saison ${data.requested} n'a pas encore commencé : voici le classement final ${data.season}.`
-      : `Saison ${data.season}, mis à jour à ${f.updatedAt(meta.fetchedAt)}.`;
+    const sub = data.fallback ? h("span", { class: "note" }, `${data.requested} pas encore commencée`) : null;
     const blocks = ["East", "West"].map((conf) =>
       h("section", { class: "section" }, h("h2", { class: "section-title" }, conf === "East" ? "Conférence Est" : "Conférence Ouest"), table(data.rows.filter((r) => r.conf === conf)))
     );
@@ -110,8 +108,8 @@ export async function render(ctx) {
       h(
         "div",
         { class: "page-head" },
-        h("div", null, h("h1", { class: "page-title" }, "Classement"), h("p", { class: "page-sub" }, sub)),
-        h("div", { style: { display: "flex", gap: "8px", alignItems: "center" } }, playoffsBtn, seasonSel)
+        h("div", null, h("h1", { class: "page-title visually-hidden" }, "Classement")),
+        h("div", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" } }, sub, playoffsBtn, seasonSel)
       ),
       staleBanner(meta) || "",
       ...blocks,

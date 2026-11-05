@@ -87,11 +87,7 @@ function youtubeSettings(ctx) {
 export async function render(ctx) {
   const box = h("div");
   ctx.outlet.append(
-    h(
-      "div",
-      { class: "page-head" },
-      h("div", null, h("h1", { class: "page-title" }, "État des sources"), h("p", { class: "page-sub" }, "Parquet interroge NBA.com et Wikipédia depuis ton ordinateur. Ce test vérifie que chaque source répond."))
-    ),
+    h("h1", { class: "page-title visually-hidden" }, "État des sources"),
     box,
     youtubeSettings(ctx)
   );

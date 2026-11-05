@@ -203,8 +203,7 @@ export async function render(ctx) {
       h(
         "div",
         null,
-        h("h1", { class: "page-title" }, "Multi-matchs"),
-        h("p", { class: "page-sub" }, live ? `${f.plural(live, "match en cours", "matchs en cours")} ce soir. Choisis ceux à suivre.` : "Aucun match en cours pour l'instant. Tu peux tout de même choisir des matchs à suivre.")
+        h("h1", { class: "page-title visually-hidden" }, "Multi-matchs")
       ),
       h("div", { class: "toolbar", style: { margin: 0 } }, h("a", { class: "btn", href: "#/" }, "Retour aux matchs"), fullscreenBtn)
     ),

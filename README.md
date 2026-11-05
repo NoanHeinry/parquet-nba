@@ -24,7 +24,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Au réveil, la vidéo « résumé de la nuit » et le top 10 publiés par la NBA, quand ils sont disponibles.
 
 **Encyclopédie et analyse**
-- Équipes : effectif, staff, calendrier mois par mois (V vert ou D rouge et score pour les matchs joués, horaire pour les prochains), résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
+- Équipes : effectif en photos (ou en tableau), staff, calendrier mois par mois (V vert ou D rouge et score pour les matchs joués, horaire pour les prochains), résumé historique, titres, maillots retirés, membres du Hall of Fame, victoires saison par saison.
 - Équipes : export du calendrier de la saison au format `.ics`, à importer dans Google Agenda, Apple Calendrier ou Outlook.
 - Joueurs : recherche dans toute l'histoire de la ligue, filtres (équipe, poste, pays), biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées (adresse réelle TS%, adresse effective eFG%, passes par balle perdue, part de tirs à 3 points), derniers matchs.
 - Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.

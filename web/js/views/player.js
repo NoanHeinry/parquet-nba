@@ -341,7 +341,7 @@ function statsView(container, career) {
     }, "Statistique du graphique")),
     chartBox,
     advancedBox,
-    h("div", { class: "section" }, h("h2", { class: "section-title" }, "Saison par saison"), h("p", { class: "note", style: { margin: "-6px 0 12px" } }, "Lignes grisées : détail par équipe d'une saison partagée entre plusieurs clubs."), tableBox)
+    h("div", { class: "section" }, h("h2", { class: "section-title" }, "Saison par saison"), tableBox)
   );
   draw();
 }
@@ -495,7 +495,7 @@ export async function render(ctx) {
         h(
           "div",
           { class: "profile-grid" },
-          h("div", null, h("h2", { class: "section-title" }, "Biographie"), bio, h("div", { class: "section" }, h("h2", { class: "section-title" }, "Records en carrière"), highs)),
+          h("div", null, bio, h("div", { class: "section" }, h("h2", { class: "section-title" }, "Records en carrière"), highs)),
           h("div", null, h("h2", { class: "section-title" }, "Palmarès"), awards, h("div", { class: "section" }, h("h2", { class: "section-title" }, "Parcours en NBA"), path), moves)
         )
       );

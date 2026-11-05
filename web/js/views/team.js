@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { columnChart } from "../charts.js";
-import { favorites, loading, playerCell, section, segmented, statTable, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
+import { favorites, headshot, loading, playerCell, section, segmented, statTable, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
 import { team, teamBand, teamColor } from "../teams.js";
 import { iconCalendar, iconStar } from "../icons.js";
 import { injuryRow, movesByDay, reportSource } from "../news.js";
@@ -62,17 +62,47 @@ function rosterView(container, t, ctx) {
       ];
       const head = data.coaches.find((c) => c.head);
       const staff = data.coaches.filter((c) => !c.head);
-      return [
-        h("p", { class: "note", style: { margin: "0 0 12px" } }, `Effectif ${data.season}, ${data.players.length} joueurs.`),
-        statTable(columns, data.players, { sortable: true, initialSort: { key: "num", dir: "asc" }, caption: `Effectif ${t.fullName}` }),
-        h(
-          "div",
-          { class: "section" },
-          h("h2", { class: "section-title" }, "Staff"),
-          head ? h("p", null, h("b", null, head.name), h("span", { class: "muted" }, `, ${head.type.toLowerCase()}`)) : null,
-          staff.length ? h("p", { class: "note" }, staff.map((c) => `${c.name} (${c.type.toLowerCase()})`).join(", ")) : null
-        ),
-      ];
+      // L'effectif en photos par défaut ; le tableau complet reste à un clic.
+      const byNumber = data.players.slice().sort((a, b) => (Number(a.num) || 999) - (Number(b.num) || 999));
+      const photos = h(
+        "div",
+        { class: "roster-grid" },
+        byNumber.map((p) =>
+          h(
+            "a",
+            { class: "roster-card", href: `#/joueur/${p.id}` },
+            h("span", { class: "roster-num num", "aria-hidden": "true" }, p.num || ""),
+            headshot(p.id, { size: "big", alt: "" }),
+            h("span", { class: "nm" }, p.name),
+            h("span", { class: "meta" }, [f.position(p.pos), p.age ? `${Math.floor(p.age)} ans` : "", f.heightM(p.height)].filter(Boolean).join(" · "))
+          )
+        )
+      );
+      const holder = h("div", null, photos);
+      let tableEl = null;
+      const toggle = segmented(
+        [
+          { value: "photos", label: "Photos" },
+          { value: "table", label: "Tableau" },
+        ],
+        "photos",
+        (v) => {
+          if (v === "table") {
+            tableEl ||= statTable(columns, data.players, { sortable: true, initialSort: { key: "num", dir: "asc" }, caption: `Effectif ${t.fullName}` });
+            holder.replaceChildren(tableEl);
+          } else holder.replaceChildren(photos);
+        },
+        "Affichage de l'effectif"
+      );
+      const staffLine = head || staff.length
+        ? h(
+            "p",
+            { class: "staff-line" },
+            head ? [h("b", null, head.name), " entraîneur principal"] : null,
+            staff.length ? h("span", { class: "muted" }, `${head ? " · " : ""}${staff.map((c) => c.name).join(", ")}`) : null
+          )
+        : null;
+      return [h("div", { class: "toolbar" }, toggle), holder, staffLine];
     }
   );
 }
@@ -304,7 +334,7 @@ function scheduleView(container, t, ctx) {
         h(
           "div",
           { class: "ics-row" },
-          h("p", { class: "note", style: { margin: 0 } }, `Saison ${data.season}. Horaires à l'heure de Paris.`),
+          h("p", { class: "note", style: { margin: 0 } }, `Saison ${data.season}, heures de Paris`),
           h(
             "a",
             { class: "btn", href: `/api/team/${t.id}/calendar.ics`, download: `parquet-${t.tri.toLowerCase()}-${data.season}.ics`, title: "Fichier à importer dans Google Agenda, Apple Calendrier ou Outlook" },
@@ -494,7 +524,6 @@ function franchiseView(container, t, ctx) {
       if (data.hof.length) {
         out.push(
           h("div", { class: "section" }, h("h2", { class: "section-title" }, "Au Hall of Fame"),
-            h("p", { class: "note" }, "Membres du Basketball Hall of Fame passés par la franchise, avec leur année d'intronisation."),
             h("div", { class: "titles-list" }, data.hof.map((p) => h(p.id ? "a" : "span", { class: "title-pill", href: p.id ? `#/joueur/${p.id}` : null }, h("b", null, p.year || ""), p.name, p.pos ? h("span", { class: "muted" }, ` (${f.position(p.pos)})`) : "")))
           )
         );
@@ -516,9 +545,9 @@ function newsView(container, t, ctx) {
   const moves = h("div", { class: "section" });
   container.replaceChildren(inj, moves);
   section(inj, () => api(`/injuries?team=${t.id}`, { signal: ctx.signal }), ({ data }) => {
-    const head = h("h2", { class: "section-title" }, "Infirmerie");
+    const head = null;
     if (!data.games.length) {
-      return [head, h("p", { class: "note" }, "L'équipe ne figure pas dans le dernier rapport des blessures : elle ne joue pas dans les prochaines heures."), reportSource(data)];
+      return [h("p", { class: "note" }, "Pas de match dans les prochaines heures, donc pas de rapport des blessures."), reportSource(data)];
     }
     return [
       head,
@@ -541,7 +570,7 @@ function newsView(container, t, ctx) {
     ];
   });
   section(moves, () => api(`/transactions?team=${t.id}&days=365&limit=60`, { signal: ctx.signal }), ({ data }) => [
-    h("h2", { class: "section-title" }, "Mouvements des douze derniers mois"),
+
     data.items.length ? movesByDay(data.items, { showTeam: false }) : h("p", { class: "note" }, "Aucune transaction sur les douze derniers mois."),
   ]);
 }

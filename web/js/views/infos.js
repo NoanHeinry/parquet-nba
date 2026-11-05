@@ -75,7 +75,6 @@ function movesView(box, ctx) {
       ({ data, meta }) => [
         staleBanner(meta),
         data.items.length ? movesByDay(data.items) : h("p", { class: "note" }, "Aucune transaction sur les quatre derniers mois pour ce filtre."),
-        h("p", { class: "note", style: { marginTop: "16px" } }, "Source : liste officielle des mouvements de joueurs de la NBA. Les quatre derniers mois sont affichés."),
       ]
     );
   box.replaceChildren(
@@ -100,16 +99,7 @@ export async function render(ctx) {
   const which = ctx.params[0] === "mouvements" ? "moves" : "injuries";
   const box = h("div");
   ctx.outlet.append(
-    h(
-      "div",
-      { class: "page-head" },
-      h(
-        "div",
-        null,
-        h("h1", { class: "page-title" }, "Infos NBA"),
-        h("p", { class: "page-sub" }, "Le rapport officiel des blessures avant chaque match, et les mouvements de joueurs dans toute la ligue.")
-      )
-    ),
+    h("h1", { class: "page-title visually-hidden" }, "Infos NBA"),
     h(
       "div",
       { class: "toolbar" },

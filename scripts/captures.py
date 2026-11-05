@@ -90,7 +90,7 @@ def main() -> None:
 
         def hover_flow(p):
             p.wait_for_selector(".flow-chart")
-            top = p.evaluate("document.querySelector('.flow-chart').closest('.section').getBoundingClientRect().top + window.scrollY")
+            top = p.evaluate("(e => (e.closest('.section') || e).getBoundingClientRect())(document.querySelector('.flow-chart')).top + window.scrollY")
             p.evaluate(f"window.scrollTo(0, {top} - 90)")
             p.wait_for_timeout(300)
             box = p.locator(".flow-chart").bounding_box()
@@ -119,13 +119,13 @@ def main() -> None:
         def videos_tab(p):
             p.click('[role="tab"][data-tab="videos"]')
             p.wait_for_selector(".moments")
-            top = p.evaluate("document.querySelector('.nba-recap').closest('.section').getBoundingClientRect().top + window.scrollY")
+            top = p.evaluate("(e => (e.closest('.section') || e).getBoundingClientRect())(document.querySelector('.nba-recap')).top + window.scrollY")
             p.evaluate(f"window.scrollTo(0, {top} - 80)")
 
         def keys(p):
             p.click('[role="tab"][data-tab="resume"]')
             p.wait_for_selector(".events")
-            top = p.evaluate("document.querySelector('.events').closest('.section').getBoundingClientRect().top + window.scrollY")
+            top = p.evaluate("(e => (e.closest('.section') || e).getBoundingClientRect())(document.querySelector('.events')).top + window.scrollY")
             p.evaluate(f"window.scrollTo(0, {top} - 80)")
 
         page = context().new_page()

@@ -192,7 +192,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   const colors = teamPair(game.away?.id, game.home?.id);
   const isFav = favs.has(game.away?.id) || favs.has(game.home?.id);
   const tile = h("a", {
-    class: `game-tile${status.live ? " is-live" : ""}${isFav ? " is-fav" : ""}${isRevealed(gameKey(game.id)) ? " is-revealed" : ""}`,
+    class: `game-tile${status.live ? " is-live" : ""}${isFav ? " is-fav" : ""}${started ? "" : " is-upcoming"}${isRevealed(gameKey(game.id)) ? " is-revealed" : ""}`,
     href: `#/match/${game.id}`,
     dataset: { gameId: game.id },
     style: { "--away": colors.away, "--home": colors.home },
@@ -200,125 +200,113 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   });
 
   const winner = game.status === 3 && game.away && game.home ? (game.away.score > game.home.score ? "away" : "home") : null;
-
-  const row = (sideKey) => {
-    const side = game[sideKey];
-    const prevScore = previous?.get(`${game.id}:${sideKey}`);
-    const score = h("span", { class: "score", title: "Cliquer pour révéler ou masquer le score" }, started ? String(side?.score ?? 0) : "");
-    if (started) {
-      score.addEventListener("click", (e) => {
-        if (isSpoilerFree()) {
-          e.preventDefault();
-          e.stopPropagation();
-          toggleReveal();
-        }
-      });
-    }
-    if (started && prevScore !== undefined && side?.score > prevScore) score.classList.add("bump");
-    if (winner === sideKey) score.append(h("i", { class: "winmark", "aria-label": "vainqueur" }));
-    const record = side?.wins !== null && side?.wins !== undefined && (side.wins + side.losses > 0) ? `${side.wins}-${side.losses}` : "";
-    return h(
-      "div",
-      { class: `tile-team${winner && winner !== sideKey ? " loser" : ""}` },
-      teamLogo(side?.id, 34),
-      h(
-        "div",
-        { class: "who" },
-        h("span", { class: "tri" }, side?.tri || "?", favs.has(side?.id) ? h("span", { class: "fav-star", title: "Équipe favorite", style: { marginLeft: "4px" } }, iconStar(true, 11)) : null),
-        h("span", { class: "nick" }, teamName(side), record ? `, ${record}` : "")
-      ),
-      started ? score : null
-    );
-  };
-
-  if (started) {
-    tile.append(row("away"), row("home"));
-  } else {
-    const time = game.start ? f.clockTime(game.start) : "–";
-    const sameDay = f.sameLocalDay(game.start, game.etDate);
-    tile.append(
-      h(
-        "div",
-        { class: "tile-upcoming" },
-        row("away"),
-        h("div", { class: "time" }, status.text.includes("confirmer") ? "–" : time, h("small", null, sameDay ? "heure de Paris" : f.localDayShort(game.start))),
-        row("home")
-      )
-    );
+  function toggleReveal() {
+    setTileRevealed(tile, !tile.classList.contains("is-revealed"));
   }
-
-  if (status.live) {
-    const bar = h("div", { class: "progress", "aria-hidden": "true" });
-    for (const p of f.gameProgress(game)) bar.append(h("span", { class: p.ot ? "ot" : "" }, h("i", { style: { width: `${p.filled * 100}%` } })));
-    tile.append(bar);
-  }
-
-  // Meilleurs marqueurs (match commencé) ou lieu et diffusion (match à venir).
-  const extra = h("div", { class: "tile-leaders", title: started ? "Cliquer pour révéler le score et les leaders" : null });
-  if (started) {
-    extra.addEventListener("click", (e) => {
+  const revealOnClick = (el) =>
+    el.addEventListener("click", (e) => {
       if (isSpoilerFree()) {
         e.preventDefault();
         e.stopPropagation();
         toggleReveal();
       }
     });
+
+  // Une équipe : logo, sigle, nom et bilan, puis le score (côté extérieur à gauche, domicile à droite).
+  const side = (sideKey) => {
+    const s = game[sideKey];
+    const record = s?.wins !== null && s?.wins !== undefined && s.wins + s.losses > 0 ? `${s.wins}-${s.losses}` : "";
+    let score = null;
+    if (started) {
+      score = h("span", { class: "score num", title: "Cliquer pour révéler ou masquer le score" }, String(s?.score ?? 0));
+      revealOnClick(score);
+      const prevScore = previous?.get(`${game.id}:${sideKey}`);
+      if (prevScore !== undefined && s?.score > prevScore) score.classList.add("bump");
+      if (winner === sideKey) score.append(h("i", { class: "winmark", "aria-label": "vainqueur" }));
+    }
+    return h(
+      "div",
+      { class: `tile-team ${sideKey}${winner && winner !== sideKey ? " loser" : ""}` },
+      teamLogo(s?.id, 46),
+      h(
+        "div",
+        { class: "who" },
+        h("span", { class: "tri" }, s?.tri || "?", favs.has(s?.id) ? h("span", { class: "fav-star", title: "Équipe favorite" }, iconStar(true, 11)) : null),
+        h("span", { class: "nick" }, teamName(s), record ? ` ${record}` : "")
+      ),
+      score
+    );
+  };
+
+  // Au centre : l'état du match, ou l'heure du coup d'envoi.
+  let center;
+  if (started) {
+    center = h(
+      "div",
+      { class: `tile-status${status.live ? " live" : ""}` },
+      status.live ? h("span", { class: "live-dot", "aria-hidden": "true" }) : null,
+      status.text
+    );
+  } else {
+    const sameDay = f.sameLocalDay(game.start, game.etDate);
+    center = h(
+      "div",
+      { class: "tile-time" },
+      h("strong", { class: "num" }, status.text.includes("confirmer") || !game.start ? "–" : f.clockTime(game.start)),
+      sameDay ? null : h("small", null, f.localDayShort(game.start))
+    );
   }
+
+  // À droite : les meilleurs joueurs du match, avec leur photo ; avant le match, la salle.
+  const people = h("div", { class: "tile-leaders", title: started ? "Cliquer pour révéler le score et les leaders" : null });
+  if (started) revealOnClick(people);
   const leaders = game.leaders;
   if (started && leaders) {
     for (const key of ["away", "home"]) {
       const l = leaders[key];
-      if (l) extra.append(h("span", null, h("b", null, l.name), ` ${l.pts ?? 0} pts, ${l.reb ?? 0} reb, ${l.ast ?? 0} pd`));
+      if (!l) continue;
+      people.append(
+        h(
+          "span",
+          { class: "tl-player" },
+          headshot(l.id, { alt: "" }),
+          h("span", null, h("b", null, l.name), h("small", { class: "num" }, `${l.pts ?? 0} pts ${l.reb ?? 0} reb ${l.ast ?? 0} pd`))
+        )
+      );
     }
   } else if (started && game.topScorers?.length) {
     const t = game.topScorers[0];
-    extra.append(h("span", null, "Meilleur marqueur : ", h("b", null, t.name), ` ${t.pts} pts`));
-  } else if (!started) {
-    if (game.arena) extra.append(h("span", null, [game.arena, game.arenaCity].filter(Boolean).join(", ")));
-    if (game.tv?.length) extra.append(h("span", null, `TV US : ${game.tv.join(", ")}`));
+    people.append(h("span", { class: "tl-player" }, headshot(t.id, { alt: "" }), h("span", null, h("b", null, t.name), h("small", { class: "num" }, `${t.pts} pts`))));
+  } else if (!started && game.arena) {
+    people.append(h("span", { class: "tl-place" }, [game.arena, game.arenaCity].filter(Boolean).join(", "), game.tv?.length ? h("small", null, game.tv.join(", ")) : null));
   }
-  if (extra.childNodes.length) tile.append(extra);
 
   let revealBtn = null;
-  const syncRevealBtn = () => syncTileReveal(tile);
-  function toggleReveal() {
-    setTileRevealed(tile, !tile.classList.contains("is-revealed"));
-  }
-
   if (started) {
-    revealBtn = h("button", {
-      type: "button",
-      class: "tile-reveal-btn",
-      "aria-label": "Révéler le score de ce match",
-    });
-    syncRevealBtn();
+    revealBtn = h("button", { type: "button", class: "tile-reveal-btn", "aria-label": "Révéler le score de ce match" });
     revealBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       toggleReveal();
     });
+    // Le bouton doit être dans la tuile pour que syncTileReveal le retrouve.
+    queueMicrotask(() => syncTileReveal(tile));
   }
-
-  const footRight = h(
-    "div",
-    { class: "tile-foot-right" },
-    revealBtn,
-    h("span", { class: "tile-label" }, game.series || f.gameLabel(game))
-  );
-
-  if (revealBtn) {
-    // Le bouton doit exister dans la tuile pour que syncTileReveal le retrouve.
-    queueMicrotask(syncRevealBtn);
-  }
+  const label = game.series || f.gameLabel(game);
 
   tile.append(
-    h(
-      "div",
-      { class: "tile-foot" },
-      h("span", { class: `tile-status${status.live ? " live" : ""}` }, status.live ? h("span", { class: "live-dot", "aria-hidden": "true" }) : null, started || status.text.includes("confirmer") || game.postponed ? status.text : "À venir"),
-      footRight
-    )
+    side("away"),
+    center,
+    side("home"),
+    people,
+    h("div", { class: "tile-foot-right" }, label ? h("span", { class: "tile-label" }, label) : null, revealBtn)
   );
+
+  if (status.live) {
+    const bar = h("div", { class: "progress", "aria-hidden": "true" });
+    for (const p of f.gameProgress(game)) bar.append(h("span", { class: p.ot ? "ot" : "" }, h("i", { style: { width: `${p.filled * 100}%` } })));
+    tile.append(bar);
+  }
   return tile;
 }
 

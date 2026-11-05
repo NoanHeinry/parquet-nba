@@ -21,11 +21,6 @@ export async function render(ctx) {
     return;
   }
   const favs = favorites();
-  const sub = data.season
-    ? data.fallback
-      ? `Bilans de la saison ${data.season}. La nouvelle saison débute bientôt.`
-      : `Bilans de la saison ${data.season}.`
-    : "";
 
   const blocks = LAYOUT.map((c) =>
     h(
@@ -46,7 +41,7 @@ export async function render(ctx) {
               h(
                 "a",
                 { class: "team-row", href: `#/equipe/${t.id}` },
-                teamLogo(t.id, 40),
+                teamLogo(t.id, 72),
                 h("span", { class: "nm" }, t.name, favs.has(t.id) ? h("span", { class: "fav-star", title: "Équipe favorite", style: { marginLeft: "4px" } }, iconStar(true, 11)) : null, h("small", null, t.city)),
                 t.record ? h("span", { class: "rec num" }, `${t.record.w}-${t.record.l}`) : null
               )
@@ -58,7 +53,7 @@ export async function render(ctx) {
   );
 
   ctx.outlet.replaceChildren(
-    h("div", { class: "page-head" }, h("div", null, h("h1", { class: "page-title" }, "Équipes"), sub ? h("p", { class: "page-sub" }, sub) : null)),
+    h("h1", { class: "page-title visually-hidden" }, "Équipes"),
     ...blocks
   );
 }

@@ -193,14 +193,7 @@ export async function render(ctx) {
     container.replaceChildren();
 
     // En-tête de la page
-    const head = h(
-      "div",
-      { class: "page-head" },
-      h("div", null,
-        h("h1", { class: "page-title" }, "Comparateur de joueurs"),
-        h("p", { class: "page-sub" }, "Compare les trajectoires, moyennes de carrière, records et palmarès de deux joueurs.")
-      )
-    );
+    const head = h("h1", { class: "page-title visually-hidden" }, "Comparateur de joueurs");
 
     // Duels suggérés (presets)
     const presetsBar = h(
@@ -344,7 +337,7 @@ export async function render(ctx) {
         return h(
           "section",
           { class: "section", style: { marginTop: "32px" } },
-          h("h2", { class: "section-title" }, "Palmarès & Distinctions"),
+          
           compareRows(awardRows, { away: c1, home: c2 }, { away: p1Info.name, home: p2Info.name })
         );
       };
@@ -412,7 +405,7 @@ export async function render(ctx) {
             "div",
             { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "8px", marginBottom: "8px" } },
             h("strong", null, `${activeChoice.label} par match (aligné par saison de carrière)`),
-            h("span", { class: "note" }, "Survole la courbe pour comparer chaque saison.")
+            null
           ),
           dualLineChart(seriesA, seriesB, { format: fmt })
         );
@@ -432,8 +425,6 @@ export async function render(ctx) {
         ? h(
             "section",
             { class: "section", style: { marginTop: "36px" } },
-            h("h2", { class: "section-title" }, "Évolution de carrière (saison par saison)"),
-            h("p", { class: "note", style: { margin: "0 0 14px" } }, "Compare leurs moyennes à chaque étape de carrière depuis leur saison rookie (S1 = 1re saison)."),
             chartToolbar,
             chartCard
           )
@@ -441,7 +432,7 @@ export async function render(ctx) {
 
       statsContainer.replaceChildren(
         h("section", { class: "section" },
-          h("h2", { class: "section-title" }, "Face-à-face statistique"),
+          
           modeToolbar,
           duelBox
         ),

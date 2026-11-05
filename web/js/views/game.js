@@ -3,12 +3,12 @@
 import { api } from "../api.js";
 import { h, s } from "../dom.js";
 import * as f from "../format.js";
-import { compareRows, gameFlowChart, leadSeries, leadStats, shotChart } from "../charts.js";
+import { compareRows, gameFlowChart, shotChart } from "../charts.js";
 import { chips, errorState, headshot, loading, playerCell, section, segmented, statTable, staleBanner, tabs, teamLogo, wl } from "../components.js";
 import { team, teamPair } from "../teams.js";
 import { gameKey, isHidden, isRevealed as isRevealedKey, setRevealed } from "../spoiler.js";
 import { momentCard, nbaRecapCard, youtubeBlock } from "../media.js";
-import { injuryTeamBlock, reportSource } from "../news.js";
+import { injuryRow } from "../news.js";
 
 const TAB_DEFS = [
   { id: "resume", label: "Résumé" },
@@ -135,32 +135,35 @@ function periodsTable(game) {
   );
 }
 
-function leaderCards(box) {
-  const cats = [
-    { key: "pts", label: "Points" },
-    { key: "reb", label: "Rebonds" },
-    { key: "ast", label: "Passes décisives" },
-  ];
-  const grid = h("div", { class: "leaders-duo" });
-  for (const c of cats) {
-    const card = h("div", { class: "leader-card" }, h("h3", null, c.label));
-    for (const key of ["away", "home"]) {
-      const players = box.teams[key].players.filter((p) => p.played);
-      if (!players.length) continue;
-      const best = players.reduce((a, b) => (b[c.key] > a[c.key] ? b : a));
-      card.append(
-        h(
-          "a",
-          { class: "leader-line", href: `#/joueur/${best.id}` },
-          headshot(best.id, { cls: "headshot pic", alt: "" }),
-          h("div", null, h("div", { style: { fontWeight: 650 } }, best.name), h("div", { class: "note" }, box.game[key]?.tri)),
-          h("span", { class: "v" }, best[c.key])
-        )
-      );
+// Les joueurs qui ont marqué le match, côte à côte pour chaque équipe, avec leur portrait.
+function standouts(box) {
+  const wrap = h("div", { class: "standouts" });
+  for (const key of ["away", "home"]) {
+    const players = box.teams[key].players.filter((p) => p.played);
+    if (!players.length) continue;
+    const picks = [];
+    for (const stat of ["pts", "reb", "ast"]) {
+      const best = players.reduce((a, b) => (b[stat] > a[stat] ? b : a));
+      if (!picks.includes(best)) picks.push(best);
     }
-    grid.append(card);
+    wrap.append(
+      h(
+        "div",
+        { class: `standouts-team ${key}` },
+        picks.map((p, i) =>
+          h(
+            "a",
+            { class: `standout${i === 0 ? " lead" : ""}`, href: `#/joueur/${p.id}` },
+            headshot(p.id, { size: i === 0 ? "big" : "small", alt: "" }),
+            h("span", { class: "nm" }, p.name),
+            h("span", { class: "ln num" }, `${p.pts} pts ${p.reb} reb ${p.ast} pd`),
+            h("span", { class: "tm" }, teamLogo(box.game[key]?.id, 16), box.game[key]?.tri)
+          )
+        )
+      )
+    );
   }
-  return grid;
+  return wrap;
 }
 
 function resume(box) {
@@ -192,13 +195,13 @@ function resume(box) {
   if (a.timesTied !== null && a.timesTied !== undefined) facts.push(h("span", null, h("b", null, "Égalités"), String(a.timesTied)));
 
   return [
+    standouts(box),
     h(
       "div",
-      { class: "two-col" },
-      h("div", null, h("h2", { class: "section-title" }, "Score par quart-temps"), periodsTable(g), facts.length ? h("div", { class: "facts-inline", style: { marginTop: "18px" } }, facts) : null),
-      h("div", null, h("h2", { class: "section-title" }, "Duel des équipes"), compareRows(rows, colors, { away: g.away?.tri, home: g.home?.tri }))
+      { class: "two-col resume-grid" },
+      h("div", null, periodsTable(g), facts.length ? h("div", { class: "facts-inline", style: { marginTop: "18px" } }, facts) : null),
+      h("div", null, compareRows(rows, colors, { away: g.away?.tri, home: g.home?.tri }))
     ),
-    h("div", { class: "section" }, h("h2", { class: "section-title" }, "Meilleurs joueurs du match"), leaderCards(box)),
   ];
 }
 
@@ -263,35 +266,23 @@ function boxTable(box, key) {
 
 function eventsBlock(events) {
   if (!events?.length) return null;
-  const count = (kind) => events.filter((e) => e.kind === kind).length;
-  const summary = [
-    count("technical") ? f.plural(count("technical"), "faute technique", "fautes techniques") : "",
-    count("flagrant") ? f.plural(count("flagrant"), "faute flagrante", "fautes flagrantes") : "",
-    count("ejection") ? f.plural(count("ejection"), "expulsion", "expulsions") : "",
-    count("challenge") ? f.plural(count("challenge"), "challenge", "challenges") : "",
-  ].filter(Boolean);
   return h(
-    "div",
-    { class: "section" },
-    h("h2", { class: "section-title" }, "Faits marquants"),
-    h("p", { class: "note", style: { margin: "-4px 0 10px" } }, summary.join(", ") + "."),
-    h(
-      "ul",
-      { class: "events" },
-      events.map((e) =>
+    "ul",
+    { class: "events", "aria-label": "Faits marquants" },
+    events.map((e) =>
+      h(
+        "li",
+        { class: `event ${e.kind}` },
+        e.personId ? headshot(e.personId, { alt: "" }) : teamLogo(e.teamId, 26),
         h(
-          "li",
-          { class: `event ${e.kind}` },
-          h("span", { class: "event-k" }, e.label),
-          h(
-            "span",
-            { class: "event-who" },
-            e.teamId ? teamLogo(e.teamId, 18) : null,
-            e.player ? (e.personId ? h("a", { class: "link", href: `#/joueur/${e.personId}` }, e.player) : e.player) : team(e.teamId)?.name || e.tri,
-            e.detail ? h("span", { class: "note" }, ` (${e.detail})`) : null
-          ),
-          h("span", { class: "event-when num" }, `${f.periodName(e.period)} ${e.clock}`)
-        )
+          "span",
+          { class: "event-txt" },
+          h("b", { class: "event-k" }, e.label),
+          " ",
+          e.player ? (e.personId ? h("a", { class: "link", href: `#/joueur/${e.personId}` }, e.player) : e.player) : team(e.teamId)?.name || e.tri,
+          e.detail ? ` (${e.detail})` : ""
+        ),
+        h("span", { class: "event-when num" }, `${f.periodName(e.period)} ${e.clock}`)
       )
     )
   );
@@ -302,118 +293,68 @@ function duration(text) {
   return sec !== undefined ? `${Number(m)} min ${String(Number(sec)).padStart(2, "0")} s` : text;
 }
 
+function keyLine(playerId, teamId, ...content) {
+  return h("p", { class: "key-line" }, playerId ? headshot(playerId, { alt: "" }) : teamLogo(teamId, 28), h("span", null, ...content));
+}
+
 function keysBlock(page, pageUrl) {
   if (!page) return null;
-  const cards = [];
-  if (page.defense?.length) {
-    cards.push(
-      h(
-        "div",
-        { class: "key-card" },
-        h("h3", null, "Défense"),
-        page.defense.map((d) =>
-          h(
-            "p",
-            null,
-            teamLogo(d.defTeamId, 18),
-            h("a", { class: "link", href: `#/joueur/${d.defenderId}` }, d.defender),
-            ` a tenu ${d.attacker} à ${d.fgm} sur ${d.fga} au tir${d.tpa ? ` (${d.tpm} sur ${d.tpa} à 3 points)` : ""}, en ${duration(d.time)} de duel direct.`
-          )
-        )
+  const lines = [];
+  for (const d of page.defense || []) {
+    lines.push(
+      keyLine(d.defenderId, d.defTeamId, h("a", { class: "link", href: `#/joueur/${d.defenderId}` }, d.defender), ` a tenu ${d.attacker} à ${d.fgm} sur ${d.fga} au tir${d.tpa ? ` (${d.tpm} sur ${d.tpa} à 3 points)` : ""} en ${duration(d.time)} de duel.`)
+    );
+  }
+  for (const x of page.hardest || []) {
+    lines.push(
+      keyLine(
+        x.shooter.id,
+        x.shooter.teamId,
+        x.shooter.id ? h("a", { class: "link", href: `#/joueur/${x.shooter.id}` }, x.shooter.name) : x.shooter.name,
+        ` a réussi un ${x.three ? "tir à 3 points" : "tir"} qui n'avait que ${Math.round(x.chance * 100)} % de chances de rentrer${x.period ? ` (${f.periodName(x.period)}${x.clock ? ` ${x.clock}` : ""})` : ""}.`
       )
     );
   }
-  if (page.hardest?.length) {
-    cards.push(
-      h(
-        "div",
-        { class: "key-card" },
-        h("h3", null, "Tirs les plus difficiles"),
-        page.hardest.map((x) =>
-          h(
-            "p",
-            null,
-            x.shooter.id ? h("a", { class: "link", href: `#/joueur/${x.shooter.id}` }, x.shooter.name) : x.shooter.name,
-            ` : ${x.three ? "tir à 3 points" : "tir"} réussi qui n'avait que ${Math.round(x.chance * 100)} % de chances de rentrer`,
-            x.period ? ` (${f.periodName(x.period)}${x.clock ? ` ${x.clock}` : ""})` : "",
-            "."
-          )
-        )
-      )
-    );
-  }
-  if (page.performers?.length) {
-    cards.push(
-      h(
-        "div",
-        { class: "key-card" },
-        h("h3", null, "Hommes du match selon NBA.com"),
-        page.performers.map((p) =>
-          h("p", null, teamLogo(p.teamId, 18), p.id ? h("a", { class: "link", href: `#/joueur/${p.id}` }, p.name) : p.name, ` : ${p.value} ${p.stat}`)
-        )
-      )
-    );
-  }
-  const story = page.story?.headline
-    ? h(
-        "p",
-        { class: "note", style: { marginTop: "12px" } },
-        `Article du match${page.story.agency ? ` (${page.story.agency})` : ""} : `,
-        h("a", { class: "link", href: pageUrl, target: "_blank", rel: "noopener", lang: "en" }, `« ${page.story.headline} »`),
-        " sur NBA.com."
-      )
-    : null;
-  if (!cards.length && !story) return null;
+  if (!lines.length && !page.story?.headline) return null;
   return h(
     "div",
-    { class: "section" },
-    h("h2", { class: "section-title" }, "Les clés du match"),
-    cards.length ? h("div", { class: "key-cards" }, cards) : null,
-    story,
-    h("p", { class: "source" }, "Source : rapport d'analyse de la page du match sur NBA.com (données de suivi des joueurs).")
+    { class: "keys" },
+    lines,
+    page.story?.headline
+      ? h("p", { class: "key-story" }, h("a", { class: "link", href: pageUrl, target: "_blank", rel: "noopener", lang: "en" }, page.story.headline), page.story.agency ? h("span", { class: "note" }, ` ${page.story.agency}`) : null)
+      : null
   );
 }
 
 function videosView(panel, game, ctx, loadExtras) {
-  const yt = h("div", { class: "section" });
-  const nba = h("div", { class: "section" });
+  const yt = h("div", { class: "video-main" });
+  const nba = h("div");
   panel.replaceChildren(yt, nba);
-  if (game.status !== 3) {
-    yt.append(h("h2", { class: "section-title" }, "Résumé vidéo"), h("p", { class: "note" }, "Le résumé vidéo arrive après le match : la NBA le publie sur YouTube en général une à deux heures après la fin."));
-  } else {
+  if (game.status === 3) {
     section(yt, () => api(`/game/${game.id}/video`, { signal: ctx.signal }), ({ data }) => {
-      const head = h("h2", { class: "section-title" }, "Résumé vidéo");
-      if (data.found) return [head, youtubeBlock({ videoId: data.videoId, title: data.title, url: data.url, embeddable: data.embeddable })];
-      const msg = data.configured
-        ? "La vidéo YouTube de ce match n'est pas encore disponible. La NBA la publie en général une à deux heures après la fin du match."
-        : "Ce résumé ne figure pas parmi les toutes dernières vidéos de la NBA. Pour retrouver celui de n'importe quel match, ajoute une clé YouTube gratuite dans les réglages.";
-      return [
-        head,
-        h("p", { class: "note" }, msg, data.configured ? null : [" ", h("a", { class: "link", href: "#/etat" }, "Régler la clé YouTube"), "."]),
-        h("a", { class: "btn", href: data.searchUrl, target: "_blank", rel: "noopener" }, "Chercher sur YouTube ↗"),
-      ];
+      if (data.found) return youtubeBlock({ videoId: data.videoId, title: data.title, url: data.url, embeddable: data.embeddable });
+      return h(
+        "p",
+        { class: "video-missing" },
+        data.configured ? "Résumé YouTube pas encore publié." : "Résumé YouTube introuvable sans clé YouTube. ",
+        data.configured ? null : h("a", { class: "link", href: "#/etat" }, "Ajouter une clé"),
+        " ",
+        h("a", { class: "btn", href: data.searchUrl, target: "_blank", rel: "noopener" }, "Chercher sur YouTube ↗")
+      );
     });
+  } else {
+    yt.append(h("p", { class: "video-missing" }, "Les vidéos arrivent après le match."));
   }
   section(nba, loadExtras, (ex) => {
     const page = ex.page;
-    if (!page) return [h("h2", { class: "section-title" }, "Vidéos NBA.com"), h("p", { class: "note" }, `Vidéos indisponibles pour l'instant${ex.pageError ? ` (${ex.pageError})` : ""}.`)];
-    const out = [];
-    if (page.recap) out.push(h("h2", { class: "section-title" }, "Sur NBA.com"), nbaRecapCard(page.recap));
-    if (page.moments?.length) {
-      out.push(
-        h("h2", { class: "section-title", style: { marginTop: page.recap ? "28px" : null } }, "Les moments décisifs"),
-        h("p", { class: "note", style: { margin: "-4px 0 12px" } }, "Les actions qui ont fait basculer le match, choisies par NBA.com. Titres et descriptions en anglais."),
-        h("div", { class: "moments" }, page.moments.map(momentCard))
-      );
-    }
-    if (page.highlights?.length) {
-      out.push(
-        h("h3", { class: "sub-title" }, "Autres vidéos sur NBA.com"),
-        h("ul", { class: "video-links" }, page.highlights.map((v) => h("li", null, h("a", { class: "link", href: v.url, target: "_blank", rel: "noopener", lang: "en" }, v.title), v.duration ? h("span", { class: "note" }, ` ${v.duration}`) : null)))
-      );
-    }
-    if (!out.length) out.push(h("h2", { class: "section-title" }, "Vidéos NBA.com"), h("p", { class: "note" }, game.status === 3 ? "NBA.com n'a pas encore publié les vidéos de ce match." : "Les moments décisifs apparaîtront ici après le match."));
-    return out;
+    if (!page) return ex.pageError ? h("p", { class: "note" }, `Vidéos NBA.com indisponibles (${ex.pageError}).`) : null;
+    return [
+      page.recap ? nbaRecapCard(page.recap) : null,
+      page.moments?.length ? h("div", { class: "moments", "aria-label": "Moments décisifs" }, page.moments.map(momentCard)) : null,
+      page.highlights?.length
+        ? h("p", { class: "video-links" }, page.highlights.map((v) => h("a", { class: "link", href: v.url, target: "_blank", rel: "noopener", lang: "en" }, v.title, v.duration ? h("small", null, ` ${v.duration}`) : null)))
+        : null,
+    ];
   });
 }
 
@@ -521,38 +462,23 @@ function shotsView(pbp, game, state, rerender) {
 }
 
 async function pregame(container, game, ctx) {
-  const forms = h("div", { class: "two-col" });
-  const injuries = h("div", { class: "section" });
-  container.append(
-    h("div", { class: "banner", style: { marginTop: "18px" } }, "Le box score, le fil des actions et la carte des tirs apparaîtront au coup d'envoi. La page se met à jour toute seule."),
-    injuries,
-    h("div", { class: "section" }, h("h2", { class: "section-title" }, "Forme du moment"), forms)
-  );
-  api(`/injuries?game=${game.id}`, { signal: ctx.signal })
-    .then(({ data }) => {
-      const g = data.games[0];
-      if (!g) {
-        injuries.remove();
-        return;
-      }
-      injuries.replaceChildren(h("h2", { class: "section-title" }, "Blessures et absences"), h("div", { class: "inj-teams" }, g.teams.map(injuryTeamBlock)), reportSource(data));
-    })
-    .catch(() => injuries.remove());
-  if (game.tv?.length) container.append(h("p", { class: "note" }, `Diffusion aux États-Unis : ${game.tv.join(", ")}.`));
+  const cols = h("div", { class: "pregame" });
+  container.append(cols);
+  if (game.tv?.length) container.append(h("p", { class: "note" }, `Diffusion aux États-Unis : ${game.tv.join(", ")}`));
+  const injuries = {};
   for (const key of ["away", "home"]) {
     const side = game[key];
-    const box = h("div");
-    forms.append(h("div", null, h("h3", { style: { display: "flex", gap: "10px", alignItems: "center", marginBottom: "10px" } }, teamLogo(side?.id, 26), sideName(side).name), box));
-    if (!side?.id) {
-      box.append(h("p", { class: "note" }, "Équipe pas encore connue."));
-      continue;
-    }
+    const inj = h("div");
+    const form = h("div");
+    injuries[side?.id] = inj;
+    cols.append(h("div", { class: "pregame-team" }, h("a", { class: "pregame-head", href: side?.id ? `#/equipe/${side.id}` : null }, teamLogo(side?.id, 40), sideName(side).name), inj, form));
+    if (!side?.id) continue;
     section(
-      box,
+      form,
       () => api(`/team/${side.id}/schedule`, { signal: ctx.signal }),
       ({ data }) => {
         const played = data.games.filter((g) => g.status === 3).slice(-5).reverse();
-        if (!played.length) return h("p", { class: "note" }, "Pas encore de match joué cette saison.");
+        if (!played.length) return null;
         return played.map((g) => {
           const home = g.home?.id === side.id;
           const me = home ? g.home : g.away;
@@ -563,13 +489,25 @@ async function pregame(container, game, ctx) {
             { class: "sched-row", href: `#/match/${g.id}` },
             h("span", { class: "date" }, f.dayShort(g.etDate)),
             teamLogo(opp?.id, 24),
-            h("span", { class: "opp" }, `${home ? "contre" : "à"} ${sideName(opp).name}`, g.kind === "pre" ? h("small", null, " (présaison)") : null),
+            h("span", { class: "opp" }, `${home ? "contre" : "à"} ${sideName(opp).name}`),
             h("span", { class: "res num" }, wl(won ? "W" : "L"), `${me.score}-${opp.score}`)
           );
         });
       }
     );
   }
+  api(`/injuries?game=${game.id}`, { signal: ctx.signal })
+    .then(({ data }) => {
+      const g = data.games[0];
+      if (!g) return;
+      for (const t of g.teams) {
+        const box = injuries[t.id];
+        if (!box) continue;
+        if (!t.submitted) box.replaceChildren(h("p", { class: "note" }, "Rapport des blessures pas encore transmis"));
+        else if (t.players.length) box.replaceChildren(h("ul", { class: "inj-list" }, t.players.map((p) => injuryRow(p))));
+      }
+    })
+    .catch(() => {});
 }
 
 export async function render(ctx) {
@@ -648,25 +586,14 @@ export async function render(ctx) {
     }
     const g = box.game;
     const colors = teamPair(g.away?.id, g.home?.id);
-    const { points } = leadSeries(pbp.actions);
-    const st = leadStats(points);
-    const lead = (p, tri) => `${tri} +${Math.abs(p.lead)} (${p.period <= 4 ? `Q${p.period}` : "prolongation"}, ${p.clock})`;
-    const facts = [
-      st.maxAway.lead < 0 ? `Plus gros écart ${g.away?.tri} : ${lead(st.maxAway, g.away?.tri)}` : `${g.away?.tri} n'a jamais mené`,
-      st.maxHome.lead > 0 ? `Plus gros écart ${g.home?.tri} : ${lead(st.maxHome, g.home?.tri)}` : `${g.home?.tri} n'a jamais mené`,
-      `${f.plural(st.changes, "changement", "changements")} de leader`,
-      `${f.plural(st.ties, "égalité", "égalités")}`,
-    ];
     el.replaceChildren(
-      h("h2", { class: "section-title" }, "Scénario du match"),
       h(
         "p",
-        { class: "legend", style: { margin: "-4px 0 10px" } },
+        { class: "legend", style: { margin: "0 0 10px" } },
         h("span", null, h("i", { class: "key-swatch", style: { background: colors.home } }), `Au-dessus : ${sideName(g.home).name} mènent`),
         h("span", null, h("i", { class: "key-swatch", style: { background: colors.away } }), `En dessous : ${sideName(g.away).name} mènent`)
       ),
-      h("div", { class: "chart-card" }, gameFlowChart(pbp.actions, { awayColor: colors.away, homeColor: colors.home, awayTri: g.away?.tri, homeTri: g.home?.tri, live: g.status === 2 })),
-      h("p", { class: "note", style: { marginTop: "10px" } }, facts.join(". ") + ".")
+      h("div", { class: "chart-card" }, gameFlowChart(pbp.actions, { awayColor: colors.away, homeColor: colors.home, awayTri: g.away?.tri, homeTri: g.home?.tri, live: g.status === 2 }))
     );
   };
 
@@ -675,8 +602,8 @@ export async function render(ctx) {
     if (tab === "resume") {
       const parts = resume(box);
       const flow = h("div", { class: "section" });
-      const more = h("div");
-      panel.replaceChildren(parts[0], flow, ...parts.slice(1), more);
+      const more = h("div", { class: "section resume-more" });
+      panel.replaceChildren(...parts, flow, more);
       drawFlow(flow);
       loadExtras()
         .then((ex) => {
@@ -731,6 +658,14 @@ export async function render(ctx) {
 
   drawHead();
   if (box.available) drawBody();
+  if (box.game.status === 3) {
+    loadExtras()
+      .then((ex) => {
+        const img = ex.page?.recap?.image;
+        if (img && ctx.active) wrapper.style.setProperty("--hero-img", `url("${img.replace(/"/g, "")}")`);
+      })
+      .catch(() => {});
+  }
   else pregame(body, box.game, ctx);
 
   // Actualisation automatique pendant le match (et juste avant le coup d'envoi).

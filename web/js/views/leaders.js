@@ -52,11 +52,8 @@ export async function render(ctx) {
     return;
   }
   const { data, meta } = res;
-  const sub = data.fallback
-    ? `La saison ${data.requested} n'a pas encore commencé : voici les leaders de la saison ${data.season} (saison régulière, joueurs qualifiés).`
-    : `Saison ${data.season}, saison régulière, joueurs qualifiés.`;
   ctx.outlet.replaceChildren(
-    h("div", { class: "page-head" }, h("div", null, h("h1", { class: "page-title" }, "Leaders"), h("p", { class: "page-sub" }, sub))),
+    h("div", { class: "page-head" }, h("h1", { class: "page-title visually-hidden" }, "Leaders"), h("span", { class: "note" }, `Saison ${data.season}, saison régulière`)),
     staleBanner(meta) || "",
     h("div", { class: "boards" }, CATEGORIES.map((c) => board(c, data.boards[c.key] || [])))
   );

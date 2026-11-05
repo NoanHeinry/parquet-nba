@@ -5001,3 +5001,1065 @@ html[data-spoiler="1"] .cal-record:hover .cal-rec {
     flex-basis: 100%;
   }
 }
+
+/* =====================================================================
+   1.6 Réorganisation : moins de cadres, plus d'images, moins de titres.
+   Les contenus se posent directement sur le fond, séparés par l'espace
+   et de fins filets ; les photos des joueurs portent les pages.
+   ===================================================================== */
+
+/* ---------- Accueil : une ligne par match */
+.games-grid {
+  display: block;
+  border-top: 1px solid var(--line);
+}
+
+.game-tile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr) minmax(0, 1.25fr) auto;
+  align-items: center;
+  gap: 8px 18px;
+  min-height: 0;
+  padding: 16px 8px 16px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  overflow: visible;
+  color: var(--text);
+}
+
+.game-tile::before {
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  border-radius: 2px;
+}
+
+.game-tile:hover {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+
+.game-tile.is-live {
+  border-color: var(--line);
+}
+
+.game-tile.is-live::before {
+  background: var(--live);
+}
+
+.game-tile.is-fav {
+  box-shadow: none;
+}
+
+.game-tile .tile-team {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  min-width: 0;
+}
+
+.game-tile .tile-team.home {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.game-tile .tile-team .who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.game-tile .tile-team .tri {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.game-tile .tile-team .nick {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-tile .tile-team .score {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1;
+  margin: 0;
+}
+
+.game-tile .tile-status,
+.game-tile .tile-time {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.game-tile .tile-status.live {
+  color: var(--live);
+}
+
+.game-tile .tile-time strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+
+.game-tile .tile-time small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.game-tile .tile-leaders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 18px;
+  border-left: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--text-2);
+  min-width: 0;
+}
+
+.tl-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tl-player .headshot {
+  width: 46px;
+  height: 34px;
+  flex: none;
+  border-radius: 6px;
+  background: none;
+}
+
+.tl-player > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tl-player b {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-player small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tl-place {
+  display: flex;
+  flex-direction: column;
+  color: var(--muted);
+}
+
+.game-tile .tile-foot-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.game-tile .tile-label {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.game-tile .progress {
+  position: absolute;
+  left: 14px;
+  right: 8px;
+  bottom: -1px;
+  margin: 0;
+}
+
+.game-tile {
+  position: relative;
+}
+
+/* ---------- Accueil : la nuit en images */
+.recap {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 8px 0 30px;
+}
+
+.recap-feature {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 28px;
+  align-items: end;
+}
+
+.recap-photo {
+  position: relative;
+  display: block;
+  align-self: stretch;
+}
+
+.recap-photo .headshot {
+  width: 100%;
+  aspect-ratio: 1040 / 760;
+  height: auto;
+  background: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+
+.recap-copy {
+  padding-bottom: 6px;
+  min-width: 0;
+}
+
+.recap-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4.4vw, 54px);
+  font-weight: 700;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.recap-line {
+  margin: 8px 0 2px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.recap-why {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.recap .recap-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 0;
+}
+
+.recap .recap-list li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border: 0;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.recap .recap-list li:first-child a {
+  border: 0;
+}
+
+.recap .recap-list .headshot {
+  width: 38px;
+  height: 28px;
+  border-radius: 5px;
+  background: none;
+}
+
+.recap .recap-list .nm {
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.recap-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 34px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.recap-cat {
+  display: grid;
+  grid-template-columns: 58px auto;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.recap-cat .headshot {
+  grid-row: 1 / 3;
+  width: 58px;
+  height: 42px;
+  border-radius: 6px;
+  background: none;
+}
+
+.recap-cat .v {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.recap-cat .v small {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.recap-cat .who {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.recap-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.recap-game {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+.recap-game .num {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.recap-videos {
+  margin-top: 22px;
+}
+
+/* ---------- Colonne de droite */
+.rail-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rail-player .headshot {
+  width: 40px;
+  height: 30px;
+  border-radius: 5px;
+  background: none;
+  flex: none;
+}
+
+.rail-player > span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.rail-player small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .game-tile {
+    grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+    padding: 14px 4px 14px 12px;
+  }
+
+  .game-tile .tile-leaders {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding: 0;
+    border: 0;
+  }
+
+  .game-tile .tile-foot-right {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .game-tile .tile-team .score {
+    font-size: 32px;
+  }
+
+  .game-tile .tile-team .nick {
+    display: none;
+  }
+
+  .recap-feature {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .recap-photo {
+    max-width: 320px;
+  }
+}
+
+/* ---------- Match : l'en-tête comme une affiche */
+.game-page .scoreboard {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 34px 6px 30px;
+  margin: -8px 0 6px;
+  isolation: isolate;
+}
+
+.game-page .scoreboard::before,
+.game-page .scoreboard::after {
+  display: none;
+}
+
+/* Photo du match (NBA.com) en fond, assombrie ; à défaut, les couleurs des deux équipes. */
+.game-page .scoreboard {
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--bg) 35%, transparent), var(--bg) 96%),
+    var(--hero-img, none) center 30% / cover no-repeat,
+    linear-gradient(100deg, color-mix(in srgb, var(--away, var(--surface)) 22%, var(--bg)) 0 50%, color-mix(in srgb, var(--home, var(--surface)) 22%, var(--bg)) 50% 100%);
+}
+
+html[data-spoiler="1"] .game-page:not(.is-revealed) .scoreboard {
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--away, var(--surface)) 22%, var(--bg)) 0 50%, color-mix(in srgb, var(--home, var(--surface)) 22%, var(--bg)) 50% 100%);
+}
+
+.game-page .sb-team .logo,
+.game-page .sb-team .logo-fallback {
+  width: 92px;
+  height: 92px;
+}
+
+.game-page .sb-scores {
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.game-page .sb-meta {
+  border: 0;
+  color: var(--text-2);
+}
+
+/* Les joueurs du match */
+.standouts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin: 26px 0 30px;
+}
+
+.standouts-team {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  align-items: end;
+  gap: 14px;
+}
+
+.standout {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.standout .headshot {
+  width: 100%;
+  aspect-ratio: 1040 / 760;
+  height: auto;
+  background: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 75%, transparent);
+  mask-image: linear-gradient(to bottom, #000 75%, transparent);
+}
+
+.standout .nm {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.standout.lead .nm {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.standout .ln {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.standout .tm {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.resume-grid {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.game-page .chart-card {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+/* Faits marquants et clés du match : des lignes illustrées */
+.events {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.events .event {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.events .event:first-child {
+  border-top: 0;
+}
+
+.events .event .headshot {
+  width: 40px;
+  height: 29px;
+  border-radius: 5px;
+  background: none;
+}
+
+.events .event-txt {
+  font-size: 14px;
+}
+
+.keys {
+  display: grid;
+  gap: 4px;
+}
+
+.key-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 8px 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.key-line .headshot {
+  width: 64px;
+  height: 47px;
+  flex: none;
+  border-radius: 6px;
+  background: none;
+}
+
+.key-story {
+  margin: 12px 0 0;
+  font-size: 14px;
+}
+
+/* Vidéos : l'image d'abord */
+.video-main {
+  margin: 8px 0 24px;
+}
+
+.video-main .yt-block {
+  max-width: none;
+}
+
+.video-missing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: var(--text-2);
+  margin: 6px 0 18px;
+}
+
+.game-page .nba-recap {
+  position: relative;
+  display: block;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.game-page .nba-recap img,
+.game-page .nba-recap .nba-recap-ph {
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  border-radius: 0;
+}
+
+.game-page .nba-recap .nba-recap-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 60px 24px 20px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  color: #fff;
+}
+
+.game-page .nba-recap .nba-recap-body .k,
+.game-page .nba-recap .nba-recap-body .s {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.game-page .nba-recap strong {
+  font-size: clamp(22px, 3vw, 34px);
+}
+
+.moments {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin-top: 22px;
+  padding-bottom: 8px;
+}
+
+.moments .moment {
+  flex: 0 0 min(300px, 80%);
+  scroll-snap-align: start;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.moments .moment-video {
+  border-radius: var(--radius-sm);
+}
+
+.moments .moment-body {
+  padding: 10px 0 0;
+}
+
+.video-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 18px 0 0;
+  padding: 0;
+  columns: auto;
+  font-size: 14px;
+}
+
+/* Avant le match : une colonne par équipe */
+.pregame {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  margin-top: 26px;
+}
+
+.pregame-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.pregame .inj-list {
+  margin-bottom: 14px;
+}
+
+@media (max-width: 860px) {
+  .standouts,
+  .pregame {
+    grid-template-columns: 1fr;
+  }
+
+  .game-page .sb-team .logo,
+  .game-page .sb-team .logo-fallback {
+    width: 56px;
+    height: 56px;
+  }
+
+  .game-page .nba-recap img,
+  .game-page .nba-recap .nba-recap-ph {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+/* ---------- Partout : des titres de section discrets */
+.section-title {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.section-title .count {
+  color: var(--muted);
+}
+
+/* ---------- Partout : plus de cadres autour des chiffres, des fiches et des tableaux */
+.tiles,
+.highs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 0;
+}
+
+.tile,
+a.tile {
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  padding: 2px 26px 2px 18px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tiles > .tile:first-child,
+.highs > .tile:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.tile .v {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.facts {
+  gap: 10px 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  margin: 18px 0 0;
+}
+
+.facts > div {
+  flex: 0 1 auto;
+  background: none;
+  padding: 0 24px 0 0;
+  margin-right: 24px;
+  border-right: 1px solid var(--line);
+}
+
+.facts > div:last-child {
+  border-right: 0;
+}
+
+.table-wrap {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.stat-table thead th {
+  background: none;
+}
+
+.chart-card {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+/* Leaders : le premier de chaque catégorie en grande photo */
+.boards {
+  gap: 34px 30px;
+}
+
+.board {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
+.board h2 {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* Joueurs : un mur de photos */
+.players-grid {
+  gap: 26px 18px;
+}
+
+.player-card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.player-card .pic-wrap {
+  background: none;
+  border-bottom: 2px solid var(--team, var(--line));
+}
+
+.player-card .body {
+  padding: 8px 0 0;
+  border-top: 0;
+}
+
+.player-card:hover .pic-wrap img {
+  transform: scale(1.03);
+}
+
+.player-card .pic-wrap img {
+  transition: transform 0.2s ease;
+  transform-origin: bottom center;
+}
+
+/* Équipes : un mur de logos */
+.div-col .team-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border: 0;
+}
+
+.div-col {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px 12px;
+  align-content: start;
+}
+
+.div-col h3 {
+  grid-column: 1 / -1;
+}
+
+.div-grid {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.div-col .team-row:hover {
+  background: none;
+  border: 0;
+}
+
+.div-col .team-row:hover .nm {
+  color: var(--accent);
+}
+
+.div-col .team-row .rec {
+  position: static;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Effectif d'une équipe en photos */
+.roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 26px 18px;
+}
+
+.roster-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.roster-card .headshot {
+  width: 100%;
+  aspect-ratio: 1040 / 760;
+  height: auto;
+  background: none;
+  border-bottom: 2px solid var(--line);
+}
+
+.roster-card:hover .headshot {
+  border-bottom-color: var(--accent);
+}
+
+.roster-num {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+  color: color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+.roster-card .nm {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.roster-card .meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.staff-line {
+  margin-top: 26px;
+  font-size: 14px;
+}
+
+/* Infos : des listes, pas des cartes */
+.inj-game {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.inj-games {
+  gap: 0;
+}
+
+.move-list {
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.inj-banner,
+.settings-card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.settings-card {
+  border-top: 1px solid var(--line);
+}
+
+.check {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 12px 0;
+}
+
+.checks {
+  gap: 0;
+}
+
+@media (max-width: 860px) {
+  .div-col {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .facts > div {
+    padding-right: 14px;
+    margin-right: 14px;
+  }
+
+  .tile,
+  a.tile {
+    padding: 2px 16px 2px 12px;
+  }
+}
+
+/* Lignes de match sur téléphone : logo plus petit pour laisser la place au score. */
+@media (max-width: 560px) {
+  .game-tile {
+    grid-template-columns: minmax(0, 1fr) 62px minmax(0, 1fr);
+    gap: 8px 8px;
+  }
+
+  .game-tile .tile-team {
+    gap: 8px;
+  }
+
+  .game-tile .tile-team .logo,
+  .game-tile .tile-team .logo-fallback {
+    width: 30px;
+    height: 30px;
+    flex: none;
+  }
+
+  .game-tile .tile-team .tri {
+    font-size: 17px;
+  }
+
+  .game-tile .tile-team .score {
+    font-size: 28px;
+    flex: none;
+  }
+
+  .game-tile .tile-time strong {
+    font-size: 22px;
+  }
+
+  .game-tile .tile-status {
+    font-size: 11px;
+  }
+}

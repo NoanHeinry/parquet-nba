@@ -295,9 +295,7 @@ export async function render(ctx) {
       toggleAllBtn.textContent = allRev ? "Révéler tout" : "Tout masquer";
     });
 
-    const sub = data.fallback
-      ? `Les playoffs ${data.requested} n'ont pas encore commencé : voici l'arbre de la saison ${data.season}.`
-      : `Playoffs NBA ${data.season}, mis à jour à ${f.updatedAt(meta.fetchedAt)}.`;
+    const sub = data.fallback ? h("span", { class: "note" }, `Playoffs ${data.requested} pas encore commencés`) : null;
 
     const VIEW_OPTIONS = [
       { value: "tree", label: "Arbre complet" },
@@ -359,8 +357,8 @@ export async function render(ctx) {
       h(
         "div",
         { class: "page-head" },
-        h("div", null, h("h1", { class: "page-title" }, "Playoffs NBA"), h("p", { class: "page-sub" }, sub)),
-        h("div", { style: { display: "flex", gap: "8px", alignItems: "center" } }, toggleAllBtn, seasonSel)
+        h("div", null, h("h1", { class: "page-title visually-hidden" }, "Playoffs NBA")),
+        h("div", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" } }, sub, toggleAllBtn, seasonSel)
       ),
       staleBanner(meta) || "",
       champBanner || "",

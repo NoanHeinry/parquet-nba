@@ -156,7 +156,7 @@ export async function render(ctx) {
 
   const field = (label, control) => h("label", { class: "field" }, label, control);
   ctx.outlet.replaceChildren(
-    h("div", { class: "page-head" }, h("div", null, h("h1", { class: "page-title" }, "Joueurs"), h("p", { class: "page-sub" }, `Les ${f.int(players.length)} joueurs passés par la NBA depuis 1946, avec leur fiche complète.`))),
+    h("h1", { class: "page-title visually-hidden" }, "Joueurs"),
     h("div", { class: "toolbar" }, input, scopeHolder),
     h("div", { class: "toolbar" }, field("Équipe actuelle", teamSel), field("Poste", posSel), field("Pays", countrySel), field("Trier par", sortSel)),
     count,

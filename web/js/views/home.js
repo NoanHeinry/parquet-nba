@@ -3,7 +3,7 @@
 import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
-import { errorState, favorites, gameTile, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
+import { errorState, favorites, gameTile, headshot, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
 import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
 import { iconGrid } from "../icons.js";
@@ -16,23 +16,6 @@ function refreshDelay(data) {
   const now = Date.now();
   if (games.some((g) => g.status === 1 && g.start && new Date(g.start).getTime() - now < 30 * 60000)) return 30000;
   return data.isToday ? 120000 : 600000;
-}
-
-function subtitle(data) {
-  const games = data.games;
-  if (!games.length) return "Pas de match ce jour-là.";
-  const kinds = new Set(games.map((g) => g.kind));
-  const label = kinds.size === 1 && kinds.has("pre") ? " de présaison" : kinds.size === 1 && kinds.has("playoffs") ? " de playoffs" : "";
-  const starts = games.map((g) => g.start).filter(Boolean).sort();
-  let when = "";
-  if (starts.length) {
-    const first = starts[0];
-    const last = starts.at(-1);
-    const fmt = (iso) => (f.sameLocalDay(iso, data.date) ? f.clockTime(iso) : `${f.localWeekday(iso)} ${f.clockTime(iso)}`);
-    when = first === last ? `, coup d'envoi ${fmt(first)}` : `, coups d'envoi entre ${fmt(first)} et ${fmt(last)}`;
-    when += " (heure de Paris)";
-  }
-  return `${f.plural(games.length, "match", "matchs")}${label}${when}.`;
 }
 
 export async function render(ctx) {
@@ -98,7 +81,7 @@ export async function render(ctx) {
     const head = h(
       "div",
       { class: "day-head" },
-      h("div", null, h("h1", { class: "page-title", id: "day-title" }, f.dayTitle(data.date)), h("p", { class: "page-sub" }, subtitle(data))),
+      h("h1", { class: "page-title", id: "day-title" }, f.dayTitle(data.date)),
       nav
     );
 
@@ -114,9 +97,7 @@ export async function render(ctx) {
       );
     }
 
-    updatedLine.textContent = live
-      ? `Mis à jour à ${f.updatedAt(meta.fetchedAt)}. Les scores se rafraîchissent toutes les 15 secondes.`
-      : `Mis à jour à ${f.updatedAt(meta.fetchedAt)}.`;
+    updatedLine.textContent = `Mis à jour à ${f.updatedAt(meta.fetchedAt)}`;
 
     const liveStrip = live
       ? h(
@@ -175,7 +156,7 @@ function renderRail(rail, ctx) {
     () => api("/standings", { signal: ctx.signal }),
     ({ data }) => {
       const out = [];
-      if (data.fallback) out.push(h("p", { class: "note", style: { margin: "0 0 8px" } }, `Bilan final ${data.season}, la nouvelle saison n'a pas encore commencé.`));
+      if (data.fallback) out.push(h("p", { class: "note", style: { margin: "0 0 8px" } }, `Bilan final ${data.season}`));
       for (const conf of ["East", "West"]) {
         const rows = data.rows.filter((r) => r.conf === conf).slice(0, 6);
         out.push(h("p", { class: "mini-sub" }, conf === "East" ? "Conférence Est" : "Conférence Ouest"));
@@ -209,7 +190,7 @@ function renderRail(rail, ctx) {
     ({ data }) => {
       const rows = (data.boards.pts || []).slice(0, 5);
       return [
-        data.fallback ? h("p", { class: "note", style: { margin: "0 0 8px" } }, `Saison ${data.season}.`) : null,
+        data.fallback ? h("p", { class: "note", style: { margin: "0 0 8px" } }, `Saison ${data.season}`) : null,
         h(
           "table",
           { class: "mini-table num" },
@@ -221,7 +202,7 @@ function renderRail(rail, ctx) {
                 "tr",
                 null,
                 h("td", null, i + 1),
-                h("td", null, h("a", { class: "team-cell", href: `#/joueur/${r.id}` }, teamLogo(r.teamId, 20), r.name)),
+                h("td", null, h("a", { class: "team-cell rail-player", href: `#/joueur/${r.id}` }, headshot(r.id, { alt: "" }), h("span", null, r.name, h("small", null, team(r.teamId)?.name || "")))),
                 h("td", { class: "r" }, f.num(r.value))
               )
             )
