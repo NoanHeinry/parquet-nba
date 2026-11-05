@@ -7,9 +7,12 @@ import { compareRows, gameFlowChart, leadSeries, leadStats, shotChart } from "..
 import { chips, errorState, headshot, loading, playerCell, section, segmented, statTable, staleBanner, tabs, teamLogo, wl } from "../components.js";
 import { team, teamPair } from "../teams.js";
 import { gameKey, isHidden, isRevealed as isRevealedKey, setRevealed } from "../spoiler.js";
+import { momentCard, nbaRecapCard, youtubeBlock } from "../media.js";
+import { injuryTeamBlock, reportSource } from "../news.js";
 
 const TAB_DEFS = [
   { id: "resume", label: "Résumé" },
+  { id: "videos", label: "Vidéos" },
   { id: "box", label: "Box score" },
   { id: "pbp", label: "Action par action" },
   { id: "shots", label: "Carte des tirs" },
@@ -256,6 +259,164 @@ function boxTable(box, key) {
   return wrap;
 }
 
+// ------------------------------------------------------------ faits marquants et clés du match
+
+function eventsBlock(events) {
+  if (!events?.length) return null;
+  const count = (kind) => events.filter((e) => e.kind === kind).length;
+  const summary = [
+    count("technical") ? f.plural(count("technical"), "faute technique", "fautes techniques") : "",
+    count("flagrant") ? f.plural(count("flagrant"), "faute flagrante", "fautes flagrantes") : "",
+    count("ejection") ? f.plural(count("ejection"), "expulsion", "expulsions") : "",
+    count("challenge") ? f.plural(count("challenge"), "challenge", "challenges") : "",
+  ].filter(Boolean);
+  return h(
+    "div",
+    { class: "section" },
+    h("h2", { class: "section-title" }, "Faits marquants"),
+    h("p", { class: "note", style: { margin: "-4px 0 10px" } }, summary.join(", ") + "."),
+    h(
+      "ul",
+      { class: "events" },
+      events.map((e) =>
+        h(
+          "li",
+          { class: `event ${e.kind}` },
+          h("span", { class: "event-k" }, e.label),
+          h(
+            "span",
+            { class: "event-who" },
+            e.teamId ? teamLogo(e.teamId, 18) : null,
+            e.player ? (e.personId ? h("a", { class: "link", href: `#/joueur/${e.personId}` }, e.player) : e.player) : team(e.teamId)?.name || e.tri,
+            e.detail ? h("span", { class: "note" }, ` (${e.detail})`) : null
+          ),
+          h("span", { class: "event-when num" }, `${f.periodName(e.period)} ${e.clock}`)
+        )
+      )
+    )
+  );
+}
+
+function duration(text) {
+  const [m, sec] = String(text || "").split(":");
+  return sec !== undefined ? `${Number(m)} min ${String(Number(sec)).padStart(2, "0")} s` : text;
+}
+
+function keysBlock(page, pageUrl) {
+  if (!page) return null;
+  const cards = [];
+  if (page.defense?.length) {
+    cards.push(
+      h(
+        "div",
+        { class: "key-card" },
+        h("h3", null, "Défense"),
+        page.defense.map((d) =>
+          h(
+            "p",
+            null,
+            teamLogo(d.defTeamId, 18),
+            h("a", { class: "link", href: `#/joueur/${d.defenderId}` }, d.defender),
+            ` a tenu ${d.attacker} à ${d.fgm} sur ${d.fga} au tir${d.tpa ? ` (${d.tpm} sur ${d.tpa} à 3 points)` : ""}, en ${duration(d.time)} de duel direct.`
+          )
+        )
+      )
+    );
+  }
+  if (page.hardest?.length) {
+    cards.push(
+      h(
+        "div",
+        { class: "key-card" },
+        h("h3", null, "Tirs les plus difficiles"),
+        page.hardest.map((x) =>
+          h(
+            "p",
+            null,
+            x.shooter.id ? h("a", { class: "link", href: `#/joueur/${x.shooter.id}` }, x.shooter.name) : x.shooter.name,
+            ` : ${x.three ? "tir à 3 points" : "tir"} réussi qui n'avait que ${Math.round(x.chance * 100)} % de chances de rentrer`,
+            x.period ? ` (${f.periodName(x.period)}${x.clock ? ` ${x.clock}` : ""})` : "",
+            "."
+          )
+        )
+      )
+    );
+  }
+  if (page.performers?.length) {
+    cards.push(
+      h(
+        "div",
+        { class: "key-card" },
+        h("h3", null, "Hommes du match selon NBA.com"),
+        page.performers.map((p) =>
+          h("p", null, teamLogo(p.teamId, 18), p.id ? h("a", { class: "link", href: `#/joueur/${p.id}` }, p.name) : p.name, ` : ${p.value} ${p.stat}`)
+        )
+      )
+    );
+  }
+  const story = page.story?.headline
+    ? h(
+        "p",
+        { class: "note", style: { marginTop: "12px" } },
+        `Article du match${page.story.agency ? ` (${page.story.agency})` : ""} : `,
+        h("a", { class: "link", href: pageUrl, target: "_blank", rel: "noopener", lang: "en" }, `« ${page.story.headline} »`),
+        " sur NBA.com."
+      )
+    : null;
+  if (!cards.length && !story) return null;
+  return h(
+    "div",
+    { class: "section" },
+    h("h2", { class: "section-title" }, "Les clés du match"),
+    cards.length ? h("div", { class: "key-cards" }, cards) : null,
+    story,
+    h("p", { class: "source" }, "Source : rapport d'analyse de la page du match sur NBA.com (données de suivi des joueurs).")
+  );
+}
+
+function videosView(panel, game, ctx, loadExtras) {
+  const yt = h("div", { class: "section" });
+  const nba = h("div", { class: "section" });
+  panel.replaceChildren(yt, nba);
+  if (game.status !== 3) {
+    yt.append(h("h2", { class: "section-title" }, "Résumé vidéo"), h("p", { class: "note" }, "Le résumé vidéo arrive après le match : la NBA le publie sur YouTube en général une à deux heures après la fin."));
+  } else {
+    section(yt, () => api(`/game/${game.id}/video`, { signal: ctx.signal }), ({ data }) => {
+      const head = h("h2", { class: "section-title" }, "Résumé vidéo");
+      if (data.found) return [head, youtubeBlock({ videoId: data.videoId, title: data.title, url: data.url, embeddable: data.embeddable })];
+      const msg = data.configured
+        ? "La vidéo YouTube de ce match n'est pas encore disponible. La NBA la publie en général une à deux heures après la fin du match."
+        : "Ce résumé ne figure pas parmi les toutes dernières vidéos de la NBA. Pour retrouver celui de n'importe quel match, ajoute une clé YouTube gratuite dans les réglages.";
+      return [
+        head,
+        h("p", { class: "note" }, msg, data.configured ? null : [" ", h("a", { class: "link", href: "#/etat" }, "Régler la clé YouTube"), "."]),
+        h("a", { class: "btn", href: data.searchUrl, target: "_blank", rel: "noopener" }, "Chercher sur YouTube ↗"),
+      ];
+    });
+  }
+  section(nba, loadExtras, (ex) => {
+    const page = ex.page;
+    if (!page) return [h("h2", { class: "section-title" }, "Vidéos NBA.com"), h("p", { class: "note" }, `Vidéos indisponibles pour l'instant${ex.pageError ? ` (${ex.pageError})` : ""}.`)];
+    const out = [];
+    if (page.recap) out.push(h("h2", { class: "section-title" }, "Sur NBA.com"), nbaRecapCard(page.recap));
+    if (page.moments?.length) {
+      out.push(
+        h("h2", { class: "section-title", style: { marginTop: page.recap ? "28px" : null } }, "Les moments décisifs"),
+        h("p", { class: "note", style: { margin: "-4px 0 12px" } }, "Les actions qui ont fait basculer le match, choisies par NBA.com. Titres et descriptions en anglais."),
+        h("div", { class: "moments" }, page.moments.map(momentCard))
+      );
+    }
+    if (page.highlights?.length) {
+      out.push(
+        h("h3", { class: "sub-title" }, "Autres vidéos sur NBA.com"),
+        h("ul", { class: "video-links" }, page.highlights.map((v) => h("li", null, h("a", { class: "link", href: v.url, target: "_blank", rel: "noopener", lang: "en" }, v.title), v.duration ? h("span", { class: "note" }, ` ${v.duration}`) : null)))
+      );
+    }
+    if (!out.length) out.push(h("h2", { class: "section-title" }, "Vidéos NBA.com"), h("p", { class: "note" }, game.status === 3 ? "NBA.com n'a pas encore publié les vidéos de ce match." : "Les moments décisifs apparaîtront ici après le match."));
+    return out;
+  });
+}
+
 const MINOR = new Set(["substitution", "timeout", "period", "jumpball", "game", "instantreplay", "stoppage"]);
 
 function pbpView(pbp, game, state, rerender) {
@@ -361,10 +522,22 @@ function shotsView(pbp, game, state, rerender) {
 
 async function pregame(container, game, ctx) {
   const forms = h("div", { class: "two-col" });
+  const injuries = h("div", { class: "section" });
   container.append(
     h("div", { class: "banner", style: { marginTop: "18px" } }, "Le box score, le fil des actions et la carte des tirs apparaîtront au coup d'envoi. La page se met à jour toute seule."),
+    injuries,
     h("div", { class: "section" }, h("h2", { class: "section-title" }, "Forme du moment"), forms)
   );
+  api(`/injuries?game=${game.id}`, { signal: ctx.signal })
+    .then(({ data }) => {
+      const g = data.games[0];
+      if (!g) {
+        injuries.remove();
+        return;
+      }
+      injuries.replaceChildren(h("h2", { class: "section-title" }, "Blessures et absences"), h("div", { class: "inj-teams" }, g.teams.map(injuryTeamBlock)), reportSource(data));
+    })
+    .catch(() => injuries.remove());
   if (game.tv?.length) container.append(h("p", { class: "note" }, `Diffusion aux États-Unis : ${game.tv.join(", ")}.`));
   for (const key of ["away", "home"]) {
     const side = game[key];
@@ -443,6 +616,19 @@ export async function render(ctx) {
     head.replaceChildren(staleBanner(meta) || "", scoreboard(box.game, previous, { onToggleReveal: toggleReveal, isRevealed }));
   };
 
+  let extrasPromise = null;
+  const loadExtras = () => {
+    if (!extrasPromise) {
+      extrasPromise = api(`/game/${id}/extras`, { signal: ctx.signal })
+        .then((r) => r.data)
+        .catch((err) => {
+          extrasPromise = null;
+          throw err;
+        });
+    }
+    return extrasPromise;
+  };
+
   const ensurePbp = async () => {
     if (!pbp) pbp = (await api(`/game/${id}/pbp`, { signal: ctx.signal })).data;
   };
@@ -489,8 +675,16 @@ export async function render(ctx) {
     if (tab === "resume") {
       const parts = resume(box);
       const flow = h("div", { class: "section" });
-      panel.replaceChildren(parts[0], flow, ...parts.slice(1));
+      const more = h("div");
+      panel.replaceChildren(parts[0], flow, ...parts.slice(1), more);
       drawFlow(flow);
+      loadExtras()
+        .then((ex) => {
+          if (ctx.active && tab === "resume") more.replaceChildren(...[eventsBlock(ex.events), keysBlock(ex.page, ex.pageUrl)].filter(Boolean));
+        })
+        .catch(() => {});
+    } else if (tab === "videos") {
+      videosView(panel, box.game, ctx, loadExtras);
     }
     else if (tab === "box") panel.replaceChildren(boxTable(box, "away"), boxTable(box, "home"));
     else {
@@ -558,7 +752,9 @@ export async function render(ctx) {
           drawBody();
         }
         if (pbp) pbp = (await api(`/game/${id}/pbp`, { signal: ctx.signal })).data;
-        if (box.available && !gated) drawPanel();
+        extrasPromise = null; // faits marquants à jour
+        // L'onglet Vidéos n'est pas redessiné : une vidéo en cours de lecture ne doit pas s'interrompre.
+        if (box.available && !gated && tab !== "videos") drawPanel();
       }
     );
   }

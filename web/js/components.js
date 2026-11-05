@@ -103,7 +103,7 @@ export async function section(container, loader, render) {
     const result = await loader();
     container.replaceChildren();
     const out = render(result, container);
-    if (out) container.append(...[out].flat().filter(Boolean));
+    if (out) container.append(...[out].flat(Infinity).filter(Boolean));
   } catch (err) {
     if (err.name === "AbortError") return;
     container.replaceChildren(errorState(err, () => section(container, loader, render)));

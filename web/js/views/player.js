@@ -7,6 +7,7 @@ import { lineChart } from "../charts.js";
 import { chips, errorState, headshot, loading, section, segmented, statTable, tabs, teamLogo, wl } from "../components.js";
 import { team, teamBand, teamByTri } from "../teams.js";
 import { iconScale } from "../icons.js";
+import { moveRow, statusBadge } from "../news.js";
 
 // ---------------------------------------------------------------- palmarès
 
@@ -489,14 +490,24 @@ export async function render(ctx) {
       const highs = h("div");
       const awards = h("div");
       const path = h("div");
+      const moves = h("div", { class: "section" });
       panel.replaceChildren(
         h(
           "div",
           { class: "profile-grid" },
           h("div", null, h("h2", { class: "section-title" }, "Biographie"), bio, h("div", { class: "section" }, h("h2", { class: "section-title" }, "Records en carrière"), highs)),
-          h("div", null, h("h2", { class: "section-title" }, "Palmarès"), awards, h("div", { class: "section" }, h("h2", { class: "section-title" }, "Parcours en NBA"), path))
+          h("div", null, h("h2", { class: "section-title" }, "Palmarès"), awards, h("div", { class: "section" }, h("h2", { class: "section-title" }, "Parcours en NBA"), path), moves)
         )
       );
+      api(`/transactions?player=${id}&days=0&limit=40`, { signal: ctx.signal })
+        .then(({ data }) => {
+          if (!data.items.length) return;
+          moves.replaceChildren(
+            h("h2", { class: "section-title" }, "Transactions"),
+            h("ul", { class: "move-list" }, data.items.map((m) => h("li", { class: "move-dated" }, h("span", { class: "note num" }, f.dateShort(m.date)), moveRow(m))))
+          );
+        })
+        .catch(() => {});
       section(bio, () => api(`/player/${id}/bio`, { signal: ctx.signal }), ({ data }) => {
         if (!data) return h("p", { class: "note" }, "Pas d'article Wikipédia trouvé pour ce joueur.");
         return [
@@ -508,18 +519,47 @@ export async function render(ctx) {
       section(path, career, (c) => stintsView(c.regular));
       section(highs, career, (c) => highsView(c.careerHighs));
     } else if (tab === "stats") {
-      section(panel, career, (c) => {
+      const holder = h("div");
+      panel.replaceChildren(holder);
+      section(holder, career, (c) => {
         const box = h("div");
         statsView(box, c);
         return box;
       });
     } else {
-      gamelogView(panel, id, ctx);
+      const holder = h("div");
+      panel.replaceChildren(holder);
+      gamelogView(holder, id, ctx);
     }
   };
 
+  // Joueur présent dans le dernier rapport des blessures : on l'indique sous l'en-tête.
+  const injury = h("div");
+  api("/injuries", { signal: ctx.signal })
+    .then(({ data }) => {
+      for (const g of data.games) {
+        for (const t of g.teams) {
+          const p = t.players.find((x) => x.id === id);
+          if (!p) continue;
+          const opp = g.matchup.split("@").find((x) => x !== t.tri) || "";
+          injury.replaceChildren(
+            h(
+              "div",
+              { class: "inj-banner" },
+              statusBadge(p),
+              h("span", null, h("span", { title: p.reasonFr ? p.reason : null }, p.reasonFr || p.reason), ` pour le match contre ${opp}`, g.start ? ` (${f.localDayShort(g.start)})` : "", "."),
+              h("a", { class: "link", href: "#/infos" }, "Rapport des blessures")
+            )
+          );
+          return;
+        }
+      }
+    })
+    .catch(() => {});
+
   ctx.outlet.replaceChildren(
     heroView(info),
+    injury,
     factsView(info),
     headline || "",
     tabs(

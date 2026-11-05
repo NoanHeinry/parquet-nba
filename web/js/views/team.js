@@ -7,6 +7,7 @@ import { columnChart } from "../charts.js";
 import { favorites, loading, playerCell, section, segmented, statTable, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
 import { team, teamBand, teamColor } from "../teams.js";
 import { iconCalendar, iconStar } from "../icons.js";
+import { injuryRow, movesByDay, reportSource } from "../news.js";
 
 const SOCIAL = { Facebook: "Facebook", Instagram: "Instagram", Twitter: "X (Twitter)", X: "X", Website: "Site officiel", Tiktok: "TikTok", YouTube: "YouTube" };
 
@@ -510,6 +511,41 @@ function franchiseView(container, t, ctx) {
   );
 }
 
+function newsView(container, t, ctx) {
+  const inj = h("div", { class: "section" });
+  const moves = h("div", { class: "section" });
+  container.replaceChildren(inj, moves);
+  section(inj, () => api(`/injuries?team=${t.id}`, { signal: ctx.signal }), ({ data }) => {
+    const head = h("h2", { class: "section-title" }, "Infirmerie");
+    if (!data.games.length) {
+      return [head, h("p", { class: "note" }, "L'équipe ne figure pas dans le dernier rapport des blessures : elle ne joue pas dans les prochaines heures."), reportSource(data)];
+    }
+    return [
+      head,
+      data.games.map((g) => {
+        const me = g.teams[0];
+        const oppTri = g.matchup.split("@").find((x) => x !== me.tri) || "";
+        const when = g.start ? `${f.localDayShort(g.start)}, ${f.clockTime(g.start)}` : f.dayShort(g.date);
+        return h(
+          "div",
+          { class: "inj-team" },
+          h("h4", null, g.gameId ? h("a", { class: "link", href: `#/match/${g.gameId}` }, `Avant le match contre ${oppTri}`) : `Avant le match contre ${oppTri}`, h("span", { class: "note" }, ` · ${when}`)),
+          !me.submitted
+            ? h("p", { class: "note" }, "Rapport pas encore transmis par l'équipe.")
+            : me.players.length
+              ? h("ul", { class: "inj-list" }, me.players.map((p) => injuryRow(p)))
+              : h("p", { class: "note" }, "Aucun joueur signalé : tout l'effectif est disponible.")
+        );
+      }),
+      reportSource(data),
+    ];
+  });
+  section(moves, () => api(`/transactions?team=${t.id}&days=365&limit=60`, { signal: ctx.signal }), ({ data }) => [
+    h("h2", { class: "section-title" }, "Mouvements des douze derniers mois"),
+    data.items.length ? movesByDay(data.items, { showTeam: false }) : h("p", { class: "note" }, "Aucune transaction sur les douze derniers mois."),
+  ]);
+}
+
 function tile(k, v, s) {
   return h("div", { class: "tile" }, h("div", { class: "k" }, k), h("div", { class: "v" }, v), s ? h("div", { class: "s" }, s) : null);
 }
@@ -528,9 +564,14 @@ export async function render(ctx) {
   const panel = h("div");
   let tab = "roster";
   const drawTab = () => {
-    if (tab === "roster") rosterView(panel, t, ctx);
-    else if (tab === "schedule") scheduleView(panel, t, ctx);
-    else franchiseView(panel, t, ctx);
+    // Un conteneur neuf par onglet : un chargement encore en cours sur l'onglet précédent
+    // écrit dans un élément détaché au lieu d'écraser le nouvel onglet.
+    const box = h("div");
+    panel.replaceChildren(box);
+    if (tab === "roster") rosterView(box, t, ctx);
+    else if (tab === "schedule") scheduleView(box, t, ctx);
+    else if (tab === "news") newsView(box, t, ctx);
+    else franchiseView(box, t, ctx);
   };
   ctx.outlet.append(
     hero(t, ctx),
@@ -539,6 +580,7 @@ export async function render(ctx) {
       [
         { id: "roster", label: "Effectif" },
         { id: "schedule", label: "Calendrier" },
+        { id: "news", label: "Infirmerie et mouvements" },
         { id: "franchise", label: "Histoire et palmarès" },
       ],
       tab,

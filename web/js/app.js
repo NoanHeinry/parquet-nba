@@ -15,6 +15,7 @@ import * as playoffs from "./views/playoffs.js";
 import * as leaders from "./views/leaders.js";
 import * as compare from "./views/compare.js";
 import * as status from "./views/status.js";
+import * as infos from "./views/infos.js";
 import { initNotificationsUI } from "./notifications.js";
 
 // Les couleurs d'équipe et les versions de logos dépendent du thème : on redessine la page.
@@ -153,6 +154,8 @@ route("/leaders", leaders.render, "leaders");
 route("/comparer", compare.render, "comparer");
 route("/comparer/(\\d+)", compare.render, "comparer");
 route("/comparer/(\\d+)/(\\d+)", compare.render, "comparer");
+route("/infos", infos.render, "infos");
+route("/infos/(mouvements)", infos.render, "infos");
 route("/etat", status.render, null);
 
 initTheme();

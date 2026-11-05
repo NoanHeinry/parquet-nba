@@ -6,6 +6,7 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { headshot, teamLogo } from "../components.js";
 import { isHidden, setRevealed } from "../spoiler.js";
+import { youtubeBlock } from "../media.js";
 
 function statLine(p) {
   const parts = [`${p.pts} pts`, `${p.reb} reb`, `${p.ast} pd`];
@@ -138,6 +139,16 @@ export function createRecap(ctx) {
       const { data } = await api(`/recap?date=${board.date}`, { signal: ctx.signal });
       if (!ctx.active) return;
       el.replaceChildren(...render(data, title, board.isToday).filter(Boolean));
+      // Le résumé et le top 10 de la nuit publiés par la NBA sur YouTube, quand ils existent.
+      api(`/videos/night?date=${board.date}`, { signal: ctx.signal })
+        .then(({ data: v }) => {
+          if (!ctx.active || !v.videos.length || lastKey !== key) return;
+          el.append(
+            h("h3", { class: "sub-title" }, "En vidéo"),
+            h("div", { class: "recap-videos" }, v.videos.map((x) => youtubeBlock({ videoId: x.videoId, title: `${x.label} : ${x.title}`, url: x.url })))
+          );
+        })
+        .catch(() => {});
     } catch (err) {
       if (err.name === "AbortError") return;
       lastKey = null;

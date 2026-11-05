@@ -5,6 +5,85 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, loading } from "../components.js";
 
+async function saveYoutubeKey(key) {
+  const res = await fetch("/api/settings/youtube", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ key }) });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `Erreur ${res.status}`);
+  return body.data.youtube;
+}
+
+function youtubeSettings(ctx) {
+  const box = h("section", { class: "settings-card", id: "youtube" });
+  const draw = (state, message = "", ok = false) => {
+    const input = h("input", { class: "input", type: "password", autocomplete: "off", spellcheck: "false", placeholder: "AIza…", "aria-label": "Clé de l'API YouTube" });
+    const msg = h("p", { class: `form-msg${ok ? " ok" : ""}`, role: "status" }, message);
+    const save = h("button", { class: "btn primary", type: "submit" }, "Enregistrer");
+    const form = h("form", { class: "key-form" }, input, save);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!input.value.trim()) return;
+      save.disabled = true;
+      msg.textContent = "Vérification de la clé auprès de YouTube…";
+      try {
+        draw(await saveYoutubeKey(input.value.trim()), "Clé enregistrée : les résumés vidéo de tous les matchs sont maintenant retrouvés automatiquement.", true);
+      } catch (err) {
+        save.disabled = false;
+        msg.className = "form-msg";
+        msg.textContent = err.message;
+      }
+    });
+    const remove = state.configured && state.source === "file" ? h("button", { class: "btn", type: "button" }, "Supprimer la clé") : null;
+    remove?.addEventListener("click", async () => {
+      try {
+        draw(await saveYoutubeKey(""), "Clé supprimée.", true);
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+    box.replaceChildren(
+      h("h2", { class: "section-title" }, "Résumés vidéo YouTube"),
+      h(
+        "p",
+        null,
+        "Parquet trouve tout seul le résumé officiel des matchs récents sur la chaîne YouTube de la NBA. Pour retrouver celui de n'importe quel match, même ancien, il lui faut une clé gratuite de l'API YouTube. Elle reste sur ton appareil, dans le dossier ",
+        h("code", null, "data"),
+        "."
+      ),
+      h(
+        "p",
+        { class: "key-state" },
+        state.configured ? h("span", { class: "ok" }, "✓") : h("span", { class: "ko" }, "–"),
+        state.configured
+          ? state.source === "env"
+            ? ` Clé fournie par la variable d'environnement PARQUET_YOUTUBE_KEY (${state.hint}).`
+            : ` Clé enregistrée (${state.hint}).`
+          : " Aucune clé : seules les vidéos des dernières heures sont trouvées."
+      ),
+      state.source === "env" ? null : h("div", { class: "key-row" }, form, remove),
+      msg,
+      h(
+        "details",
+        { class: "how" },
+        h("summary", null, "Comment obtenir une clé (5 minutes, gratuit)"),
+        h(
+          "ol",
+          null,
+          h("li", null, "Ouvre la ", h("a", { class: "link", href: "https://console.cloud.google.com/projectcreate", target: "_blank", rel: "noopener" }, "console Google Cloud"), " avec ton compte Google et crée un projet (par exemple « Parquet »)."),
+          h("li", null, "Active l'API ", h("a", { class: "link", href: "https://console.cloud.google.com/apis/library/youtube.googleapis.com", target: "_blank", rel: "noopener" }, "YouTube Data API v3"), " pour ce projet."),
+          h("li", null, "Dans ", h("a", { class: "link", href: "https://console.cloud.google.com/apis/credentials", target: "_blank", rel: "noopener" }, "Identifiants"), ", choisis « Créer des identifiants », puis « Clé API », et copie la clé."),
+          h("li", null, "Conseillé : modifie la clé et limite-la à « YouTube Data API v3 »."),
+          h("li", null, "Colle la clé ci-dessus et enregistre. Parquet vérifie qu'elle fonctionne.")
+        ),
+        h("p", { class: "note" }, "Le quota gratuit permet une centaine de recherches par jour, largement assez : chaque vidéo trouvée est gardée en mémoire. Aucune carte bancaire n'est nécessaire.")
+      )
+    );
+  };
+  api("/settings", { signal: ctx.signal })
+    .then(({ data }) => draw(data.youtube))
+    .catch(() => box.remove());
+  return box;
+}
+
 export async function render(ctx) {
   const box = h("div");
   ctx.outlet.append(
@@ -13,7 +92,8 @@ export async function render(ctx) {
       { class: "page-head" },
       h("div", null, h("h1", { class: "page-title" }, "État des sources"), h("p", { class: "page-sub" }, "Parquet interroge NBA.com et Wikipédia depuis ton ordinateur. Ce test vérifie que chaque source répond."))
     ),
-    box
+    box,
+    youtubeSettings(ctx)
   );
 
   const run = async () => {
