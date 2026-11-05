@@ -154,6 +154,8 @@ export function initGlobalSearch() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
       e.preventDefault();
+      // Sur l'accueil, la recherche est dans le menu : on l'ouvre d'abord.
+      if (input.closest(".menu-panel")?.hidden) document.querySelector(".menu-fab")?.click();
       input.focus();
     }
   });

@@ -74,7 +74,10 @@ class InterfaceTests(unittest.TestCase):
         self.open("#/")
         self.assertEqual(self.page.locator(".game-tile").count(), 5)
         self.assertEqual(self.page.locator(".recap").get_attribute("aria-label"), "Cette nuit en NBA")
-        self.page.wait_for_selector(".recap-feature")
+        self.page.wait_for_selector(".night-num")
+        # Accueil sans en-tête : la scène du joueur du match ouvre la page.
+        self.assertFalse(self.page.locator(".topbar").is_visible())
+        self.assertIn("Jolivet", self.page.text_content(".stage-name"))
         self.assertTrue(self.page.locator(".demo-banner").is_visible())
         self.assertTrue(self.page.locator("a[href='#/multi']").is_visible())
 
@@ -90,8 +93,11 @@ class InterfaceTests(unittest.TestCase):
 
     def test_spoiler_mode_hides_scores_and_remembers_reveals(self):
         self.open("#/")
+        self.page.click(".menu-fab")
         self.page.click("#spoiler-toggle")
         self.page.wait_for_selector(".recap .spoiler-gate")
+        self.assertTrue(self.page.locator(".stage-reveal").is_visible())
+        self.assertEqual(self.page.locator(".stage-cutout").count(), 0)
         first = self.page.locator(".game-tile", has=self.page.locator(".tile-reveal-btn")).first
         game_id = first.get_attribute("data-game-id")
         first.locator(".tile-reveal-btn").click()
@@ -103,6 +109,25 @@ class InterfaceTests(unittest.TestCase):
         self.open(f"#/match/{other}")
         self.page.wait_for_selector(".spoiler-gate")
         self.assertEqual(self.page.locator(".stat-table").count(), 0)
+
+    def test_home_stage_and_menu(self):
+        self.open("#/matchs/2026-10-13")
+        self.page.wait_for_selector(".stage-tab.is-active")
+        self.assertEqual(self.page.locator(".stage-tab").count(), 4)
+        first = self.page.inner_text(".stage-tab.is-active .st-name")
+        self.page.click(".stage-arrows .stage-round >> nth=1")
+        self.assertNotEqual(self.page.inner_text(".stage-tab.is-active .st-name"), first)
+        self.assertTrue(self.page.locator(".stage").evaluate("el => el.classList.contains('no-auto')"))
+        # Le menu déroulant contient la recherche et les liens ; l'en-tête revient sur les autres pages.
+        self.page.click(".menu-fab")
+        self.page.wait_for_selector(".menu-panel.is-open #global-search")
+        self.page.keyboard.press("Escape")
+        self.page.wait_for_selector(".menu-panel", state="hidden")
+        self.page.click(".menu-fab")
+        self.page.click('.menu-link:has-text("Classement")')
+        self.page.wait_for_selector(".topbar #global-search")
+        self.assertTrue(self.page.locator(".topbar").is_visible())
+        self.assertEqual(self.page.locator(".menu-fab, .section-index").count(), 0)
 
     def test_playoff_series_are_collapsed(self):
         self.open("#/playoffs")

@@ -58,7 +58,7 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/player/{id}/bio` | Biographie Wikipédia | Wikidata (P3647) puis Wikipédia |
 | `GET /api/leaders?season=AAAA-AA` | Top 10 par catégorie | `leaguedashplayerstats` |
 | `GET /api/playoffs?season=AAAA-AA` | Arbre des playoffs, séries et matchs (bascule sur la saison précédente avant les playoffs) | `commonplayoffseries`, `leaguegamefinder` |
-| `GET /api/recap?date=AAAA-MM-JJ` | Résumé d'une journée : Game Score, meilleurs par catégorie, triples-doubles, match le plus serré, plus large victoire, prolongations | box scores des matchs terminés |
+| `GET /api/recap?date=AAAA-MM-JJ` | Résumé d'une journée : joueur du match de chaque rencontre (Game Score), meilleurs de la nuit, meilleurs par catégorie, triples-doubles, match le plus serré, plus large victoire, prolongations | box scores des matchs terminés |
 | `GET /api/team/{id}/calendar.ics` | Calendrier de la saison au format iCalendar (fichier à télécharger) | CDN calendrier |
 | `GET /api/game/{id}/extras` | Résumé vidéo NBA.com, moments décisifs (extraits vidéo), clés du match, article, faits marquants | page du match sur www.nba.com (données `__NEXT_DATA__`) + fil des actions |
 | `GET /api/game/{id}/video` | Résumé officiel du match sur YouTube (identifiant, intégrable ou non) et lien de recherche | flux de la chaîne NBA, puis API YouTube si une clé est réglée |
@@ -163,7 +163,10 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/spoiler.js` | Mode anti-spoiler : état global et mémoire de session des scores révélés |
 | `js/notifications.js` | Alertes de match (coup d'envoi, fin serrée selon la définition NBA, résultat), mémoire des alertes envoyées, détection des connexions non sécurisées |
 | `js/icons.js` | Icônes SVG |
-| `js/views/recap.js` | Bloc « Cette nuit en NBA » de la page d'accueil, avec les vidéos de la nuit |
+| `js/views/stage.js` | Scène d'ouverture de l'accueil : le joueur du match de chaque rencontre (portrait détouré, nom ajusté à la largeur, couleurs d'équipe, défilement automatique, onglets, glissement au doigt) |
+| `js/views/recap.js` | « La nuit en chiffres » sur l'accueil, avec les vidéos de la nuit |
+| `js/menu.js` | Accueil sans en-tête : logo et bouton flottants, menu plein écran qui reprend la recherche et les boutons de l'en-tête (déplacés, puis remis en place en quittant l'accueil) |
+| `js/scroll.js` | Défilement doux à la molette, sommaire numéroté de la page, apparition des sections, effet de profondeur ; tout est coupé si le système demande moins d'animations |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |
 | `js/news.js` | Affichage partagé des blessures (statuts colorés) et des transactions |

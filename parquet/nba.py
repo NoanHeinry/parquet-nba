@@ -518,6 +518,8 @@ def _player_line(p: dict) -> dict:
         "id": _int(p.get("personId")),
         "order": _int(p.get("order"), 0),
         "name": p.get("name") or f"{p.get('firstName', '')} {p.get('familyName', '')}".strip(),
+        "first": p.get("firstName") or "",
+        "last": p.get("familyName") or "",
         "nameI": p.get("nameI") or "",
         "jersey": p.get("jerseyNum") or "",
         "pos": p.get("position") or "",
@@ -632,6 +634,8 @@ def _box_from_stats(game_id: str, header: dict | None) -> dict:
                 {
                     "personId": p.get("personId"),
                     "name": f"{p.get('firstName', '')} {p.get('familyName', '')}".strip(),
+                    "firstName": p.get("firstName"),
+                    "familyName": p.get("familyName"),
                     "nameI": p.get("nameI"),
                     "jerseyNum": p.get("jerseyNum"),
                     "position": p.get("position"),
@@ -1899,6 +1903,15 @@ def _game_score(p: dict) -> float:
     )
 
 
+def _split_name(p: dict) -> tuple[str, str]:
+    """Prénom et nom, pour les grands titres (« Shai » / « Gilgeous-Alexander »)."""
+    first, last = (p.get("first") or "").strip(), (p.get("last") or "").strip()
+    if first or last:
+        return first, last
+    parts = (p.get("name") or "").split(" ", 1)
+    return (parts[0], parts[1]) if len(parts) == 2 else ("", parts[0])
+
+
 def build_recap(day: str, games: list[dict], boxes: dict[str, dict]) -> dict:
     finished = [g for g in games if g.get("status") == 3 and g.get("home") and g.get("away")]
     performers = []
@@ -1913,10 +1926,17 @@ def build_recap(day: str, games: list[dict], boxes: dict[str, dict]) -> dict:
             for p in box["teams"][side]["players"]:
                 if not p.get("played"):
                     continue
+                first, last = _split_name(p)
                 performers.append(
                     {
                         "id": p["id"],
                         "name": p["name"],
+                        "first": first,
+                        "last": last,
+                        "jersey": p.get("jersey") or "",
+                        "pos": p.get("pos") or "",
+                        "min": p.get("min") or "",
+                        "tpa": p.get("tpa") or 0,
                         "teamId": me.get("id"),
                         "tri": me.get("tri"),
                         "oppTri": opp.get("tri"),
@@ -1943,7 +1963,22 @@ def build_recap(day: str, games: list[dict], boxes: dict[str, dict]) -> dict:
         }
 
     lines = [game_line(g) for g in finished]
+
+    # Le joueur du match de chaque rencontre terminée (meilleur Game Score), le plus fort en premier.
+    stars = []
+    by_id = {g["id"]: g for g in finished}
+    for gid, g in by_id.items():
+        mine = [p for p in performers if p["gameId"] == gid]
+        if not mine:
+            continue
+        best = max(mine, key=lambda x: (x["gameScore"], x["pts"]))
+        line = game_line(g)
+        line["label"] = g.get("series") or g.get("label") or ""
+        stars.append({**best, "game": line})
+    stars.sort(key=lambda x: x["gameScore"], reverse=True)
+
     return {
+        "stars": stars,
         "date": day,
         "total": len(games),
         "finished": len(finished),

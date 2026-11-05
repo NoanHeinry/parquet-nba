@@ -6,7 +6,7 @@ Parquet affiche les scores des matchs en temps réel, le détail de chaque renco
 
 Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur des données fictives.
 
-![Page des matchs avec deux rencontres en direct](docs/captures/01-matchs.png)
+![Accueil : le joueur du match présenté en grand, portrait détouré et nom géant](docs/captures/01-accueil.png)
 
 <sub>Les captures de cette page utilisent des données de démonstration : joueurs fictifs, logos remplacés par des pastilles.</sub>
 
@@ -14,7 +14,8 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 
 **Suivi des matchs**
 - Scores de la journée rafraîchis automatiquement pendant les matchs, avec l'avancement de chaque quart-temps.
-- « Cette nuit en NBA » : au réveil, le résumé des matchs de la nuit (performance de la nuit selon le Game Score, meilleurs marqueurs, rebondeurs et passeurs, triples-doubles, match le plus serré, plus large victoire, prolongations).
+- Accueil façon affiche : le joueur du match de chaque rencontre de la nuit (meilleur Game Score) présenté en plein écran, portrait détouré devant son nom en très grand, aux couleurs de son équipe, avec sa ligne de stats et l'action du match en vidéo quand NBA.com la publie. On passe d'un joueur à l'autre avec les onglets, les flèches, le clavier ou en glissant le doigt ; la scène avance seule tant qu'on n'y touche pas.
+- En descendant : les matchs du jour en grandes lignes, « La nuit en chiffres » (meilleurs marqueur, rebondeur, passeur et tireur à 3 points, match le plus serré, plus large victoire, triples-doubles, prolongations), le classement et les meilleurs marqueurs. Un sommaire numéroté sur le côté suit la lecture, avec un défilement doux à la molette.
 - Horaires convertis à l'heure de Paris, navigation de jour en jour jusque dans les saisons passées.
 - Page de match : score par quart-temps, scénario du match (courbe de l'écart au score, plus gros écarts, changements de leader), duel statistique des deux équipes, meilleurs joueurs, box score complet, fil des actions filtrable et carte des tirs.
 - Mode multi-matchs : plusieurs rencontres en direct côte à côte, en plein écran, avec les dernières actions et un signal des fins de match serrées.
@@ -34,19 +35,20 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
+- Sur l'accueil, pas d'en-tête : un bouton rond en haut à droite ouvre un menu plein écran (rubriques, recherche, alertes, anti-spoiler, thème).
 - Alertes en direct, tant qu'un onglet Parquet est ouvert : coup d'envoi et résultat des équipes favorites, fins de match serrées selon la définition de la NBA (5 dernières minutes, 5 points d'écart ou moins). Notifications système quand la connexion le permet, alertes dans la page sinon ; une alerte n'est jamais envoyée deux fois.
 - Mode anti-spoiler pour regarder les matchs en différé : scores, box score, fil des actions, résumé de la nuit, champion des playoffs et alertes restent masqués jusqu'à ce qu'on les révèle, match par match ou d'un coup. Les révélations sont retenues pendant la session.
 - Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.
 - Fonctionne aussi **sans ordinateur sur Android** : le serveur tourne sur le téléphone dans Termux, installé en une commande, lancé depuis un widget de l'écran d'accueil.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
-- Habillage « Arena » inspiré des retransmissions sportives : titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon.
+- Habillage « Arena » inspiré des retransmissions sportives : grands noms en Anton, titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon. Les animations sont coupées si le système demande de les limiter.
 - Page « État des sources » pour diagnostiquer un problème de connexion.
 
 ## Captures
 
-| Cette nuit en NBA | Scénario du match |
+| Matchs du jour | Scénario du match |
 | --- | --- |
-| ![Résumé d'une journée de matchs](docs/captures/02-resume-de-la-nuit.png) | ![Courbe de l'écart au score d'un match](docs/captures/03-scenario-du-match.png) |
+| ![Matchs du jour en grandes lignes, avec les meilleurs joueurs détourés](docs/captures/02-matchs.png) | ![Courbe de l'écart au score d'un match](docs/captures/03-scenario-du-match.png) |
 | **Carte des tirs** | **Multi-matchs** |
 | ![Carte des tirs des deux équipes](docs/captures/04-carte-des-tirs.png) | ![Plusieurs matchs en direct côte à côte](docs/captures/05-multi-matchs.png) |
 | **Arbre des playoffs** | **Statistiques d'un joueur** |
@@ -54,11 +56,13 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 | **Comparateur** | **Mode anti-spoiler** |
 | ![Face-à-face statistique de deux joueurs](docs/captures/08-comparateur.png) | ![Scores masqués sur la page des matchs](docs/captures/09-anti-spoiler.png) |
 | **Fiche d'équipe, thème clair** | **Sur téléphone** |
-| ![Fiche d'une équipe en thème clair](docs/captures/10-equipe-theme-clair.png) | <img src="docs/captures/11-mobile.png" alt="Page des matchs sur téléphone" width="260"> |
+| ![Fiche d'une équipe en thème clair](docs/captures/10-equipe-theme-clair.png) | <img src="docs/captures/11-mobile.png" alt="Accueil sur téléphone" width="260"> |
 | **Vidéos d'un match** | **Faits marquants et clés du match** |
 | ![Résumé officiel et moments décisifs d'un match](docs/captures/12-videos-du-match.png) | ![Fautes techniques, challenges et clés du match](docs/captures/13-cles-du-match.png) |
 | **Rapport des blessures** | **Transactions** |
 | ![Rapport officiel des blessures traduit en français](docs/captures/14-blessures.png) | ![Signatures, échanges et joueurs libérés](docs/captures/15-transactions.png) |
+| **La nuit en chiffres** | **Menu de l'accueil** |
+| ![Meilleurs de la nuit : le chiffre en grand, le joueur détouré devant](docs/captures/16-chiffres-de-la-nuit.png) | ![Menu déroulant plein écran](docs/captures/17-menu.png) |
 
 Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 
@@ -176,7 +180,7 @@ parquet-nba/
 ## Données, droits et licence
 
 - **Code** : licence [MIT](LICENSE).
-- **Polices** : Oswald (titres) et Barlow (texte), incluses sous licence SIL Open Font License (fichiers dans `web/fonts/`).
+- **Polices** : Anton (grands noms de l'accueil), Oswald (titres) et Barlow (texte), incluses sous licence SIL Open Font License (fichiers dans `web/fonts/`).
 - **Données, logos et photos NBA** : ils ne sont pas inclus dans ce dépôt. L'application les télécharge au moment de l'utilisation, depuis les sources publiques de NBA.com, et ils restent la propriété de la NBA et de leurs ayants droit. Les conditions d'utilisation de NBA.com réservent ces contenus à un usage personnel : Parquet est conçu pour être lancé par chacun sur son propre ordinateur, pas pour être hébergé publiquement.
 - **Textes Wikipédia** : affichés avec un lien vers l'article et la mention de la licence CC BY-SA.
 

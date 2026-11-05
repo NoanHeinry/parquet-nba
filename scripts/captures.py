@@ -84,9 +84,19 @@ def main() -> None:
             page.screenshot(path=str(OUT / name), full_page=full, clip=clip)
             print("capture", name)
 
+        def go_to(selector, offset=0):
+            def run(p):
+                p.wait_for_selector(selector)
+                top = p.evaluate(f"document.querySelector('{selector}').getBoundingClientRect().top + window.scrollY")
+                p.evaluate(f"window.scrollTo(0, {top} - {offset})")
+                p.wait_for_timeout(1400)  # apparition de la section
+            return run
+
         page = context().new_page()
-        shot(page, "01-matchs.png", "#/")
-        shot(page, "02-resume-de-la-nuit.png", "#/matchs/2026-10-13", element=".recap")
+        shot(page, "01-accueil.png", "#/matchs/2026-10-13", before=lambda p: p.wait_for_timeout(1200))
+        shot(page, "02-matchs.png", "#/", before=go_to("#matchs", -20))
+        shot(page, "16-chiffres-de-la-nuit.png", "#/matchs/2026-10-13", before=go_to("#chiffres", -20))
+        shot(page, "17-menu.png", "#/", before=lambda p: p.click(".menu-fab"))
 
         def hover_flow(p):
             p.wait_for_selector(".flow-chart")
@@ -107,14 +117,15 @@ def main() -> None:
         spoiler = context().new_page()
         spoiler.goto(base + "#/")
         spoiler.wait_for_load_state("networkidle")
+        spoiler.click(".menu-fab")
         spoiler.click("#spoiler-toggle")
-        shot(spoiler, "09-anti-spoiler.png", "#/")
+        shot(spoiler, "09-anti-spoiler.png", "#/", before=go_to("#matchs", -20))
 
         light = context(scheme="light").new_page()
         shot(light, "10-equipe-theme-clair.png", "#/equipe/1610612738")
 
         phone = context(390, 844, scale=2).new_page()
-        shot(phone, "11-mobile.png", "#/")
+        shot(phone, "11-mobile.png", "#/matchs/2026-10-13", before=lambda p: p.wait_for_timeout(1200))
 
         def videos_tab(p):
             p.click('[role="tab"][data-tab="videos"]')

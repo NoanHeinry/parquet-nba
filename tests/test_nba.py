@@ -309,6 +309,15 @@ class RecapTests(unittest.TestCase):
         self.assertEqual(recap["blowout"]["margin"], 29)
         self.assertEqual([g["id"] for g in recap["overtimes"]], ["B"])
         self.assertNotIn(41, [p["id"] for p in recap["best"]])  # joueur qui n'a pas joué
+        # Un joueur du match par rencontre terminée, le meilleur Game Score en premier.
+        self.assertEqual([(p["gameId"], p["id"]) for p in recap["stars"]], [("A", 11), ("B", 31)])
+        self.assertEqual((recap["stars"][0]["first"], recap["stars"][0]["last"]), ("Joueur", "11"))
+        self.assertEqual(recap["stars"][1]["game"]["away"]["score"], 130)
+
+    def test_split_name(self):
+        self.assertEqual(nba._split_name({"first": "Shai", "last": "Gilgeous-Alexander"}), ("Shai", "Gilgeous-Alexander"))
+        self.assertEqual(nba._split_name({"name": "Jaren Jackson Jr."}), ("Jaren", "Jackson Jr."))
+        self.assertEqual(nba._split_name({"name": "Nenê"}), ("", "Nenê"))
 
 
 class CalendarTests(unittest.TestCase):

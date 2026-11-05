@@ -1,4 +1,5 @@
-// Page d'accueil : les matchs d'une journée NBA, en direct quand il y en a.
+// Page d'accueil : la scène des joueurs du match, puis les matchs d'une journée NBA (en direct
+// quand il y en a), les chiffres de la nuit, le classement et les meilleurs marqueurs.
 
 import { api } from "../api.js";
 import { h } from "../dom.js";
@@ -6,6 +7,9 @@ import * as f from "../format.js";
 import { errorState, favorites, gameTile, headshot, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
 import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
+import { createStage } from "./stage.js";
+import { immersive } from "../menu.js";
+import { exitProgress, reveal, sectionIndex, smoothWheel } from "../scroll.js";
 import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
 
@@ -20,16 +24,34 @@ function refreshDelay(data) {
 
 export async function render(ctx) {
   const requested = ctx.params[0] || null;
-  const layout = h("div", { class: "matches-layout" });
-  const mainCol = h("section", { "aria-labelledby": "day-title" });
-  const rail = h("aside", { class: "rail", "aria-label": "Classement et leaders" });
-  layout.append(mainCol, rail);
-  ctx.outlet.append(layout);
-  mainCol.append(loading("Chargement des matchs…"));
+  immersive(ctx);
+
+  // La page : la scène des joueurs du match, puis les matchs, les chiffres de la nuit,
+  // le classement et les meilleurs marqueurs. Un sommaire numéroté suit la lecture à droite.
+  const stage = createStage(ctx);
+  const recap = createRecap(ctx);
+  const gamesSec = h("section", { class: "home-sec home-games", id: "matchs", "aria-labelledby": "day-title" });
+  const nightSec = h("section", { class: "home-sec home-night", id: "chiffres", "aria-label": "La nuit en chiffres" }, recap.el);
+  const tablesSec = h("section", { class: "home-sec home-tables", id: "tableaux", "aria-label": "Classement et leaders" });
+  ctx.outlet.append(stage.el, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec));
+  gamesSec.append(loading("Chargement des matchs…"));
+
+  const scroller = smoothWheel(ctx);
+  const index = sectionIndex(
+    ctx,
+    [
+      { el: stage.el, label: "Joueurs du match", dark: true },
+      { el: gamesSec, label: "Matchs" },
+      { el: nightSec, label: "La nuit en chiffres" },
+      { el: tablesSec, label: "Classement" },
+    ],
+    scroller
+  );
+  reveal(ctx, [gamesSec, nightSec, tablesSec]);
+  exitProgress(ctx, stage.el);
 
   let previous = new Map();
   let last = null;
-  const recap = createRecap(ctx);
   const updatedLine = h("p", { class: "updated", "aria-live": "polite" });
 
   const draw = (data, meta) => {
@@ -53,7 +75,7 @@ export async function render(ctx) {
       },
       "Révéler tout"
     );
-    const startedTiles = () => [...mainCol.querySelectorAll(".game-tile")].filter((el) => el.querySelector(".tile-reveal-btn"));
+    const startedTiles = () => [...gamesSec.querySelectorAll(".game-tile")].filter((el) => el.querySelector(".tile-reveal-btn"));
     const syncAllBtn = () => {
       const tiles = startedTiles();
       const allRev = tiles.length > 0 && tiles.every((el) => el.classList.contains("is-revealed"));
@@ -78,16 +100,24 @@ export async function render(ctx) {
       games.some((g) => g.status >= 2) ? toggleAllBtn : null
     );
 
+    const counts = [
+      games.length ? f.plural(games.length, "match", "matchs") : null,
+      live ? `${live} en direct` : null,
+    ].filter(Boolean);
     const head = h(
       "div",
       { class: "day-head" },
-      h("h1", { class: "page-title", id: "day-title" }, f.dayTitle(data.date)),
+      h("div", null, h("p", { class: "home-kicker" }, counts.join(" · ") || "Matchs"), h("h1", { class: "page-title", id: "day-title" }, f.dayTitle(data.date))),
       nav
     );
 
     let content;
     if (games.length) {
-      content = h("div", { class: "games-grid" }, games.map((g) => gameTile(g, { favs, previous })));
+      content = h("div", { class: "games-grid games-list" }, games.map((g, i) => {
+        const tile = gameTile(g, { favs, previous });
+        tile.style.setProperty("--i", i);
+        return tile;
+      }));
     } else {
       content = h(
         "div",
@@ -108,8 +138,12 @@ export async function render(ctx) {
         )
       : "";
 
-    mainCol.replaceChildren(head, staleBanner(meta) || "", liveStrip, recap.el, content, updatedLine);
-    recap.update(data);
+    gamesSec.replaceChildren(head, staleBanner(meta) || "", liveStrip, content, updatedLine);
+    stage.update(data);
+    recap.update(data).then(() => {
+      nightSec.hidden = recap.el.hidden;
+      index.refresh();
+    });
   };
 
   const load = async () => {
@@ -125,8 +159,10 @@ export async function render(ctx) {
     await load();
   } catch (err) {
     if (err.name === "AbortError") return;
-    mainCol.replaceChildren(errorState(err, () => location.reload()));
-    renderRail(rail, ctx);
+    stage.el.hidden = true;
+    nightSec.hidden = true;
+    gamesSec.replaceChildren(errorState(err, () => location.reload()));
+    renderTables(tablesSec, ctx);
     return;
   }
 
@@ -140,75 +176,80 @@ export async function render(ctx) {
       }
     }
   );
-  renderRail(rail, ctx);
+  renderTables(tablesSec, ctx);
 }
 
-function renderRail(rail, ctx) {
-  const standingsBox = h("div");
-  const leadersBox = h("div");
-  rail.append(
-    h("section", null, h("h2", null, "Classement", h("a", { href: "#/classement" }, "Tout voir")), standingsBox),
-    h("section", null, h("h2", null, "Meilleurs marqueurs", h("a", { href: "#/leaders" }, "Tous les leaders")), leadersBox)
-  );
+// Bas de page : les deux conférences et les meilleurs marqueurs, côte à côte.
+function renderTables(box, ctx) {
+  const east = h("div", { class: "ht-col" });
+  const west = h("div", { class: "ht-col" });
+  const scorers = h("div", { class: "ht-col" });
+  box.append(h("div", { class: "home-tables-grid" }, east, west, scorers));
 
-  section(
-    standingsBox,
-    () => api("/standings", { signal: ctx.signal }),
-    ({ data }) => {
-      const out = [];
-      if (data.fallback) out.push(h("p", { class: "note", style: { margin: "0 0 8px" } }, `Bilan final ${data.season}`));
-      for (const conf of ["East", "West"]) {
-        const rows = data.rows.filter((r) => r.conf === conf).slice(0, 6);
-        out.push(h("p", { class: "mini-sub" }, conf === "East" ? "Conférence Est" : "Conférence Ouest"));
-        out.push(
-          h(
-            "table",
-            { class: "mini-table num" },
-            h(
-              "tbody",
-              null,
-              rows.map((r) =>
+  // Une seule requête pour les deux conférences (refaite si on réessaie après une erreur).
+  let pending = null;
+  const standings = () =>
+    (pending ||= api("/standings", { signal: ctx.signal }).catch((err) => {
+      pending = null;
+      throw err;
+    }));
+  for (const [col, conf, label] of [
+    [east, "East", "Conférence Est"],
+    [west, "West", "Conférence Ouest"],
+  ]) {
+    section(
+      col,
+      standings,
+      ({ data }) => [
+        h("p", { class: "home-kicker" }, label, h("a", { href: "#/classement" }, data.fallback ? `Bilan ${data.season}` : "Classement complet")),
+        h(
+          "ol",
+          { class: "ht-list" },
+          data.rows
+            .filter((r) => r.conf === conf)
+            .slice(0, 8)
+            .map((r) =>
+              h(
+                "li",
+                null,
                 h(
-                  "tr",
-                  null,
-                  h("td", null, r.rank),
-                  h("td", null, h("a", { class: "team-cell", href: `#/equipe/${r.teamId}` }, teamLogo(r.teamId, 20), team(r.teamId)?.name || r.name)),
-                  h("td", { class: "r" }, `${r.w}-${r.l}`)
+                  "a",
+                  { href: `#/equipe/${r.teamId}` },
+                  h("span", { class: "ht-rank num" }, r.rank),
+                  teamLogo(r.teamId, 28),
+                  h("span", { class: "ht-name" }, team(r.teamId)?.name || r.name),
+                  h("span", { class: "ht-val num" }, `${r.w}-${r.l}`)
                 )
               )
             )
-          )
-        );
-      }
-      return out;
-    }
-  );
+        ),
+      ]
+    );
+  }
 
   section(
-    leadersBox,
+    scorers,
     () => api("/leaders", { signal: ctx.signal }),
-    ({ data }) => {
-      const rows = (data.boards.pts || []).slice(0, 5);
-      return [
-        data.fallback ? h("p", { class: "note", style: { margin: "0 0 8px" } }, `Saison ${data.season}`) : null,
-        h(
-          "table",
-          { class: "mini-table num" },
+    ({ data }) => [
+      h("p", { class: "home-kicker" }, "Meilleurs marqueurs", h("a", { href: "#/leaders" }, data.fallback ? `Saison ${data.season}` : "Tous les leaders")),
+      h(
+        "ol",
+        { class: "ht-list players" },
+        (data.boards.pts || []).slice(0, 6).map((r, i) =>
           h(
-            "tbody",
+            "li",
             null,
-            rows.map((r, i) =>
-              h(
-                "tr",
-                null,
-                h("td", null, i + 1),
-                h("td", null, h("a", { class: "team-cell rail-player", href: `#/joueur/${r.id}` }, headshot(r.id, { alt: "" }), h("span", null, r.name, h("small", null, team(r.teamId)?.name || "")))),
-                h("td", { class: "r" }, f.num(r.value))
-              )
+            h(
+              "a",
+              { href: `#/joueur/${r.id}` },
+              h("span", { class: "ht-rank num" }, i + 1),
+              headshot(r.id, { alt: "" }),
+              h("span", { class: "ht-name" }, r.name, h("small", null, team(r.teamId)?.name || "")),
+              h("span", { class: "ht-val num" }, f.num(r.value))
             )
           )
-        ),
-      ];
-    }
+        )
+      ),
+    ]
   );
 }
