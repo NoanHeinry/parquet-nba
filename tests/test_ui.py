@@ -24,6 +24,13 @@ from parquet.server import make_server
 
 STAR = demo.STAR
 PLACEHOLDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#8592a6"/></svg>'
+# Photo en pied de remplacement, aux dimensions des photos « silos » (440 × 700).
+FULL_BODY = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="440" height="700" viewBox="0 0 440 700">'
+    '<circle cx="220" cy="80" r="56" fill="#8592a6"/><rect x="150" y="150" width="140" height="300" fill="#8592a6"/>'
+    '<rect x="160" y="440" width="50" height="250" fill="#8592a6"/><rect x="230" y="440" width="50" height="250" fill="#8592a6"/></svg>'
+)
+BUST = '<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="760" viewBox="0 0 1040 760"><circle cx="520" cy="300" r="200" fill="#8592a6"/></svg>'
 
 
 @unittest.skipIf(sync_playwright is None, "Playwright n'est pas installé")
@@ -215,6 +222,180 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_selector(".draft-row")
         self.assertEqual(self.page.locator(".dr-future.is-none").count(), 60)
         self.assertEqual(self.errors, [])
+
+    # ------------------------------------------------------------ jeu « Qui est-ce ? »
+
+    def quiz_photos(self, full=True):
+        """Toutes les photos en pied répondent (ou aucune), portraits aux bonnes dimensions."""
+        self.page.route(
+            "https://ak-static.cms.nba.com/**",
+            lambda route: route.fulfill(status=200, content_type="image/svg+xml", body=FULL_BODY) if full else route.fulfill(status=404, body=""),
+        )
+        self.page.route("https://cdn.nba.com/headshots/**", lambda route: route.fulfill(status=200, content_type="image/svg+xml", body=BUST))
+
+    def quiz_state(self):
+        return self.page.evaluate("JSON.parse(localStorage.getItem('parquet-quiz') || 'null')")
+
+    def test_quiz_engine_rules(self):
+        self.open("#/jeu")
+        res = self.page.evaluate(
+            """async () => {
+              const Q = await import('/js/quiz.js');
+              const a = Q.rng('parquet-defi-2026-11-06'), b = Q.rng('parquet-defi-2026-11-06'), c = Q.rng('autre');
+              const seqA = [a(), a(), a()], seqB = [b(), b(), b()], seqC = [c(), c(), c()];
+              const pool = Array.from({length: 40}, (_, i) => ({id: i + 1, first: 'P', last: 'N' + i, pos: i % 2 ? 'G' : 'C', height: '6-' + (i % 12), pts: 40 - i}));
+              const d = Q.distractors(pool[3], pool, Q.rng('x'));
+              return {
+                same: JSON.stringify(seqA) === JSON.stringify(seqB), differs: JSON.stringify(seqA) !== JSON.stringify(seqC),
+                fast: Q.roundPoints({correct: true, hintsUsed: 0, ms: 1500}),
+                slow: Q.roundPoints({correct: true, hintsUsed: 2, ms: 30000}),
+                wrong: Q.roundPoints({correct: false, ms: 1000}),
+                serie: Q.roundPoints({correct: true, ms: 1000, mode: 'serie'}),
+                distractors: d.map((p) => p.id), samePos: d.every((p) => p.pos === pool[3].pos),
+                hints: Q.hints({pos: 'G', height: '6-3', weight: '200', country: 'France', draftYear: 2019, draftNumber: 1, from: 2019, pts: 20, reb: 5, ast: 7, jersey: '7', teamId: 1610612738, statsTf: 'Season'}).map((h) => h.key),
+                inches: Q.inches('6-11'),
+              };
+            }"""
+        )
+        self.assertTrue(res["same"])
+        self.assertTrue(res["differs"])
+        self.assertEqual(res["fast"], 150)
+        self.assertEqual(res["slow"], 60)
+        self.assertEqual(res["wrong"], 0)
+        self.assertEqual(res["serie"], 1)
+        self.assertEqual(len(res["distractors"]), 3)
+        self.assertNotIn(4, res["distractors"])
+        self.assertTrue(res["samePos"])
+        self.assertEqual(res["hints"], ["gabarit", "parcours", "chiffres", "equipe"])
+        self.assertEqual(res["inches"], 83)
+
+    def test_quiz_home_lists_daily_modes_and_album(self):
+        self.quiz_photos()
+        self.open("#/jeu")
+        self.page.wait_for_selector(".qz-daily")
+        self.assertEqual(self.page.locator(".qz-mode").count(), 3)
+        self.assertEqual(self.page.locator(".qz-team").count(), 30)
+        self.assertEqual(self.page.locator(".qz-day").count(), 14)
+        self.assertEqual(self.page.locator(".menu-link[href='#/jeu']").count(), 1)
+        # Le niveau choisi est retenu.
+        self.page.click(".qz-seg-btn:has-text('Expert')")
+        self.assertEqual(self.quiz_state()["prefs"]["level"], "expert")
+        self.page.wait_for_selector(".poster-visual.is-quiz canvas")
+
+    def test_quiz_full_game_with_keyboard_and_results(self):
+        self.quiz_photos()
+        self.open("#/jeu/partie")
+        for i in range(10):
+            self.page.wait_for_selector(".qz-arena:not(.is-revealed) .qz-choice:not([disabled])")
+            self.assertIn(f"{i + 1}/10", self.page.text_content(".qz-kicker"))
+            self.page.keyboard.press("1")
+            self.page.wait_for_selector(".qz-arena.is-revealed")
+            # La bonne réponse est toujours montrée ; le nom révélé est le sien.
+            right = self.page.locator(".qz-choice.is-right")
+            self.assertEqual(right.count(), 1)
+            self.assertIn(self.page.text_content(".qz-name").strip(), right.text_content())
+            self.assertIn(f"{i + 1}/10", self.page.text_content(".qz-kicker"))
+            self.page.keyboard.press("Enter")
+        self.page.wait_for_selector(".qz-results")
+        self.assertEqual(self.page.locator(".qz-card").count(), 10)
+        state = self.quiz_state()
+        self.assertEqual(state["rounds"], 10)
+        self.assertEqual(state["games"], 1)
+        hits = self.page.locator(".qz-card.is-hit").count()
+        self.assertEqual(state["correct"], hits)
+        self.assertEqual(len(state["found"]), hits)
+
+    def test_quiz_daily_is_identical_and_played_once(self):
+        def first_round(ctx_page):
+            ctx_page.wait_for_selector(".qz-choice:not([disabled])")
+            names = ctx_page.locator(".qz-choice span").all_text_contents()
+            ctx_page.click(".qz-choice >> nth=0")
+            ctx_page.wait_for_selector(".qz-arena.is-revealed")
+            return names, ctx_page.text_content(".qz-name")
+
+        self.quiz_photos()
+        self.open("#/jeu/defi")
+        mine = first_round(self.page)
+        # Un autre navigateur, sans historique : même joueur, mêmes choix, dans le même ordre.
+        other_ctx = self.browser.new_context(viewport={"width": 1280, "height": 900}, service_workers="block")
+        other_ctx.route("https://ak-static.cms.nba.com/**", lambda route: route.fulfill(status=200, content_type="image/svg+xml", body=FULL_BODY))
+        other_ctx.route("https://cdn.nba.com/**", lambda route: route.fulfill(status=200, content_type="image/svg+xml", body=BUST))
+        other = other_ctx.new_page()
+        other.goto(self.base + "#/jeu/defi")
+        self.assertEqual(first_round(other), mine)
+        other_ctx.close()
+        for _ in range(4):
+            self.page.click(".qz-next")
+            self.page.wait_for_selector(".qz-arena:not(.is-revealed) .qz-choice:not([disabled])")
+            self.page.click(".qz-choice >> nth=1")
+            self.page.wait_for_selector(".qz-arena.is-revealed")
+        self.assertEqual(self.page.text_content(".qz-next"), "Voir le bilan")
+        self.page.click(".qz-next")
+        self.page.wait_for_selector(".qz-results")
+        self.assertEqual(self.page.locator(".qz-res-marks .qz-mark").count(), 5)
+        # Une seule tentative par jour : on retombe sur le bilan.
+        self.open("#/jeu")
+        self.page.wait_for_selector(".qz-daily.is-done")
+        self.open("#/jeu/defi")
+        self.page.wait_for_selector(".qz-results")
+        self.assertIn("déjà joué", self.page.text_content(".qz-results"))
+        self.assertEqual(self.page.locator(".qz-choice").count(), 0)
+
+    def test_quiz_typing_mode_hints_and_skip(self):
+        self.context.add_init_script("localStorage.setItem('parquet-quiz', JSON.stringify({v: 1, prefs: {level: 'expert', answer: 'saisie'}}))")
+        self.quiz_photos()
+        self.open("#/jeu/partie")
+        self.page.wait_for_selector(".qz-input")
+        self.assertIn("3 essais", self.page.text_content(".qz-tries"))
+        # Indice payant à la main.
+        self.page.click(".qz-hint-btn")
+        self.assertEqual(self.page.locator(".qz-hint").count(), 1)
+        # Mauvaise réponse tapée : un essai en moins et un indice offert.
+        self.page.fill(".qz-input", "a")
+        self.page.fill(".qz-input", "an")
+        self.page.wait_for_selector(".qz-suggest li")
+        options = self.page.locator(".qz-suggest li").all_text_contents()
+        revealed_name = None
+        for idx, _ in enumerate(options):
+            self.page.fill(".qz-input", "an")
+            self.page.wait_for_selector(".qz-suggest li")
+            for _ in range(idx):
+                self.page.keyboard.press("ArrowDown")
+            self.page.keyboard.press("Enter")
+            if self.page.locator(".qz-arena.is-revealed").count():
+                revealed_name = True
+                break
+            if self.page.locator(".qz-tries").text_content().startswith("2"):
+                break
+        if not revealed_name:
+            self.assertIn("2 essais", self.page.text_content(".qz-tries"))
+            self.assertEqual(self.page.locator(".qz-hint").count(), 2)
+            self.page.click(".qz-skip")
+            self.page.wait_for_selector(".qz-arena.is-wrong")
+            self.assertIn("Passé", self.page.text_content(".qz-points"))
+            self.assertIn("C'était", self.page.text_content(".qz-verdict"))
+
+    def test_quiz_falls_back_to_portraits_without_full_body_photos(self):
+        self.quiz_photos(full=False)
+        self.open("#/jeu/partie")
+        self.page.wait_for_selector(".qz-frame.is-bust", timeout=20000)
+        self.page.wait_for_selector(".qz-choice:not([disabled])")
+
+    def test_quiz_chrono_runs_clock_and_chains_players(self):
+        self.quiz_photos()
+        self.open("#/jeu/chrono")
+        self.page.wait_for_selector(".qz-choice:not([disabled])")
+        self.assertTrue(self.page.locator(".qz-clock").is_visible())
+        self.assertFalse(self.page.locator(".qz-hint-btn").is_visible())
+        first = self.page.locator(".qz-choice span").all_text_contents()
+        self.page.keyboard.press("2")
+        # Pas de bouton « suivant » : le joueur suivant arrive tout seul.
+        self.page.wait_for_function(
+            "(prev) => { const n = [...document.querySelectorAll('.qz-arena:not(.is-revealed) .qz-choice span')].map(e => e.textContent); return n.length === 4 && n.join() !== prev; }",
+            arg=",".join(first),
+            timeout=5000,
+        )
+        self.assertTrue(self.page.locator(".qz-next").is_hidden())
 
     def test_outdated_server_shows_restart_notice(self):
         # Fenêtre de Parquet jamais refermée après une mise à jour : le serveur répond encore

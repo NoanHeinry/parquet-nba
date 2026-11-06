@@ -7,6 +7,7 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 - **Équipes** : les 30 franchises avec leur effectif (en photos, ou en tableau si tu préfères), leur staff, leur calendrier présenté mois par mois (un V vert ou un D rouge avec le score pour chaque match joué, l'horaire pour les prochains, exportable dans ton agenda), leur histoire, leurs titres, les maillots retirés, leurs membres du Hall of Fame et leurs victoires saison par saison.
 - **Joueurs** et **Comparateur** : tous les joueurs passés par la NBA depuis 1946, avec leur fiche (biographie, palmarès, parcours, records, statistiques de carrière par match, sur 36 minutes ou en totaux, stats avancées, derniers matchs) et un outil de comparaison face-à-face (duel statistique, palmarès comparé, graphiques de trajectoire saison par saison).
 - **Draft** : toutes les drafts depuis 1947, choix par choix (équipe, joueur, université ou club) et ce que chaque joueur est devenu. Tu peux filtrer par tour ou par provenance, chercher un nom, passer d'une année à l'autre ou afficher tous les choix d'une équipe (aussi depuis la fiche d'une équipe, bouton *Choix de draft*, ou en touchant la ligne « Draft » d'une fiche joueur).
+- **Jeu** : « Qui est-ce ? », reconnaître un joueur à sa silhouette. Défi du jour à partager, parties, séries, contre-la-montre et un album des joueurs que tu as trouvés.
 - **Infos** : le rapport officiel des blessures de la NBA, traduit en français, et toutes les transactions (signatures, échanges, joueurs libérés).
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
@@ -68,6 +69,19 @@ La NBA publie le résumé YouTube en général une à deux heures après la fin 
 La page **Infos** affiche le dernier rapport officiel des blessures, publié par la NBA toutes les 15 minutes : pour chaque match à venir, les joueurs forfait, peu probables, incertains ou probables, avec leur blessure en français. Le filtre *Mes équipes favorites* ne garde que tes équipes. L'onglet *Transactions* liste les signatures, échanges et joueurs libérés des quatre derniers mois.
 
 Ces informations apparaissent aussi sur la page d'un match avant le coup d'envoi, dans l'onglet *Infirmerie et mouvements* d'une équipe, et sur la fiche d'un joueur blessé.
+
+### Le jeu « Qui est-ce ? »
+
+Ouvre **Jeu** dans le menu (ou l'encart tout en bas de l'accueil). Une silhouette de joueur s'affiche : trouve qui c'est.
+
+- **Défi du jour** : 5 joueurs, les mêmes pour tout le monde ce jour-là, une seule tentative. À la fin, *Partager* copie ton résultat en petits carrés (orange : trouvé, jaune : trouvé avec un indice, noir : raté), à coller dans une conversation. Un nouveau défi arrive chaque nuit à minuit.
+- **Partie** : 10 joueurs. Une bonne réponse rapporte 100 points, plus un bonus de vitesse (jusqu'à 50 points si tu réponds en moins de 2 secondes). Chaque indice coûte 20 points.
+- **Série** : on continue jusqu'à la première erreur.
+- **Contre-la-montre** : 60 secondes pour en trouver le plus possible ; une erreur coûte 3 secondes.
+
+Le **niveau** choisit les joueurs : *Facile* (les 100 meilleurs marqueurs), *Normal* (les 260 joueurs les plus utilisés) ou *Expert* (toute la ligue). En *Saisie libre*, tu tapes le nom (des suggestions s'affichent) et tu as trois essais ; chaque erreur te donne un indice. Au clavier : touches 1 à 4 pour répondre, I pour un indice, Entrée pour passer au joueur suivant.
+
+Ta progression (records, défis, album des joueurs trouvés) est gardée dans le navigateur : celle du téléphone et celle de l'ordinateur sont séparées.
 
 ### Sur ton téléphone
 

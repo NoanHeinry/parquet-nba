@@ -34,6 +34,10 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Drafts : l'ordre complet de chaque draft depuis 1947 (tour, rang du choix, équipe sous son nom de l'époque, joueur, université, lycée ou club), avec ce que chaque joueur est devenu (saisons en NBA, en activité ou non, moyennes). Filtres par tour et par provenance, recherche, navigation d'année en année et vue de tous les choix d'une équipe ; le 1er choix en pied en tête de page.
 - Page « Infos » : le rapport officiel des blessures de la NBA (publié toutes les 15 minutes en PDF, lu et traduit en français : statut et blessure de chaque joueur, match par match) et toutes les transactions de la ligue (signatures, échanges, joueurs libérés, contrats), avec des rappels sur les pages des équipes et des joueurs.
 
+**Jeu**
+- « Qui est-ce ? » : reconnaître un joueur NBA d'après sa silhouette en pied (photo officielle détourée, recouverte d'une couleur unie), puis la révélation en couleur avec son nom en très grand. Quatre noms au choix (même poste et gabarit proche, pour que ce ne soit pas trop facile) ou saisie libre avec suggestions et trois essais. Indices à la demande (gabarit, parcours, chiffres, équipe) qui coûtent des points, bonus de vitesse.
+- Quatre façons de jouer : défi du jour (5 joueurs, les mêmes pour tout le monde, une tentative, résultat à partager en carrés de couleur), partie de 10 joueurs, série jusqu'à la première erreur et contre-la-montre de 60 secondes. Trois niveaux (les 100 meilleurs marqueurs, les 260 joueurs les plus utilisés, toute la ligue), records par mode et par niveau, historique des défis et album des joueurs trouvés, équipe par équipe. Jouable au clavier (1 à 4, I pour un indice, Entrée pour continuer).
+
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
 - Pas de barre en haut : sur tout le site, un bouton rond en haut à droite ouvre un menu plein écran (rubriques, recherche, alertes, anti-spoiler, animations, thème).
@@ -66,7 +70,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 | ![Rapport officiel des blessures traduit en français](docs/captures/14-blessures.png) | ![Signatures, échanges et joueurs libérés](docs/captures/15-transactions.png) |
 | **La nuit en chiffres** | **Menu de l'accueil** |
 | ![Meilleurs de la nuit : le chiffre en grand, le joueur détouré devant](docs/captures/16-chiffres-de-la-nuit.png) | ![Menu déroulant plein écran](docs/captures/17-menu.png) |
-| ![Ordre d'une draft, avec le devenir de chaque joueur](docs/captures/18-draft.png) | |
+| ![Ordre d'une draft, avec le devenir de chaque joueur](docs/captures/18-draft.png) | ![Jeu « Qui est-ce ? » : la silhouette, deux indices et quatre noms](docs/captures/19-qui-est-ce.png) |
 
 Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 

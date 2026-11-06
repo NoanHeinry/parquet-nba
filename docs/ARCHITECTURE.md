@@ -169,6 +169,8 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/menu.js` | Site sans en-tête : logo et bouton flottants, menu plein écran qui reprend la recherche et les boutons de l'en-tête |
 | `js/poster.js` | En-tête « affiche » commun aux pages : titre ajusté à la largeur, visuel détouré ou logo, chiffre fantôme, statistiques, actions, mis à jour quand les données arrivent |
 | `js/scroll.js` | Sommaire numéroté de la page, apparition des sections, compteurs ; le défilement reste celui du navigateur et toutes les animations passent par le compositeur (déplacement, transparence) ; coupé quand les animations sont réduites |
+| `js/quiz.js` | Moteur du jeu « Qui est-ce ? » : tirage des joueurs (reproductible pour le défi du jour), noms proposés, indices, points, photos préparées à l'avance, progression gardée dans le navigateur |
+| `js/views/quiz.js` | Pages du jeu : accueil (défi, modes, réglages, historique, album), partie (silhouette dessinée sur un canevas puis révélée), bilan, encart de l'accueil |
 | `js/views/draft.js` | Page « Draft » : ordre de chaque draft par tour, ou tous les choix d'une équipe par année ; filtres, recherche, 1er choix en pied dans l'en-tête |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |

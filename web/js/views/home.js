@@ -10,6 +10,7 @@ import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
 import { createStage } from "./stage.js";
 import { countUp, reducedMotion, reveal, sectionIndex } from "../scroll.js";
+import { createQuizTeaser } from "./quiz.js";
 import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
 
@@ -74,8 +75,10 @@ export async function render(ctx) {
   const gamesSec = h("section", { class: "home-sec home-games", id: "matchs", "aria-labelledby": "day-title" });
   const nightSec = h("section", { class: "home-sec home-night", id: "chiffres", "aria-label": "La nuit en chiffres" }, recap.el);
   const tablesSec = h("section", { class: "home-sec home-tables", id: "tableaux", "aria-label": "Classement et leaders" });
+  const teaser = createQuizTeaser(ctx);
+  const quizSec = h("section", { class: "home-sec home-quiz", id: "jeu", "aria-label": "Le jeu Qui est-ce ?" }, teaser.el);
   const ticker = h("div", { class: "ticker", "aria-hidden": "true" }, h("div", { class: "ticker-track" }));
-  ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec));
+  ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec, quizSec));
   gamesSec.append(loading("Chargement des matchs…"));
 
   const scroller = ctx.scroller;
@@ -86,13 +89,16 @@ export async function render(ctx) {
       { el: gamesSec, label: "Matchs" },
       { el: nightSec, label: "La nuit en chiffres" },
       { el: tablesSec, label: "Classement" },
+      { el: quizSec, label: "Le jeu" },
     ],
     scroller
   );
   // Les sections glissent en place en arrivant ; les chiffres de la nuit comptent à ce moment-là.
-  reveal(ctx, [gamesSec, nightSec, tablesSec], (el) => {
+  reveal(ctx, [gamesSec, nightSec, tablesSec, quizSec], (el) => {
     if (el === nightSec) for (const b of el.querySelectorAll(".nn-big")) countUp(b, b.textContent, 250);
+    if (el === quizSec) teaser.show();
   });
+  if (reducedMotion()) teaser.show();
 
   // Chaque ligne de match apparaît quand elle arrive à l'écran ; une ligne déjà vue reste en
   // place quand les scores s'actualisent.

@@ -155,6 +155,14 @@ def main() -> None:
         shot(page, "13-cles-du-match.png", "#/match/0012600050", before=keys)
         shot(page, "14-blessures.png", "#/infos", before=lambda p: p.wait_for_selector(".inj-game"))
         shot(page, "18-draft.png", "#/draft/2003", before=lambda p: p.wait_for_selector(".draft-row"), scroll=300)
+        def quiz_hints(p):
+            p.wait_for_selector(".qz-choice:not([disabled])")
+            p.wait_for_timeout(700)
+            p.click(".qz-hint-btn")
+            p.click(".qz-hint-btn")
+            p.wait_for_timeout(500)
+
+        shot(page, "19-qui-est-ce.png", "#/jeu/partie", before=quiz_hints)
         shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()
