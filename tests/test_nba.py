@@ -530,6 +530,28 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(pal["titles"][0]["count"], 18)
         self.assertEqual(pal["finals"][0]["championId"], 1610612752)
 
+    def test_deep_verification_passes_on_demo_data(self):
+        from parquet import verify
+
+        report = verify.run_all()
+        self.assertEqual(report["total"], len(verify.CHECKS))
+        self.assertEqual(report["ok"], report["total"], [c for c in report["checks"] if c["level"] != "ok"])
+        self.assertIn("sources fonctionnent normalement", verify.report_text(report))
+
+    def test_deep_verification_flags_format_changes(self):
+        from parquet import verify
+
+        def broken():
+            verify.need(False, "colonne PTS absente")
+
+        def down():
+            raise net.SourceError("stats.nba.com ne répond pas")
+
+        self.assertEqual(verify._run(("x", "X", "Page", broken))["level"], "warn")
+        self.assertIn("colonne PTS absente", verify._run(("x", "X", "Page", broken))["message"])
+        self.assertEqual(verify._run(("x", "X", "Page", down))["level"], "error")
+        self.assertEqual(verify._run(("x", "X", "Page", lambda: {}["absent"]))["level"], "warn")
+
     def test_draft_by_year_and_by_team(self):
         data, _ = nba.draft(2015)
         self.assertEqual(data["year"], 2015)

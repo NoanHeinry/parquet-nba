@@ -141,7 +141,7 @@ Parquet peut tourner entièrement sur un téléphone Android, grâce à **Termux
 - **Arrêter :** touche « Arrêter Parquet » dans le widget, tape `parquet stop`, ou touche *Exit* dans la notification de Termux. Pense à l'arrêter quand tu as fini, pour économiser la batterie.
 - **Installer comme une vraie application :** une fois Parquet ouvert dans Chrome, menu ⋮, puis *Installer l'application* (ou *Ajouter à l'écran d'accueil*). Comme tout se passe sur le téléphone, l'adresse `http://localhost:8765` est considérée comme sécurisée : l'application complète et les notifications fonctionnent, sans aucun réglage de Chrome. L'icône ne s'ouvre que si Parquet tourne : lance-le d'abord avec le widget.
 - **Mettre à jour :** tape `parquet maj` dans Termux.
-- **Autres commandes :** `parquet demo` (mode démonstration), `parquet diagnostic` (tester l'accès à NBA.com), `parquet aide`.
+- **Autres commandes :** `parquet demo` (mode démonstration), `parquet diagnostic` (tester l'accès à NBA.com), `parquet verifier` (vérifier chaque source en détail), `parquet aide`.
 
 ### Si ça ne marche pas
 
@@ -157,13 +157,17 @@ Ce mode n'existe pas sur **iPhone** : iOS ne laisse pas un programme de ce type 
 
 Ouvre **État des sources** (lien en bas de chaque page). Le test indique si NBA.com et Wikipédia répondent.
 
+- **Une page reste vide alors que tout répond ?** Lance la **Vérification complète** sur la même page. Elle interroge chaque source utilisée par Parquet et vérifie que la réponse a la forme attendue ; « Format inattendu » veut dire que NBA.com a changé quelque chose. *Copier le rapport* le met dans le presse-papiers, prêt à être envoyé pour corriger Parquet. Sur le téléphone : `parquet verifier`.
+- **Après une mise à jour**, si un encadré orange en bas de l'écran dit que le serveur est encore l'ancienne version, ferme la fenêtre de Parquet et relance-le.
+- La section **Ce navigateur** liste ce que ton navigateur prend en charge. Sur Firefox, l'apparition des sections au défilement n'existe pas encore : elles s'affichent directement, c'est normal.
+
 - NBA.com bloque certains réseaux : désactive un éventuel VPN ou proxy et réessaie.
 - NBA.com limite parfois les requêtes trop rapprochées : attends quelques minutes.
 - Quand NBA.com ne répond pas, Parquet affiche les dernières données gardées en mémoire et le signale par un bandeau.
 - Pour repartir de zéro, supprime le dossier `data` (ou lance `.\lancer.bat --vider-cache`).
 - Après une mise à jour de Parquet, l'application installée récupère les nouveaux fichiers dès le lancement suivant. Si l'affichage semble ancien, recharge la page une fois.
 
-Tu peux aussi tester les sources sans ouvrir l'application, depuis un terminal ouvert dans le dossier : `.\lancer.bat --diagnostic` (Windows) ou `bash lancer.command --diagnostic` (Mac/Linux).
+Tu peux aussi tester les sources sans ouvrir l'application, depuis un terminal ouvert dans le dossier : `.\lancer.bat --diagnostic` (Windows) ou `bash lancer.command --diagnostic` (Mac/Linux), et `--verifier` à la place de `--diagnostic` pour la vérification complète.
 
 ## D'où viennent les données
 

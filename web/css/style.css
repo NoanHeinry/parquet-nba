@@ -12707,3 +12707,88 @@ body.is-immersive main .pl-head h2.pl-title,
     gap: 8px;
   }
 }
+
+/* ================================================================ 3.1 Vérification des sources */
+
+.verify-card .qz-row {
+  margin: 12px 0;
+}
+
+.verify-sum {
+  margin: 14px 0 8px;
+  font-size: 15px;
+  color: var(--text-2);
+}
+
+.verify-sum b {
+  font-family: var(--font-poster);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--win);
+}
+
+.verify-sum.is-bad b {
+  color: var(--accent);
+}
+
+.verify-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.verify-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.verify-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.verify-row small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.verify-msg {
+  font-size: 13.5px;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.verify-row.is-warn .verify-msg,
+.verify-row.is-error .verify-msg {
+  color: var(--text);
+}
+
+.verify-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-weight: 800;
+  background: var(--surface-3);
+}
+
+.verify-icon.ok {
+  background: color-mix(in oklab, var(--win) 25%, transparent);
+  color: var(--win);
+}
+
+.verify-icon.warn {
+  background: color-mix(in oklab, var(--accent) 25%, transparent);
+  color: var(--accent);
+}
+
+.verify-icon.ko {
+  background: color-mix(in oklab, var(--loss) 25%, transparent);
+  color: var(--loss);
+}

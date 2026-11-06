@@ -85,11 +85,149 @@ function youtubeSettings(ctx) {
   return box;
 }
 
+// ------------------------------------------------------------ vérification complète
+
+const LEVEL = { ok: ["✓", "ok", "fonctionne"], warn: ["!", "warn", "format inattendu"], error: ["✕", "ko", "ne répond pas"] };
+
+function copyText(text, button) {
+  const done = (ok) => {
+    button.textContent = ok ? "Rapport copié" : "Copie impossible";
+    setTimeout(() => (button.textContent = "Copier le rapport"), 2500);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => done(true), () => done(false));
+    return;
+  }
+  const area = h("textarea", { style: { position: "fixed", opacity: "0" } }, text);
+  document.body.append(area);
+  area.select();
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  area.remove();
+  done(ok);
+}
+
+function reportText(data) {
+  const lines = [`Parquet ${document.documentElement.dataset.version || ""} : vérification des sources (saison ${data.season}${data.demo ? ", mode démo" : ""})`];
+  for (const c of data.checks) lines.push(`${LEVEL[c.level][0]} ${c.label} : ${c.message} (${c.ms} ms)`);
+  lines.push(`${data.ok}/${data.total} sources normales. Navigateur : ${navigator.userAgent}`);
+  return lines.join("\n");
+}
+
+function deepCheck(ctx) {
+  const box = h("section", { class: "settings-card verify-card", id: "verification" });
+  const start = h("button", { class: "btn primary", type: "button" }, "Lancer la vérification complète");
+  const out = h("div", { class: "verify-out" });
+  start.addEventListener("click", async () => {
+    start.disabled = true;
+    out.replaceChildren(loading("Vérification de chaque source… (une minute environ)"));
+    let data;
+    try {
+      data = (await api("/verify", { signal: ctx.signal })).data;
+    } catch (err) {
+      start.disabled = false;
+      if (err.name === "AbortError") return;
+      out.replaceChildren(errorState(err));
+      return;
+    }
+    start.disabled = false;
+    start.textContent = "Relancer la vérification";
+    const copy = h("button", { class: "btn", type: "button" }, "Copier le rapport");
+    copy.addEventListener("click", () => copyText(reportText(data), copy));
+    const bad = data.checks.filter((c) => c.level !== "ok");
+    out.replaceChildren(
+      h("p", { class: `verify-sum${bad.length ? " is-bad" : ""}` }, h("b", { class: "num" }, `${data.ok}/${data.total}`), bad.length ? " sources fonctionnent normalement." : " : tout fonctionne."),
+      h(
+        "div",
+        { class: "verify-list" },
+        data.checks.map((c) =>
+          h(
+            "div",
+            { class: `verify-row is-${c.level}` },
+            h("span", { class: `verify-icon ${LEVEL[c.level][1]}`, "aria-label": LEVEL[c.level][2] }, LEVEL[c.level][0]),
+            h("div", null, h("b", null, c.label), h("small", null, c.pages), h("span", { class: "verify-msg" }, c.message)),
+            h("span", { class: "note num" }, `${f.int(c.ms)} ms`)
+          )
+        )
+      ),
+      bad.length
+        ? h("p", { class: "note" }, "« Format inattendu » : NBA.com répond, mais la réponse a changé de forme ; la page concernée peut rester vide. Copie le rapport et envoie-le pour qu'on corrige Parquet.")
+        : null,
+      h("div", { class: "qz-row" }, copy)
+    );
+  });
+  box.append(
+    h("h2", { class: "section-title" }, "Vérification complète"),
+    h("p", null, "Interroge chaque source utilisée par une page de Parquet, sans passer par le cache, et vérifie que la réponse a bien la forme attendue. Utile quand une page reste vide après une mise à jour."),
+    h("div", { class: "qz-row" }, start),
+    out
+  );
+  return box;
+}
+
+// ------------------------------------------------------------ ce navigateur
+
+function browserName() {
+  const ua = navigator.userAgent;
+  const m = /Firefox\/(\d+)/.exec(ua) || /Edg\/(\d+)/.exec(ua) || /Chrome\/(\d+)/.exec(ua) || /Version\/(\d+).*Safari/.exec(ua);
+  const name = /Firefox/.test(ua) ? "Firefox" : /Edg\//.test(ua) ? "Edge" : /Chrome/.test(ua) ? "Chrome" : /Safari/.test(ua) ? "Safari" : "Navigateur";
+  return m ? `${name} ${m[1]}` : name;
+}
+
+export function browserChecks() {
+  const css = (q) => {
+    try {
+      return CSS.supports(q);
+    } catch {
+      return false;
+    }
+  };
+  return [
+    { label: "Mélange de couleurs (color-mix)", ok: css("color: color-mix(in oklab, red, blue)"), off: "couleurs d'équipe moins nuancées" },
+    { label: "Hauteur d'écran mobile (svh)", ok: css("height: 100svh"), off: "pages plein écran un peu trop hautes sur téléphone" },
+    { label: "Proportions des images (aspect-ratio)", ok: css("aspect-ratio: 1"), off: "photos mal cadrées" },
+    { label: "Transitions de couleur d'équipe (@property)", ok: typeof CSS !== "undefined" && "registerProperty" in CSS, off: "les couleurs changent sans fondu" },
+    { label: "Apparition au défilement", ok: css("animation-timeline: view()"), off: "les sections s'affichent directement, sans effet (normal sur Firefox et Safari)", optional: true },
+    { label: "Copie dans le presse-papiers", ok: !!(navigator.clipboard && window.isSecureContext), off: "le partage du jeu passe par une méthode plus ancienne", optional: true },
+    { label: "Notifications du système", ok: "Notification" in window && window.isSecureContext, off: "alertes affichées seulement dans la page", optional: true },
+    { label: "Fonctionnement hors ligne", ok: "serviceWorker" in navigator && window.isSecureContext, off: "pas d'ouverture sans connexion", optional: true },
+  ];
+}
+
+function browserCard() {
+  const checks = browserChecks();
+  const missing = checks.filter((c) => !c.ok && !c.optional);
+  return h(
+    "section",
+    { class: "settings-card", id: "navigateur" },
+    h("h2", { class: "section-title" }, `Ce navigateur : ${browserName()}`),
+    h("p", null, missing.length ? "Quelques fonctions manquent : Parquet marche, avec un rendu un peu simplifié. Mettre le navigateur à jour suffit en général." : "Tout ce dont Parquet a besoin est pris en charge."),
+    h(
+      "div",
+      { class: "verify-list" },
+      checks.map((c) =>
+        h(
+          "div",
+          { class: `verify-row is-${c.ok ? "ok" : c.optional ? "info" : "warn"}` },
+          h("span", { class: `verify-icon ${c.ok ? "ok" : "warn"}` }, c.ok ? "✓" : "–"),
+          h("div", null, h("b", null, c.label), c.ok ? null : h("span", { class: "verify-msg" }, c.off))
+        )
+      )
+    )
+  );
+}
+
 export async function render(ctx) {
   const box = h("div");
   ctx.outlet.append(
     poster(ctx, { kicker: "Diagnostic", lines: ["État des", "sources"], size: "slim" }).el,
     box,
+    deepCheck(ctx),
+    browserCard(),
     youtubeSettings(ctx)
   );
 

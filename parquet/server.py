@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, extras, history, nba, net, player_season, season, settings, teams_meta
+from . import __version__, extras, history, nba, net, player_season, season, settings, teams_meta, verify
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -71,6 +71,11 @@ def api_status(q):
 @route(r"/api/diagnostic")
 def api_diagnostic(q):
     return _no_meta(nba.diagnostic())
+
+
+@route(r"/api/verify")
+def api_verify(q):
+    return _no_meta(verify.run_all())
 
 
 @route(r"/api/scoreboard")

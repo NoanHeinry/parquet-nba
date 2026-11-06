@@ -54,7 +54,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Fonctionne aussi **sans ordinateur sur Android** : le serveur tourne sur le téléphone dans Termux, installé en une commande, lancé depuis un widget de l'écran d'accueil.
 - Équipes favorites mises en avant, thème sombre ou clair adapté aux préférences système.
 - Habillage « Arena » inspiré des retransmissions sportives : grands noms en Anton, titres en Oswald, texte en Barlow, noir carbone (ou gris clair) et orange ballon. Pages, onglets et chargements apparaissent en fondu. Par défaut, les animations suivent le réglage du système (coupées si Windows, macOS ou Android demandent de les limiter) ; un bouton les active ou les coupe quel que soit ce réglage.
-- Page « État des sources » pour diagnostiquer un problème de connexion.
+- Page « État des sources » pour diagnostiquer un problème de connexion, avec une vérification complète : chaque source utilisée par une page est interrogée sans cache et sa réponse contrôlée (champs présents, volumes plausibles), pour repérer tout de suite un changement de format chez NBA.com ; rapport à copier. Et la liste de ce que le navigateur prend en charge.
 
 ## Captures
 
@@ -151,7 +151,7 @@ python run.py
 
 L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les lanceurs `lancer.bat` et `lancer.command` créent l'environnement Python et démarrent tout en un double-clic ; `lancer-telephone.bat` et `lancer-telephone.command` font de même en rendant Parquet accessible depuis le téléphone. Sur Android, sans ordinateur, `installer-android.sh` installe Parquet dans Termux et ajoute la commande `parquet` (lancer, arrêter, mettre à jour) et un widget d'écran d'accueil. Le [guide d'utilisation](docs/GUIDE-UTILISATEUR.md) détaille l'installation, l'accès depuis un téléphone et le dépannage.
 
-Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--diagnostic` (teste les sources puis s'arrête), `--vider-cache`.
+Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--diagnostic` (teste les sources puis s'arrête), `--verifier` (vérifie chaque source en détail, format compris, puis s'arrête), `--vider-cache`.
 
 ## Tests
 

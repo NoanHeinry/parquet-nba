@@ -6,6 +6,7 @@
 #   parquet stop           arrête Parquet
 #   parquet maj            met Parquet à jour
 #   parquet diagnostic     teste l'accès à NBA.com et à Wikipédia
+#   parquet verifier       vérifie en détail chaque source (format des données compris)
 #
 # Installée par installer-android.sh dans $PREFIX/bin.
 
@@ -94,8 +95,12 @@ case "${1:-}" in
     need_app
     cd "$APP" && "$PY" run.py --diagnostic
     ;;
+  verifier|vérifier)
+    need_app
+    cd "$APP" && "$PY" run.py --verifier
+    ;;
   -h|--help|aide)
-    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
     ;;
   *)
     echo "Commande inconnue : $1 (tape « parquet aide »)"

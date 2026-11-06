@@ -66,6 +66,15 @@ def open_browser(url: str) -> None:
         webbrowser.open(url)
 
 
+def run_verify() -> int:
+    from parquet import verify
+
+    print("Vérification de chaque source de données (une minute environ)…\n")
+    report = verify.run_all()
+    print(verify.report_text(report))
+    return 0 if report["ok"] == report["total"] else 1
+
+
 def run_diagnostic() -> int:
     print("Test des sources de données…\n")
     report = nba.diagnostic()
@@ -96,6 +105,7 @@ def main() -> int:
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--port-fixe", action="store_true", help=argparse.SUPPRESS)  # pas de port de secours (lanceur Android)
     parser.add_argument("--diagnostic", action="store_true")
+    parser.add_argument("--verifier", action="store_true", help="vérifier en détail chaque source de données (vraies données)")
     parser.add_argument("--vider-cache", action="store_true")
     args = parser.parse_args()
 
@@ -116,6 +126,8 @@ def main() -> int:
 
     if args.diagnostic:
         return run_diagnostic()
+    if args.verifier:
+        return run_verify()
 
     # Par défaut, seul cet ordinateur peut ouvrir Parquet. Avec --lan, les appareils
     # du même réseau aussi : à réserver au Wi-Fi de la maison, pas aux réseaux publics.

@@ -287,6 +287,16 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Par adversaire", groups)
         self.assertIn("2025-26", self.page.locator(".ps-tools select").input_value())
 
+    def test_status_page_deep_verification_and_browser_card(self):
+        self.open("#/etat")
+        self.page.wait_for_selector("#navigateur .verify-row")
+        self.assertGreaterEqual(self.page.locator("#navigateur .verify-row").count(), 8)
+        self.page.click("#verification .btn.primary")
+        self.page.wait_for_selector("#verification .verify-row", timeout=90000)
+        self.assertEqual(self.page.locator("#verification .verify-row").count(), 17)
+        self.assertGreaterEqual(self.page.locator("#verification .verify-row.is-ok").count(), 16)
+        self.assertTrue(self.page.locator("#verification button:has-text('Copier le rapport')").is_visible())
+
     # ------------------------------------------------------------ jeu « Qui est-ce ? »
 
     def quiz_photos(self, full=True):

@@ -71,6 +71,7 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/records?type=playoffs` | Les 50 meilleurs de tous les temps dans huit catégories (saison régulière ou playoffs), écart des joueurs en activité avec le joueur devant eux et matchs nécessaires à leur rythme | `alltimeleadersgrids`, `leaguedashplayerstats` (`parquet/history.py`) |
 | `GET /api/palmares` | Champions et lauréats des grands trophées depuis 1947, plus titrés, titres par franchise | `parquet/palmares.py` (liste fixe tirée de NBA.com, mise à jour une fois par an), index des joueurs pour retrouver les identifiants |
 | `GET /api/player/{id}/season?season=AAAA-AA` | Saison d'un joueur en détail : tous ses tirs (position, réussite, zone), adresse par zone comparée à la ligue, moyennes selon le contexte (forme, lieu, résultat, repos, mois, adversaire) | `shotchartdetail`, `playergamelog` (`parquet/player_season.py`) |
+| `GET /api/verify` | Vérification complète : chaque source interrogée sans cache, réponse contrôlée (champs, volumes), niveau ok / format inattendu / injoignable | `parquet/verify.py` (aussi `run.py --verifier`) |
 | `GET /api/settings` · `POST /api/settings/youtube` | État de la clé YouTube (jamais la clé elle-même) ; enregistrement après vérification | `data/settings.json` |
 | `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
