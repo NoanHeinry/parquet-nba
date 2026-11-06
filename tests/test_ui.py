@@ -165,6 +165,23 @@ class InterfaceTests(unittest.TestCase):
             self.page.wait_for_function("document.querySelectorAll('.stage .slide').length === 1")
         self.assertEqual(seen, {"full", "bust"})
 
+    def test_player_page_shows_portrait_and_full_body_side_by_side(self):
+        self.open("#/matchs/2026-10-13")
+        self.page.wait_for_selector(".stage-tab.is-active")
+        # Fiche du joueur qui a une photo en pied (voir setUp) : portrait et joueur en pied.
+        self.open("#/joueur/1722532")
+        self.page.wait_for_selector(".player-poster .pp-face")
+        self.page.wait_for_function("document.querySelector('.player-poster .pp-full')?.complete")
+        self.assertEqual(self.page.locator(".player-poster .pp-full").count(), 1)
+        title = self.page.locator(".player-poster .poster-title").bounding_box()
+        card = self.page.locator(".player-poster .pp-card").bounding_box()
+        self.assertLessEqual(title["x"] + title["width"], card["x"])  # le nom ne passe pas sous les photos
+        # Un joueur sans photo en pied garde son portrait, agrandi.
+        self.open("#/joueur/1722981")
+        self.page.wait_for_selector(".player-poster .poster-visual.no-full")
+        self.assertEqual(self.page.locator(".player-poster .pp-full").count(), 0)
+        self.assertTrue(self.page.locator(".player-poster .pp-face").is_visible())
+
     def test_motion_toggle_overrides_system_setting(self):
         # Windows peut demander aux sites de limiter les animations : le bouton passe outre.
         self.page.emulate_media(reduced_motion="reduce")

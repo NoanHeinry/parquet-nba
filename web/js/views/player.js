@@ -5,7 +5,7 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { lineChart } from "../charts.js";
 import { chips, errorState, headshot, loading, section, segmented, statTable, swapIn, tabs, teamLogo, wl } from "../components.js";
-import { team, teamBand, teamByTri } from "../teams.js";
+import { silhouetteUrl, team, teamBand, teamByTri } from "../teams.js";
 import { iconScale } from "../icons.js";
 import { moveRow, statusBadge } from "../news.js";
 import { poster } from "../poster.js";
@@ -409,15 +409,29 @@ function heroView(p, ctx) {
   if (p.pos) metaBits.push(h("span", null, f.position(p.pos)));
   const hl = p.headline && p.headline.pts !== null ? p.headline : null;
   if (hl) metaBits.push(h("span", null, hl.season === "Career" ? "Moyennes en carrière" : `Moyennes ${hl.season}`));
+  // Deux photos côte à côte, à droite du nom : le portrait officiel en couleur dans un cadre aux
+  // couleurs de l'équipe, et le joueur en pied (photo « silos ») debout à côté. Sans photo en
+  // pied, le portrait prend toute la place ; sans portrait, le joueur en pied reste seul.
+  const face = headshot(p.id, { size: "big", alt: "", cls: "pp-face" });
+  const card = h("div", { class: "pp-card" }, p.jersey && p.active ? h("span", { class: "pp-num num", "aria-hidden": "true" }, p.jersey) : null, face);
+  const full = h("img", { class: "pp-full", src: silhouetteUrl(p.id), alt: "", decoding: "async", referrerpolicy: "no-referrer" });
+  const duo = [card, full];
+  full.addEventListener("error", () => {
+    full.closest(".poster-visual")?.classList.add("no-full");
+    full.remove();
+  });
+  face.addEventListener("error", () => {
+    if (face.dataset.fallback) card.closest(".poster-visual")?.classList.add("no-face");
+  });
   return poster(ctx, {
     size: "full",
     cls: "player-poster",
     kicker: [t && p.active ? t.fullName : "", p.from ? `${p.from}–${p.active ? "aujourd'hui" : p.to}` : ""].filter(Boolean).join(" · "),
     lines: [p.first, p.last],
     teamId: t && p.active ? t.id : null,
-    visual: headshot(p.id, { size: "big", alt: "" }),
-    visualKind: "cutout",
-    ghost: p.jersey && p.active ? p.jersey : "",
+    visual: duo,
+    visualKind: "duo",
+    ghost: "",
     meta: [...metaBits, ...badges],
     stats: hl
       ? [

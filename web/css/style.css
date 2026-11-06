@@ -9395,3 +9395,164 @@ html[data-spoiler="1"] .cal-record:hover .cal-rec {
 html[data-motion="reduce"] .cut-layer::after {
   animation: none;
 }
+
+/* =====================================================================
+   2.4 Fiche joueur : le nom et les stats à gauche ; à droite, le portrait
+   officiel en couleur dans un cadre aux couleurs de l'équipe, et le
+   joueur en pied debout à côté. Chacun sa place, sans se recouvrir.
+   ===================================================================== */
+
+.player-poster .poster-copy {
+  width: min(100%, 50%);
+}
+
+.player-poster::before {
+  background: linear-gradient(90deg, var(--bg) 0%, color-mix(in oklab, var(--bg) 70%, transparent) 30%, transparent 50%);
+}
+
+.poster-visual.is-duo {
+  top: calc(var(--banner-h, 0px) + 84px);
+  bottom: 0;
+  height: auto;
+  width: min(46%, 660px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  translate: none;
+}
+
+.pp-card {
+  position: relative;
+  flex: none;
+  width: clamp(200px, 19vw, 290px);
+  aspect-ratio: 4 / 5;
+  margin-bottom: 44px;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--team) 45%, var(--line));
+  background: linear-gradient(165deg, color-mix(in oklab, var(--team) 60%, var(--surface)) 0%, color-mix(in oklab, var(--team) 16%, var(--bg)) 100%);
+  animation: fade-up 0.9s var(--ease-out) 0.15s both;
+}
+
+/* Numéro de maillot en filigrane dans le cadre. */
+.pp-num {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+  font-family: var(--font-poster);
+  font-size: clamp(64px, 7vw, 104px);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.pp-face {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 138%;
+  max-width: none;
+  height: auto;
+  translate: -50% 0;
+  border-radius: 0;
+  background: none;
+}
+
+.pp-full {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  aspect-ratio: 440 / 700;
+  margin-left: -26px;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: grayscale(1) contrast(1.08) brightness(1.04);
+  animation: cut-enter 1s var(--ease-out) 0.25s both;
+}
+
+/* Pas de photo en pied : le portrait s'agrandit. Pas de portrait : le cadre disparaît. */
+.poster-visual.is-duo.no-full .pp-card {
+  width: clamp(240px, 26vw, 380px);
+}
+
+.poster-visual.is-duo.no-face .pp-card {
+  display: none;
+}
+
+html[data-motion="reduce"] .pp-card,
+html[data-motion="reduce"] .pp-full {
+  animation: none;
+}
+
+@media (max-width: 1080px) {
+  .pp-card {
+    width: clamp(170px, 22vw, 240px);
+  }
+}
+
+@media (max-width: 700px) {
+  /* Téléphone : les deux photos en haut, côte à côte ; le nom et les stats en dessous. */
+  .player-poster {
+    padding-top: calc(var(--banner-h, 0px) + 84px + 320px);
+  }
+
+  .player-poster::before {
+    display: none;
+  }
+
+  .player-poster .poster-copy {
+    width: 100%;
+  }
+
+  .poster-visual.is-duo {
+    top: calc(var(--banner-h, 0px) + 80px);
+    bottom: auto;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    height: 310px;
+    justify-content: center;
+    opacity: 1;
+  }
+
+  .pp-card {
+    width: 46%;
+    margin-bottom: 18px;
+  }
+
+  .pp-num {
+    font-size: 64px;
+  }
+
+  .pp-full {
+    margin-left: -18px;
+  }
+
+  .poster-visual.is-duo.no-full .pp-card {
+    width: 70%;
+  }
+}
+
+/* Zone des photos calée sur la moitié droite : le nom occupe la moitié gauche (sa taille est
+   calculée sur cette largeur), les photos commencent juste après, sans jamais le croiser. */
+@media (min-width: 701px) {
+  .poster-visual.is-duo {
+    left: calc(50vw + 24px);
+    right: max(20px, calc((100vw - var(--page)) / 2 + 20px));
+    width: auto;
+  }
+
+  .pp-card {
+    width: min(42%, 290px);
+  }
+
+  .pp-full {
+    max-width: 64%;
+  }
+
+  .poster-visual.is-duo.no-full .pp-card {
+    width: min(72%, 380px);
+  }
+}
