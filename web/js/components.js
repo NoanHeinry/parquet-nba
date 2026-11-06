@@ -209,6 +209,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
   });
 
   const winner = game.status === 3 && game.away && game.home ? (game.away.score > game.home.score ? "away" : "home") : null;
+  let bumped = false;
   function toggleReveal() {
     setTileRevealed(tile, !tile.classList.contains("is-revealed"));
   }
@@ -234,6 +235,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
         // Le score qui change roule, et l'écart marqué s'envole au-dessus (+2, +3).
         score.classList.add("bump");
         score.dataset.delta = `+${s.score - prevScore}`;
+        bumped = true;
       }
       if (winner === sideKey) score.append(h("i", { class: "winmark", "aria-label": "vainqueur" }));
     }
@@ -320,6 +322,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
     for (const p of f.gameProgress(game)) bar.append(h("span", { class: p.ot ? "ot" : "" }, h("i", { style: { width: `${p.filled * 100}%` } })));
     tile.append(bar);
   }
+  if (bumped) tile.classList.add("has-bump");
   return tile;
 }
 

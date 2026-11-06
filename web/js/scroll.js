@@ -41,37 +41,68 @@ export function sectionIndex(ctx, items, scroller) {
   const nav = h("nav", { class: "section-index", "aria-label": "Sommaire de la page" }, h("span", { class: "si-track" }, fill), buttons);
   document.body.append(nav);
 
-  let raf = 0;
-  const sync = () => {
-    raf = 0;
-    const mid = window.innerHeight * 0.4;
+  // Section en cours : celle qui croise une ligne fictive à 40 % de la hauteur de l'écran.
+  // L'observateur est géré par le navigateur : aucun calcul pendant le défilement.
+  const visible = new Set();
+  let lastActive = -1;
+  const setActive = () => {
     let active = 0;
     items.forEach((it, i) => {
-      const hidden = it.el.hidden || !it.el.isConnected || it.el.offsetHeight === 0;
-      buttons[i].hidden = hidden;
-      if (!hidden && it.el.getBoundingClientRect().top <= mid) active = i;
+      if (visible.has(it.el)) active = i;
     });
+    if (!visible.size) active = lastActive < 0 ? 0 : lastActive;
+    if (active === lastActive) return;
+    lastActive = active;
     buttons.forEach((b, i) => b.classList.toggle("is-active", i === active));
-    nav.classList.toggle("on-stage", Boolean(items[active]?.dark));
-    const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    fill.style.transform = `scaleY(${Math.min(1, window.scrollY / max)})`;
+  };
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) visible.add(e.target);
+        else visible.delete(e.target);
+      }
+      setActive();
+    },
+    { rootMargin: "-40% 0px -59% 0px" }
+  );
+  for (const it of items) io.observe(it.el);
+
+  // Trait de progression : seule la position de défilement est lue à chaque image ; la hauteur
+  // de la page n'est remesurée que lorsqu'elle change.
+  let max = 1;
+  let raf = 0;
+  let lastFill = "";
+  const draw = () => {
+    raf = 0;
+    const v = `scaleY(${Math.min(1, window.scrollY / max).toFixed(3)})`;
+    if (v !== lastFill) {
+      lastFill = v;
+      fill.style.transform = v;
+    }
   };
   const queue = () => {
-    if (!raf) raf = requestAnimationFrame(sync);
+    if (!raf) raf = requestAnimationFrame(draw);
   };
-  window.addEventListener("scroll", queue, { passive: true });
-  window.addEventListener("resize", queue);
-  const ro = new ResizeObserver(queue);
+  // Sections masquées (pas de résumé de la nuit, par exemple) : leur numéro disparaît.
+  const refresh = () => {
+    max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    items.forEach((it, i) => (buttons[i].hidden = it.el.hidden || !it.el.isConnected));
+    queue();
+  };
+  const ro = new ResizeObserver(refresh);
   ro.observe(document.body);
-  queue();
+  window.addEventListener("scroll", queue, { passive: true });
+  window.addEventListener("resize", refresh);
+  refresh();
   ctx.onCleanup(() => {
     cancelAnimationFrame(raf);
-    window.removeEventListener("scroll", queue);
-    window.removeEventListener("resize", queue);
+    io.disconnect();
     ro.disconnect();
+    window.removeEventListener("scroll", queue);
+    window.removeEventListener("resize", refresh);
     nav.remove();
   });
-  return { refresh: queue };
+  return { refresh };
 }
 
 // Un nombre qui défile de 0 à sa valeur (entiers seulement), après un éventuel délai.

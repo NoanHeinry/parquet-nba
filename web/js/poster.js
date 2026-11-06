@@ -75,7 +75,13 @@ export function poster(ctx, opts) {
   paint(opts.teamId, opts.color);
   for (const part of [kicker, meta, stats, actions, ghost]) part.hidden = !part.textContent && !part.children.length;
 
-  const ro = new ResizeObserver(() => fitTitle(el));
+  let lastWidth = 0;
+  const ro = new ResizeObserver(([entry]) => {
+    const w = Math.round(entry.contentRect.width);
+    if (w === lastWidth) return;
+    lastWidth = w;
+    fitTitle(el);
+  });
   ro.observe(el);
   document.fonts?.load('100px "Anton"').then(() => fitTitle(el)).catch(() => {});
   ctx.onCleanup(() => ro.disconnect());

@@ -8095,7 +8095,7 @@ html[data-spoiler="1"] .game-tile:not(.is-revealed) .score.bump::after {
   display: none;
 }
 
-.game-tile:has(.bump) {
+.game-tile.has-bump {
   animation: row-flash 1.8s ease-out;
 }
 
@@ -8172,7 +8172,7 @@ html[data-motion="reduce"] .fx-swap,
 html[data-motion="reduce"] main.page-in > *,
 html[data-motion="reduce"] .bump,
 html[data-motion="reduce"] .score.bump[data-delta]::after,
-html[data-motion="reduce"] .game-tile:has(.bump),
+html[data-motion="reduce"] .game-tile.has-bump,
 html[data-motion="reduce"] .stage-hint i::after,
 html[data-motion="reduce"] .reveal .page-title .w > span {
   animation: none !important;
@@ -9187,4 +9187,152 @@ html[data-motion="reduce"] .live-dot::after {
     top: 70%;
     height: 8px;
   }
+}
+
+/* =====================================================================
+   2.2 Légèreté (Firefox en particulier) : pas de texte en dégradé, pas
+   de masques, pas de calques forcés ; des aplats et des voiles simples.
+   ===================================================================== */
+
+/* Chiffres fantômes : une couleur légère en aplat au lieu d'un dégradé découpé dans le texte. */
+.poster-ghost,
+.nn-big,
+.night-num:hover .nn-big {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.nn-big {
+  color: color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+.night-num:hover .nn-big {
+  color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Plus aucun masque : le bas des portraits et les bords du bandeau sont fondus par des voiles. */
+.recap-photo .headshot,
+.standout .headshot,
+.stage-cutout,
+.ticker,
+.poster-visual.is-cutout img,
+.stage .stage-band,
+.poster .stage-band,
+.game-page .scoreboard .stage-band {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.ticker::before,
+.ticker::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 6%;
+  pointer-events: none;
+}
+
+.ticker::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg), transparent);
+}
+
+.ticker::after {
+  right: 0;
+  background: linear-gradient(-90deg, var(--bg), transparent);
+}
+
+.poster-visual.is-cutout::after,
+.standout .headshot-wrap::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16%;
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+
+/* Calques forcés retirés : le navigateur les crée lui-même le temps d'une animation. */
+.stage-cutout,
+.stage-band,
+.sn-in,
+.poster-visual img,
+.poster-ghost,
+.ss-item {
+  will-change: auto;
+}
+
+/* Photos des listes en couleur, sans filtre (le noir et blanc reste sur les grands portraits
+   de la scène et des affiches) : des dizaines de photos filtrées ralentissaient le défilement. */
+.home-games .tl-player .headshot,
+.home-games .game-tile:hover .tl-player .headshot,
+.nn-cut img,
+.ht-list.players .headshot,
+.ht-list.players a:hover .headshot,
+.player-card .pic-wrap img,
+.player-card:hover .pic-wrap img,
+.board-top .headshot,
+.board-top:hover .headshot,
+.roster-card .headshot,
+.roster-card:hover .headshot,
+.standout .headshot,
+.standout:hover .headshot {
+  filter: none;
+}
+
+.home-games .tl-player .headshot {
+  transition: transform 0.8s var(--ease-out) 0.2s, opacity 0.6s ease 0.2s;
+}
+
+/* Anti-spoiler : les scores masqués deviennent des pavés pleins au lieu d'être floutés (le flou
+   de dizaines d'éléments était très lent, sous Firefox surtout). Survoler montre qu'on peut
+   cliquer ; un clic révèle, comme avant. */
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team .score,
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team .score:hover,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .sb-scores span:not(.dash),
+html[data-spoiler="1"] .game-page:not(.is-revealed) .sb-scores span:not(.dash):hover,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.num,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.num:hover,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .periods-table td.total:hover,
+html[data-spoiler="1"] .stat-table td .wl,
+html[data-spoiler="1"] .cal-res:not(.cal-time),
+html[data-spoiler="1"] .cal-rec {
+  filter: none;
+  color: transparent;
+  text-shadow: none;
+  background: var(--surface-3);
+  border-radius: 6px;
+  opacity: 1;
+  transition: background 0.2s ease;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-team .score:hover,
+html[data-spoiler="1"] .game-page:not(.is-revealed) .sb-scores span:not(.dash):hover {
+  background: color-mix(in srgb, var(--accent) 35%, var(--surface-3));
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders,
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
+  filter: none;
+  opacity: 0.12;
+}
+
+html[data-spoiler="1"] .game-tile:not(.is-revealed) .tile-leaders:hover {
+  opacity: 0.25;
+}
+
+/* Survol ou focus : le résultat masqué se montre, comme avant. */
+html[data-spoiler="1"] .stat-table tr:hover td .wl,
+html[data-spoiler="1"] .stat-table tr:focus-within td .wl,
+html[data-spoiler="1"] .cal-game:hover .cal-res,
+html[data-spoiler="1"] .cal-game:focus-visible .cal-res,
+html[data-spoiler="1"] .cal-record:hover .cal-rec {
+  color: inherit;
+  background: none;
 }

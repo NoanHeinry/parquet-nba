@@ -84,7 +84,13 @@ export function createStage(ctx) {
   if (manual) el.classList.add("no-auto");
   const extras = new Map();
 
-  const ro = new ResizeObserver(() => fitName(el));
+  let lastSize = "";
+  const ro = new ResizeObserver(([entry]) => {
+    const size = `${Math.round(entry.contentRect.width)}x${Math.round(entry.contentRect.height)}`;
+    if (size === lastSize) return;
+    lastSize = size;
+    fitName(el);
+  });
   ro.observe(el);
   document.fonts?.load('100px "Anton"').then(() => fitName(el)).catch(() => {});
 
