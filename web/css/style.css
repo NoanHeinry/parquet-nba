@@ -9005,3 +9005,186 @@ body.is-immersive main h2:not(.stage-name):not(.name) {
 .stage .stage-band.thin {
   translate: none;
 }
+
+/* =====================================================================
+   2.1 Fluidité : uniquement des animations que la carte graphique gère
+   seule (déplacement et transparence), plus aucun calcul à chaque image.
+   ===================================================================== */
+
+/* Le menu descend en glissant (au lieu d'un découpage redessiné à chaque image). */
+.menu-panel,
+.menu-panel.is-open {
+  clip-path: none;
+}
+
+.menu-panel {
+  transform: translateY(-100%);
+  transition: transform 0.5s var(--ease-out);
+  will-change: transform;
+}
+
+.menu-panel.is-open {
+  transform: none;
+}
+
+/* Changement de joueur : la couleur d'équipe change d'un coup, sans redessiner tout le fond. */
+.stage,
+.poster {
+  transition: none;
+}
+
+/* Portraits détourés : plus d'ombre portée, très coûteuse à afficher sur de grandes images. */
+.stage-cutout,
+.poster-visual.is-cutout img {
+  filter: grayscale(1) contrast(1.08) brightness(1.04);
+}
+
+.poster-visual.is-logo img,
+.poster-visual.is-logo .logo-fallback {
+  filter: none;
+}
+
+/* Bandeau des scores : défilement continu animé par la carte graphique. */
+.ticker-track {
+  animation: ticker-run var(--tk-dur, 40s) linear infinite;
+}
+
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-run {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+html[data-motion="reduce"] .ticker-track {
+  animation: none;
+}
+
+/* Barre de progression des onglets de la scène : elle s'allonge par mise à l'échelle (et non
+   en changeant sa largeur, qui redessinait la page à chaque image pendant 8 secondes). */
+.st-prog {
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.stage-tab.is-active .st-prog {
+  animation: st-grow 8s linear forwards;
+}
+
+.stage.no-auto .stage-tab.is-active .st-prog {
+  animation: none;
+  width: 100%;
+  transform: none;
+}
+
+@keyframes st-grow {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Pastille « en direct » : un anneau qui grandit et s'efface (au lieu d'une ombre redessinée). */
+.live-dot {
+  position: relative;
+  animation: none;
+}
+
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--live);
+  animation: live-ring 1.6s ease-out infinite;
+}
+
+@keyframes live-ring {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+html[data-motion="reduce"] .live-dot::after {
+  animation: none;
+  display: none;
+}
+
+/* Grands éléments animés : chacun sur son propre calque, déplacé sans être redessiné. */
+.stage-cutout,
+.stage-band,
+.sn-in,
+.poster-visual img,
+.poster-ghost,
+.ss-item {
+  will-change: transform, opacity;
+}
+
+.stage,
+.poster {
+  contain: paint;
+}
+
+.ss-item b,
+.stage-stats b {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bandes en biais : de simples rectangles inclinés, en dégradé (plus de découpe ni de masque,
+   très coûteux à recalculer pendant les animations). */
+.stage-band,
+.stage .stage-band,
+.poster .stage-band,
+.game-page .scoreboard .stage-band {
+  inset: auto;
+  left: 0;
+  top: 40%;
+  width: 112%;
+  height: 16%;
+  clip-path: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+  rotate: -14deg;
+  transform-origin: left center;
+  background: linear-gradient(90deg, transparent 4%, color-mix(in oklab, var(--team) 26%, var(--surface)) 52%);
+}
+
+.stage-band.thin,
+.stage .stage-band.thin,
+.poster .stage-band.thin,
+.game-page .scoreboard .stage-band.thin {
+  top: 59%;
+  height: 12px;
+  background: linear-gradient(90deg, transparent 4%, var(--accent) 40%);
+}
+
+/* Le bas du portrait est déjà fondu par le voile de la scène : plus besoin de masque. */
+.stage-cutout {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+@media (max-width: 700px) {
+  .stage-band,
+  .stage .stage-band,
+  .poster .stage-band {
+    top: 56%;
+    height: 10%;
+    rotate: -21deg;
+  }
+
+  .stage-band.thin,
+  .stage .stage-band.thin,
+  .poster .stage-band.thin {
+    top: 70%;
+    height: 8px;
+  }
+}

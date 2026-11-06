@@ -9,7 +9,7 @@ import { gameKey, isRevealed, isSpoilerFree } from "../spoiler.js";
 import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
 import { createStage } from "./stage.js";
-import { countUp, enterFx, exitProgress, marquee, motion, reducedMotion, reveal, sectionIndex } from "../scroll.js";
+import { countUp, reducedMotion, reveal, sectionIndex } from "../scroll.js";
 import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
 
@@ -93,10 +93,6 @@ export async function render(ctx) {
   reveal(ctx, [gamesSec, nightSec, tablesSec], (el) => {
     if (el === nightSec) for (const b of el.querySelectorAll(".nn-big")) countUp(b, b.textContent, 250);
   });
-  exitProgress(ctx, stage.el);
-  const m = motion(ctx);
-  enterFx(m, [gamesSec, nightSec, tablesSec]);
-  marquee(ctx, m, ticker);
 
   // Chaque ligne de match apparaît quand elle arrive à l'écran ; une ligne déjà vue reste en
   // place quand les scores s'actualisent.
@@ -115,7 +111,6 @@ export async function render(ctx) {
             tile.style.transitionDelay = `${k++ * 70}ms`;
             tile.classList.add("row-in");
             setTimeout(() => (tile.style.transitionDelay = ""), 1600);
-            for (const sc of tile.querySelectorAll(".tile-team .score")) countUp(sc.firstChild ? sc.firstChild : sc, Number(sc.firstChild?.textContent ?? sc.textContent), 150);
           }
         },
         { rootMargin: "0px 0px -8% 0px" }
@@ -222,6 +217,9 @@ export async function render(ctx) {
       const items = tickerItems(games);
       const once = items.map((it) => it.el);
       ticker.firstChild.replaceChildren(...once, ...items.map((it) => it.el.cloneNode(true)));
+      // Le bandeau défile en continu (animation CSS) ; sa vitesse reste la même quel que soit
+      // le nombre de matchs.
+      ticker.style.setProperty("--tk-dur", `${Math.max(20, items.length * 6)}s`);
       ticker.hidden = !items.length;
     }
     stage.update(data);

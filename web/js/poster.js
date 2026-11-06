@@ -11,7 +11,7 @@
 
 import { h } from "./dom.js";
 import { teamColor } from "./teams.js";
-import { countUp, exitProgress, pointerDepth } from "./scroll.js";
+import { countUp } from "./scroll.js";
 
 let measureCtx = null;
 function textWidth(text) {
@@ -79,8 +79,6 @@ export function poster(ctx, opts) {
   ro.observe(el);
   document.fonts?.load('100px "Anton"').then(() => fitTitle(el)).catch(() => {});
   ctx.onCleanup(() => ro.disconnect());
-  pointerDepth(ctx, el);
-  exitProgress(ctx, el);
 
   return {
     el,
