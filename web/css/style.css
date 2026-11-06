@@ -8691,3 +8691,299 @@ body.is-immersive main h2:not(.stage-name):not(.name) {
   border-radius: 0;
   box-shadow: none;
 }
+
+/* =====================================================================
+   2.0 Fluidité et lisibilité : les éléments ne se croisent plus en
+   bougeant (on sort, puis on entre), les textes et les chiffres sont
+   toujours posés sur un fond calme.
+   ===================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+
+/* ------------------------------------------------ transitions sans chevauchement */
+
+/* Les bandes s'étirent depuis la gauche au lieu de traverser l'écran. */
+.stage-band {
+  transform-origin: left center;
+  animation: band-grow 1s var(--ease-out) both;
+}
+
+.stage-band.thin {
+  animation-delay: 0.1s;
+}
+
+@keyframes band-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.stage-cutout,
+.poster-visual.is-cutout img {
+  animation: cut-enter 1s var(--ease-out) 0.1s both;
+}
+
+@keyframes cut-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+}
+
+/* Changement de joueur : tout l'ancien s'efface d'abord, sur place… */
+.slide.is-leaving .sn-in {
+  animation: sn-exit 0.36s var(--ease-in) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+@keyframes sn-exit {
+  to {
+    opacity: 0;
+    transform: translateY(-60%);
+  }
+}
+
+.slide.is-leaving .stage-cutout {
+  animation: cut-exit 0.32s var(--ease-in) both;
+}
+
+@keyframes cut-exit {
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+}
+
+.slide.is-leaving .stage-band,
+.slide.is-leaving .stage-top,
+.slide.is-leaving .stage-left,
+.slide.is-leaving .stage-stats,
+.slide.is-leaving .stage-gate {
+  animation: fade-only-out 0.24s ease both;
+}
+
+/* … puis le nouveau entre, une fois la place libre. */
+.slide.is-after .stage-band {
+  animation-name: band-grow;
+  animation-delay: 0.34s;
+}
+
+.slide.is-after .stage-band.thin {
+  animation-delay: 0.42s;
+}
+
+.slide.is-after .sn-in {
+  animation-delay: calc(var(--i, 0) * 80ms + 0.42s);
+}
+
+.slide.is-after .stage-cutout {
+  animation-name: cut-enter;
+  animation-delay: 0.4s;
+}
+
+.slide.is-after .stage-top {
+  animation-delay: 0.45s;
+}
+
+.slide.is-after .stage-left {
+  animation-delay: 0.5s;
+}
+
+.slide.is-after .ss-item {
+  animation-delay: calc(var(--i, 0) * 70ms + 0.5s);
+}
+
+/* Profondeur à la souris et au défilement : des mouvements courts, qui ne font plus passer
+   une forme sur un texte. */
+.name-layer {
+  translate: calc(var(--mx, 0) * -8px) calc(var(--my, 0) * -4px);
+  transform: translateY(calc(var(--out, 0) * -8vh));
+  opacity: calc(1 - var(--out, 0) * 1.6);
+}
+
+.cut-layer {
+  translate: calc(var(--mx, 0) * 12px) calc(var(--my, 0) * 5px);
+}
+
+.stage-band {
+  translate: calc(var(--mx, 0) * -10px) 0;
+}
+
+.stage-band.thin {
+  translate: calc(var(--mx, 0) * -16px) 0;
+}
+
+.poster-title {
+  translate: calc(var(--mx, 0) * -6px) 0;
+  transform: none;
+}
+
+.poster-copy {
+  opacity: calc(1 - var(--out, 0) * 1.1);
+}
+
+.poster-ghost {
+  translate: calc(var(--mx, 0) * 10px) calc(var(--out, 0) * 36px);
+}
+
+.poster-visual {
+  translate: calc(var(--mx, 0) * 10px) calc(var(--my, 0) * 4px);
+}
+
+.home-games .page-title {
+  translate: calc((1 - var(--enter, 1)) * 6vw) 0;
+}
+
+.nn-big {
+  translate: 0 calc((1 - var(--enter, 1)) * 36px);
+}
+
+.night-num:nth-child(even) .nn-big {
+  translate: 0 calc((1 - var(--enter, 1)) * 56px);
+}
+
+.ht-col:nth-child(2) {
+  translate: 0 calc((1 - var(--enter, 1)) * 30px);
+}
+
+.ht-col:nth-child(3) {
+  translate: 0 calc((1 - var(--enter, 1)) * 60px);
+}
+
+.home-games .game-tile:not(.row-in) .tile-team .logo {
+  transform: scale(0.85);
+}
+
+.home-games .game-tile:not(.row-in) .tl-player .headshot {
+  transform: translateY(18%);
+}
+
+.home-games .game-tile,
+.home-games .game-tile .tile-team .logo,
+.home-games .tl-player .headshot {
+  transition-timing-function: var(--ease-out);
+}
+
+/* ------------------------------------------------ lisibilité */
+
+/* Scène de l'accueil : un voile monte du bas de l'écran, sous les stats et l'encart du match,
+   pour que rien (portrait, bandes) ne passe derrière les chiffres. */
+.slide::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44%;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--bg) 0%, color-mix(in oklab, var(--bg) 88%, transparent) 34%, transparent 100%);
+}
+
+/* Les bandes s'effacent avant d'atteindre le bas de la scène et la zone des textes des affiches. */
+.stage .stage-band {
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 70%);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent 70%);
+}
+
+.poster .stage-band,
+.game-page .scoreboard .stage-band {
+  -webkit-mask-image: linear-gradient(to right, transparent 8%, #000 62%);
+  mask-image: linear-gradient(to right, transparent 8%, #000 62%);
+}
+
+/* Affiches : le portrait ou le logo s'estompe vers la gauche, sous le titre et les chiffres. */
+.poster-visual {
+  z-index: 2;
+}
+
+.poster::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--bg) 0%, color-mix(in oklab, var(--bg) 82%, transparent) 34%, transparent 66%);
+}
+
+.poster-slim::before {
+  display: none;
+}
+
+/* Chiffres fantômes plus discrets, pour ne jamais concurrencer les vrais chiffres. */
+.poster-ghost {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--text) 9%, transparent) 10%, color-mix(in oklab, var(--text) 1%, transparent) 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.nn-big {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--text) 17%, transparent) 10%, color-mix(in oklab, var(--text) 3%, transparent) 78%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Stats : libellés plus contrastés, chiffres nets. */
+.ss-item small {
+  color: var(--text-2);
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+}
+
+.ss-item b {
+  color: var(--text);
+}
+
+.ss-item:first-child b {
+  color: var(--accent);
+}
+
+.home-games .tl-player small,
+.tl-player small {
+  color: var(--text-2);
+}
+
+.home-games .game-tile:hover {
+  background: linear-gradient(100deg, color-mix(in srgb, var(--away) 9%, transparent) 0%, transparent 30%, transparent 55%, color-mix(in srgb, var(--home) 9%, transparent) 72%, transparent 100%);
+}
+
+.poster-meta,
+.nn-vs,
+.nl-k {
+  color: var(--text-2);
+}
+
+@media (max-width: 700px) {
+  /* Sur téléphone, le voile monte du bas : le texte est en bas, le visuel au-dessus. */
+  .poster::before {
+    background: linear-gradient(to top, var(--bg) 0%, color-mix(in oklab, var(--bg) 86%, transparent) 42%, transparent 78%);
+  }
+
+  .poster .stage-band {
+    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 62%);
+    mask-image: linear-gradient(to bottom, #000 30%, transparent 62%);
+  }
+
+  .slide::after {
+    height: 40%;
+  }
+
+  .poster-ghost {
+    top: calc(var(--banner-h, 0px) + 60px);
+    bottom: auto;
+  }
+}
+
+/* Le portrait de la scène ne recouvre plus que le bas du nom. */
+.cut-layer {
+  height: min(60%, 700px);
+}
+
+@media (max-width: 700px) {
+  .cut-layer {
+    height: 50%;
+  }
+}

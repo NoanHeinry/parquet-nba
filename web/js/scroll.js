@@ -283,7 +283,7 @@ export function marquee(ctx, m, el) {
     if (!loop) return;
     x = (x + (46 * dir + vel * 0.32) * dt) % loop;
     if (x < 0) x += loop;
-    const skew = Math.max(-9, Math.min(9, -vel / 260));
+    const skew = Math.max(-4, Math.min(4, -vel / 420));
     track.style.transform = `translate3d(${(-x).toFixed(1)}px, 0, 0) skewX(${skew.toFixed(2)}deg)`;
   });
 }

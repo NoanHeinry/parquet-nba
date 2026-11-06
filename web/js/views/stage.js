@@ -199,7 +199,7 @@ export function createStage(ctx) {
       o.classList.add("is-leaving");
       o.setAttribute("aria-hidden", "true");
       o.inert = true;
-      setTimeout(() => o.remove(), 700);
+      setTimeout(() => o.remove(), 520);
     }
     scene.append(slide);
     fitName(el);
