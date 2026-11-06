@@ -45,6 +45,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
+- Des contrôles dessinés pour Parquet, inspirés des panneaux de score : boutons et champs en blocs pleins à l'angle coupé, choix et onglets signalés par une ligne de fond orange, plutôt que des pastilles arrondies génériques.
 - Pas de barre en haut : sur tout le site, un bouton rond en haut à droite ouvre un menu plein écran qui tient sur un seul écran, ordinateur comme téléphone : la recherche et les réglages nommés (alertes, anti-spoiler, animations, thème) en haut, puis toutes les pages rangées en quatre groupes (la saison, équipes et joueurs, histoire, et aussi), chacune avec une courte description ; la page affichée est signalée.
 - Fiche joueur : le nom et les moyennes à gauche ; à droite, le portrait officiel en couleur dans un cadre aux couleurs de son équipe (numéro de maillot en filigrane) et le joueur en pied à côté.
 - Chaque page s'ouvre sur une affiche dans l'esprit de l'accueil : titre en très grand, portrait détouré ou logo, chiffre en fond (numéro de maillot, bilan, nombre de joueurs…), halo aux couleurs de l'équipe ; les sections montent en place au défilement.

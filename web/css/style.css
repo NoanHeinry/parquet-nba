@@ -13014,7 +13014,7 @@ body.is-immersive .menu-panel h2.menu-group-title,
   }
 }
 
-@media (max-width: 700px) and (max-height: 700px) {
+@media (max-width: 700px) and (max-height: 760px) {
   .menu-inner {
     gap: 14px;
     padding-top: calc(var(--banner-h, 0px) + 72px);
@@ -13075,5 +13075,532 @@ body.is-immersive .menu-panel h2.menu-group-title,
 
   .menu-btn-label {
     font-size: 10.5px;
+  }
+}
+
+/* =====================================================================
+   3.3 Contrôles « tableau de marque »
+   Une seule grammaire pour tout ce qu'on touche, tirée des panneaux de score
+   et des écussons de maillot :
+   - forme : un bloc plein, angle supérieur droit coupé en biseau (--cut) ;
+     plus de pilules ni de contours gris ;
+   - état : la ligne de fond. Ce qui est choisi reçoit une barre orange de
+     3 px en bas, comme une ligne peinte sur le parquet ;
+   - texte : Oswald, en minuscules, comme les noms des pages.
+   Les filtres (puces, onglets) ne sont que du texte posé sur la ligne de fond.
+   ===================================================================== */
+
+:root {
+  --radius: 4px;
+  --radius-sm: 3px;
+  --cut: 9px;
+  --field: var(--surface-2);
+  --field-hover: var(--surface-3);
+}
+
+/* -- biseau commun */
+.btn,
+.select,
+.input,
+.search input,
+.qz-input,
+.segmented,
+.menu-fab,
+.stage-round,
+.qz-act,
+.qz-choice,
+.qz-seg-btn,
+.qz-cta,
+.qzt-cta,
+.menu-tools .topbar-actions,
+.update-notice {
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+/* -- boutons */
+.btn {
+  height: 40px;
+  padding: 0 18px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+  background: var(--field-hover);
+  box-shadow: inset 0 -3px 0 var(--line-strong);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn.primary:hover {
+  background: color-mix(in oklab, var(--accent) 88%, var(--text));
+  box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--accent) 60%, #000);
+}
+
+.btn.square {
+  width: 40px;
+}
+
+.btn:focus-visible,
+.select:focus-visible,
+.qz-act:focus-visible,
+.qz-choice:focus-visible,
+.qz-seg-btn:focus-visible,
+.stage-round:focus-visible,
+.menu-fab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* -- champs : bloc plein, la ligne de fond s'allume quand on écrit */
+.search input,
+.select,
+.input,
+.qz-input {
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--line-strong);
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.select {
+  height: 40px;
+  padding: 0 34px 0 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--text-2) 50%);
+  background-position: calc(100% - 17px) 52%, calc(100% - 12px) 52%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.select:hover,
+.search input:hover,
+.input:hover {
+  background-color: var(--field-hover);
+}
+
+.search input:focus,
+.input:focus,
+.qz-input:focus,
+.select:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+input[type="search"].select {
+  background-image: none;
+  padding-right: 12px;
+  font-family: var(--font-text);
+  font-size: 14px;
+  cursor: text;
+}
+
+/* -- choix exclusifs : une barre découpée en cases */
+.segmented {
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+}
+
+.segmented button {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+  box-shadow: inset 1px 0 0 var(--line);
+}
+
+.segmented button:first-child {
+  box-shadow: none;
+}
+
+.segmented button:hover {
+  color: var(--text);
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--field-hover);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+/* -- filtres et onglets : du texte sur la ligne de fond */
+.chips,
+.seg-links,
+.aw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.chip,
+.preset-chip,
+.seg-links a,
+.aw-nav a,
+.dr-step {
+  height: auto;
+  padding: 7px 0 6px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 15.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  box-shadow: inset 0 -3px 0 transparent;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.chip:hover,
+.preset-chip:hover,
+.seg-links a:hover,
+.aw-nav a:hover,
+.dr-step:hover {
+  border-color: transparent;
+  background: none;
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--line-strong);
+}
+
+.chip[aria-pressed="true"],
+.seg-links a[aria-current="page"] {
+  background: none;
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.chip:focus-visible,
+.seg-links a:focus-visible,
+.aw-nav a:focus-visible {
+  outline: none;
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+/* -- étiquettes d'état : rectangles nets, plus de pastilles */
+.badge,
+.rr-badge,
+.dr-active,
+.rc-active,
+.qz-streak,
+.qz-record,
+.conf-tag,
+.inj-status,
+.move-type {
+  border-radius: 2px;
+}
+
+/* -- bouton du menu et flèches de l'accueil */
+.menu-fab {
+  width: 54px;
+  height: 54px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.menu-fab:hover {
+  transform: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.stage-round {
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+}
+
+.stage-round:hover {
+  transform: none;
+  background: var(--field-hover);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+/* -- menu : la recherche et une barre de réglages d'un seul tenant */
+.menu-tools {
+  align-items: center;
+}
+
+.menu-tools .search input {
+  height: 52px;
+  padding-left: 46px;
+  font-size: 16px;
+}
+
+.menu-tools .topbar-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--field);
+}
+
+.menu-btn {
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  height: 52px;
+  padding: 0 16px 0 8px;
+  box-shadow: inset 1px 0 0 var(--line);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.menu-btn:first-child {
+  box-shadow: none;
+}
+
+.menu-btn:hover {
+  background: var(--field-hover);
+}
+
+.menu-btn.is-on {
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.menu-btn.is-on:not(:first-child) {
+  box-shadow: inset 0 -3px 0 var(--accent), inset 1px 0 0 var(--line);
+}
+
+.menu-tools .menu-btn .icon-btn,
+.menu-tools .menu-btn .icon-btn.is-active,
+.menu-tools .menu-btn .icon-btn[aria-pressed="true"] {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--text-2);
+}
+
+.menu-btn.is-on .icon-btn,
+.menu-tools .menu-btn .icon-btn.pwa-install {
+  color: var(--accent) !important;
+}
+
+.menu-btn:hover .icon-btn {
+  color: var(--text);
+}
+
+.menu-btn-label {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-2);
+}
+
+.menu-btn.is-on .menu-btn-label {
+  color: var(--text);
+}
+
+.menu-btn[hidden] {
+  display: none;
+}
+
+.menu-side > .menu-small {
+  margin-bottom: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--text-2);
+  text-decoration: none;
+  box-shadow: inset 0 -1px 0 var(--line-strong);
+}
+
+.menu-side > .menu-small:hover {
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+.search-results {
+  border: 0;
+  border-radius: 0;
+  background: var(--surface-2);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.35), inset 0 3px 0 var(--accent);
+}
+
+/* -- jeu : mêmes blocs */
+.qz-act {
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.qz-act:hover:not(:disabled) {
+  background: var(--field-hover);
+  box-shadow: inset 0 -3px 0 var(--line-strong);
+}
+
+.qz-next,
+.qz-cta,
+.qzt-cta {
+  border-radius: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.qz-next:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 88%, var(--text));
+}
+
+.qz-choice {
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+  box-shadow: inset 0 -3px 0 transparent;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.3s ease;
+}
+
+.qz-choice:hover:not(:disabled) {
+  transform: none;
+  background: var(--field-hover);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.qz-choice kbd {
+  border-radius: 0;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.qz-choice.is-right {
+  background: color-mix(in oklab, var(--win) 24%, var(--surface-2));
+  box-shadow: inset 0 -3px 0 var(--win);
+}
+
+.qz-choice.is-wrong {
+  background: color-mix(in oklab, var(--loss) 22%, var(--surface-2));
+  box-shadow: inset 0 -3px 0 var(--loss);
+}
+
+.qz-seg-btn {
+  border: 0;
+  border-radius: 0;
+  background: var(--field);
+}
+
+.qz-seg-btn:hover {
+  background: var(--field-hover);
+}
+
+.qz-seg-btn[aria-checked="true"] {
+  background: var(--field-hover);
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.qz-seg-btn b {
+  font-weight: 500;
+}
+
+.update-notice {
+  border-radius: 0;
+}
+
+.update-close {
+  border-radius: 0;
+}
+
+@media (max-width: 700px) {
+  .menu-tools .topbar-actions {
+    width: 100%;
+  }
+
+  .menu-btn {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+    height: 52px;
+    padding: 3px 2px 5px;
+  }
+
+  .menu-btn-label {
+    font-size: 12.5px;
+  }
+
+  .menu-tools .menu-btn .icon-btn {
+    height: 28px;
+  }
+
+  .menu-side > .menu-small {
+    order: 3;
+  }
+
+  .btn {
+    height: 40px;
+  }
+}
+
+.search > svg {
+  z-index: 1;
+}
+
+@media (max-width: 700px) and (max-height: 760px) {
+  .menu-btn {
+    height: 48px;
+  }
+
+  .menu-btn-label {
+    font-size: 11.5px;
+  }
+}
+
+/* Deux groupes de filtres côte à côte : un trait vertical les sépare. */
+.toolbar > .chips + .chips,
+.toolbar > .segmented + .chips,
+.toolbar > .dr-nav + .chips {
+  padding-left: 22px;
+  box-shadow: inset 1px 0 0 var(--line-strong);
+}
+
+@media (max-width: 700px) {
+  .toolbar > .chips + .chips,
+  .toolbar > .segmented + .chips,
+  .toolbar > .dr-nav + .chips {
+    padding-left: 0;
+    box-shadow: none;
   }
 }

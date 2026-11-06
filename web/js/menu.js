@@ -202,7 +202,7 @@ function close(restoreFocus = true) {
   if (restoreFocus && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }
 
-const BUTTON_LABELS = { "notif-toggle": "Alertes", "spoiler-toggle": "Anti-spoiler", "motion-toggle": "Animations", "theme-toggle": "Thème" };
+const BUTTON_LABELS = { "pwa-install-btn": "Installer", "notif-toggle": "Alertes", "spoiler-toggle": "Anti-spoiler", "motion-toggle": "Animations", "theme-toggle": "Thème" };
 
 // Tout le site est sans en-tête : la recherche et les boutons passent dans le menu, une fois
 // pour toutes, et le logo et le bouton rond flottent au-dessus de chaque page.
@@ -220,6 +220,14 @@ export function enableImmersive() {
       const wrap = h("span", { class: "menu-btn" });
       btn.replaceWith(wrap);
       wrap.append(btn, h("label", { class: "menu-btn-label", for: id }, text));
+      // La case entière reflète l'état du bouton (activé, masqué) : les boutons gèrent eux-mêmes
+      // leur icône, on recopie seulement leur état sur la case.
+      const mirror = () => {
+        wrap.classList.toggle("is-on", btn.getAttribute("aria-pressed") === "true" || btn.classList.contains("is-active"));
+        wrap.hidden = btn.hidden;
+      };
+      new MutationObserver(mirror).observe(btn, { attributes: true, attributeFilter: ["aria-pressed", "class", "hidden"] });
+      mirror();
     }
     tools.append(actions);
   }
