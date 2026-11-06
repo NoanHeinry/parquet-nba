@@ -261,8 +261,7 @@ export function compareRows(rows, colors, names) {
 // ------------------------------------------------------------ carte des tirs
 
 // Demi-terrain en coordonnées NBA (dixièmes de pied, panier en 0,0).
-export function shotChart(shots, color) {
-  const svg = s("svg", { class: "court", viewBox: "-252 -55 504 400", role: "img" });
+function courtLines() {
   const lines = s("g", { class: "lines" });
   lines.append(
     s("rect", { x: -250, y: -47.5, width: 500, height: 390 }),
@@ -276,7 +275,12 @@ export function shotChart(shots, color) {
     s("line", { x1: 220, x2: 220, y1: -47.5, y2: 92.5 }),
     s("path", { d: "M-220,92.5 A237.5,237.5 0 0 0 220,92.5" })
   );
-  svg.append(lines);
+  return lines;
+}
+
+export function shotChart(shots, color) {
+  const svg = s("svg", { class: "court", viewBox: "-252 -55 504 400", role: "img" });
+  svg.append(courtLines());
   const marks = s("g");
   for (const shot of shots) {
     if (shot.x === null || shot.y === null || shot.x === undefined || shot.y === undefined) continue;
@@ -295,6 +299,103 @@ export function shotChart(shots, color) {
     marks.append(mark, hit);
   }
   svg.append(marks);
+  return svg;
+}
+
+// ------------------------------------------------------------ zones chaudes (saison d'un joueur)
+
+const COLD = [75, 123, 236];
+const MID = [154, 160, 168];
+const HOT = [255, 95, 46];
+
+function mix(a, b, t) {
+  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
+}
+
+// Couleur selon l'écart à la moyenne de la ligue (en points de pourcentage) : bleu en
+// dessous, gris dans la moyenne, orange au-dessus ; ±12 points donnent la couleur pleine.
+export function heatColor(diff) {
+  const t = Math.max(-1, Math.min(1, diff / 0.12));
+  return t < 0 ? mix(MID, COLD, -t) : mix(MID, HOT, t);
+}
+
+// Tirs regroupés en hexagones : la taille dit le volume, la couleur l'adresse comparée à la
+// moyenne de la ligue dans la même zone. shots : [x, y, réussi, zone, côté, distance, …].
+export function heatChart(shots, league, { radius = 14, pct = (v) => `${Math.round(v * 100)} %` } = {}) {
+  const exact = new Map();
+  const basic = new Map();
+  for (const [b, a, r, fga, fgm] of league) {
+    for (const [map, key] of [
+      [exact, `${b}|${a}|${r}`],
+      [basic, b],
+    ]) {
+      const e = map.get(key) || [0, 0];
+      e[0] += fga || 0;
+      e[1] += fgm || 0;
+      map.set(key, e);
+    }
+  }
+  const expected = (sh) => {
+    const e = exact.get(`${sh[3]}|${sh[4]}|${sh[5]}`) || basic.get(sh[3]);
+    return e && e[0] ? e[1] / e[0] : null;
+  };
+  const R = radius;
+  const SQ3 = Math.sqrt(3);
+  const bins = new Map();
+  for (const sh of shots) {
+    const [x, y, made] = sh;
+    if (y > 400) continue; // tirs du fond du terrain
+    const fq = ((SQ3 / 3) * x - y / 3) / R;
+    const fr = ((2 / 3) * y) / R;
+    const fs = -fq - fr;
+    let q = Math.round(fq);
+    let r = Math.round(fr);
+    const rs = Math.round(fs);
+    const dq = Math.abs(q - fq);
+    const dr = Math.abs(r - fr);
+    const ds = Math.abs(rs - fs);
+    if (dq > dr && dq > ds) q = -r - rs;
+    else if (dr > ds) r = -q - rs;
+    const key = `${q},${r}`;
+    const bin = bins.get(key) || { q, r, n: 0, made: 0, exp: 0, expN: 0 };
+    bin.n++;
+    bin.made += made ? 1 : 0;
+    const e = expected(sh);
+    if (e !== null) {
+      bin.exp += e;
+      bin.expN++;
+    }
+    bins.set(key, bin);
+  }
+  const list = [...bins.values()];
+  const maxN = Math.max(1, ...list.map((b) => b.n));
+  const minN = shots.length > 300 ? 2 : 1;
+  const svg = s("svg", { class: "court heat", viewBox: "-252 -55 504 400", role: "img" });
+  svg.append(courtLines());
+  const g = s("g", { class: "hexes" });
+  for (const b of list.sort((a, c) => a.n - c.n)) {
+    if (b.n < minN) continue;
+    const cx = R * SQ3 * (b.q + b.r / 2);
+    const cy = R * 1.5 * b.r;
+    if (cy > 345 || cx < -250 || cx > 250) continue;
+    const size = R * 0.98 * (0.34 + 0.66 * Math.sqrt(b.n / maxN));
+    const pts = [];
+    for (let i = 0; i < 6; i++) {
+      const ang = (Math.PI / 180) * (60 * i - 30);
+      pts.push(`${(cx + size * Math.cos(ang)).toFixed(1)},${(cy + size * Math.sin(ang)).toFixed(1)}`);
+    }
+    const rate = b.made / b.n;
+    const exp = b.expN ? b.exp / b.expN : null;
+    const hex = s("polygon", { points: pts.join(" "), fill: exp === null ? heatColor(0) : heatColor(rate - exp) });
+    const lines = [
+      `${b.made} sur ${b.n} (${pct(rate)})`,
+      exp === null ? "" : `Moyenne de la ligue à cet endroit : ${pct(exp)}`,
+    ].filter(Boolean);
+    hex.addEventListener("pointermove", (e) => showTip(e, lines));
+    hex.addEventListener("pointerleave", hideTip);
+    g.append(hex);
+  }
+  svg.append(g);
   return svg;
 }
 

@@ -582,6 +582,36 @@ def player_gamelog(pid: int, season: str, season_type: str) -> dict:
     hdr = ["SEASON_ID", "Player_ID", "Game_ID", "GAME_DATE", "MATCHUP", "WL", "MIN", "FGM", "FGA", "FG_PCT", "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA",
            "FT_PCT", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS", "PLUS_MINUS", "VIDEO_AVAILABLE"]
     rows = []
+    if season == "2025-26" and season_type == "Regular Season" and pid in PLAYERS:
+        # Saison passée complète, cohérente avec les moyennes du joueur.
+        p = PLAYERS[pid]
+        r = rng("gl-season", pid)
+        day = date(2025, 10, 22)
+        others = [t for t in TEAMS if t["id"] != p["teamId"]]
+        for k in range(r.randint(58, 78)):
+            day += timedelta(days=r.choice([1, 2, 2, 2, 3, 3, 4]))
+            if day > date(2026, 4, 12):
+                break
+            opp = r.choice(others)
+            home = k % 2 == 0
+            pts = max(0, int(r.gauss(p["pts"], 6)))
+            tpa = r.randint(0, 9)
+            tpm = min(tpa, r.randint(0, 4), pts // 3)
+            fta = r.randint(0, 9)
+            ftm = min(fta, max(0, pts - 3 * tpm) // 3)
+            twom = max(0, (pts - 3 * tpm - ftm) // 2)
+            fgm = twom + tpm
+            fga = fgm + r.randint(2, 12)
+            reb = max(0, int(r.gauss(p["reb"], 2.5)))
+            ast = max(0, int(r.gauss(p["ast"], 2)))
+            won = r.random() < 0.52
+            when = day.strftime("%b %d, %Y").upper()
+            rows.append(["22025", pid, f"00225{k:05d}", when, f"{p['tri']} {'vs.' if home else '@'} {opp['tri']}", "W" if won else "L",
+                         r.randint(18, 38), fgm, fga, round(fgm / fga, 3) if fga else 0, tpm, tpa, round(tpm / tpa, 3) if tpa else 0, ftm, fta,
+                         round(ftm / fta, 3) if fta else 0, 1, max(0, reb - 1), reb, ast, r.randint(0, 3), r.randint(0, 2), r.randint(0, 5), r.randint(0, 5),
+                         2 * twom + 3 * tpm + ftm, r.randint(-18, 18) if won else r.randint(-22, 8), 1])
+        rows.reverse()
+        return wrap(rs("PlayerGameLog", hdr, rows))
     if season == "2026-27" and season_type == "Pre Season":
         p = _player(pid)
         r = rng("gl", pid)
@@ -803,6 +833,53 @@ def all_time_leaders(season_type: str) -> dict:
     return wrap(*sets)
 
 
+def shot_chart(pid: int, season: str) -> dict:
+    """Tous les tirs d'un joueur sur une saison, zone par zone, avec la moyenne de la ligue."""
+    hdr = ["GRID_TYPE", "GAME_ID", "GAME_EVENT_ID", "PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "TEAM_NAME", "PERIOD", "MINUTES_REMAINING",
+           "SECONDS_REMAINING", "EVENT_TYPE", "ACTION_TYPE", "SHOT_TYPE", "SHOT_ZONE_BASIC", "SHOT_ZONE_AREA", "SHOT_ZONE_RANGE",
+           "SHOT_DISTANCE", "LOC_X", "LOC_Y", "SHOT_ATTEMPTED_FLAG", "SHOT_MADE_FLAG", "GAME_DATE", "HTM", "VTM"]
+    league = {"Restricted Area": 0.66, "In The Paint (Non-RA)": 0.44, "Mid-Range": 0.42, "Left Corner 3": 0.39, "Right Corner 3": 0.385,
+              "Above the Break 3": 0.355, "Backcourt": 0.02}
+    rows = []
+    p = PLAYERS.get(pid)
+    if p and season == "2025-26":
+        r = rng("shots", pid, season)
+        skill = r.uniform(-0.06, 0.07)
+        weights = [("Restricted Area", 30), ("In The Paint (Non-RA)", 13), ("Mid-Range", 14), ("Left Corner 3", 5), ("Right Corner 3", 5), ("Above the Break 3", 32), ("Backcourt", 1)]
+        names = [w[0] for w in weights]
+        n = int(180 + p["pts"] * 32)
+        for k in range(n):
+            zone = r.choices(names, [w[1] for w in weights])[0]
+            if zone == "Restricted Area":
+                ang, dist = r.uniform(0, math.pi), r.uniform(0, 38)
+                x, y = dist * math.cos(ang), dist * math.sin(ang) - 5
+            elif zone == "In The Paint (Non-RA)":
+                x, y = r.uniform(-78, 78), r.uniform(40, 140)
+            elif zone == "Mid-Range":
+                ang, dist = r.uniform(0.15, math.pi - 0.15), r.uniform(90, 225)
+                x, y = dist * math.cos(ang), dist * math.sin(ang)
+                if abs(x) < 80 and y < 140:
+                    y = 150
+            elif zone in ("Left Corner 3", "Right Corner 3"):
+                x, y = r.uniform(222, 246) * (1 if zone == "Left Corner 3" else -1), r.uniform(-40, 85)
+            elif zone == "Above the Break 3":
+                ang, dist = r.uniform(0.38, math.pi - 0.38), r.uniform(240, 285)
+                x, y = dist * math.cos(ang), dist * math.sin(ang)
+            else:
+                x, y = r.uniform(-200, 200), r.uniform(430, 600)
+            made = r.random() < league[zone] + skill + (0.04 if x > 60 else -0.02)
+            dist_ft = int(math.hypot(x, y) / 10)
+            area = "Center(C)" if abs(x) < 70 else ("Left Side(L)" if x > 0 else "Right Side(R)")
+            rng_txt = "Less Than 8 ft." if dist_ft < 8 else "8-16 ft." if dist_ft < 16 else "16-24 ft." if dist_ft < 24 else "24+ ft."
+            day = date(2025, 10, 22) + timedelta(days=(k * 173) // n)
+            rows.append(["Shot Chart Detail", f"00225{k:05d}", k, pid, p["name"], p["teamId"], p["tri"], 1 + k % 4, 5, 30, "Made Shot" if made else "Missed Shot",
+                         "Jump Shot" if dist_ft > 8 else "Layup Shot", "3PT Field Goal" if "3" in zone else "2PT Field Goal", zone, area, rng_txt, dist_ft,
+                         round(x), round(y), 1, 1 if made else 0, day.strftime("%Y%m%d"), p["tri"], "BOS"])
+    lg_hdr = ["GRID_TYPE", "SHOT_ZONE_BASIC", "SHOT_ZONE_AREA", "SHOT_ZONE_RANGE", "FGA", "FGM", "FG_PCT"]
+    lg_rows = [["League Averages", z, "Center(C)", "", 10000, int(10000 * pct), pct] for z, pct in league.items()]
+    return wrap(rs("Shot_Chart_Detail", hdr, rows), rs("LeagueAverages", lg_hdr, lg_rows))
+
+
 # ---------------------------------------------------------------- Wikipédia
 
 def wiki(url: str, params: dict) -> dict:
@@ -863,6 +940,8 @@ def _handle_base(url: str, params: dict | None):
             return league_leaders(params["Season"])
         if ep == "playerindex":
             return player_index()
+        if ep == "shotchartdetail":
+            return shot_chart(int(params["PlayerID"]), params["Season"])
         if ep == "alltimeleadersgrids":
             return all_time_leaders(params.get("SeasonType", "Regular Season"))
         if ep == "drafthistory":

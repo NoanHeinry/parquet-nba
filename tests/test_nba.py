@@ -166,7 +166,47 @@ class PalmaresTests(unittest.TestCase):
         self.assertIsNone(history._player_id(by_name, "Inconnu", 1990))
 
 
-class FormatTests(unittest.TestCase):
+class PlayerSeasonTests(unittest.TestCase):
+    def game(self, day, home, wl, pts, opp="BOS", fga=10, fgm=5, fta=2, tpa=4, tpm=2):
+        return {"date": day, "home": home, "wl": wl, "pts": pts, "reb": 5, "ast": 4, "fga": fga, "fgm": fgm, "fta": fta, "tpa": tpa, "tpm": tpm, "min": 30.0, "pm": 3, "opp": opp}
+
+    def test_splits_by_context(self):
+        from parquet import player_season
+
+        games = [
+            self.game("2025-11-01", True, "W", 30, "BOS"),
+            self.game("2025-11-02", False, "L", 10, "NYK"),
+            self.game("2025-11-04", True, "W", 20, "BOS"),
+            self.game("2025-12-10", False, "W", 40, "MIA"),
+        ]
+        groups = {g["key"]: g["rows"] for g in player_season.splits(games)}
+        self.assertEqual(groups["form"][0]["gp"], 4)
+        self.assertEqual(groups["form"][0]["pts"], 25.0)
+        self.assertEqual(groups["form"][0]["w"], 3)
+        self.assertEqual([r["gp"] for r in groups["place"]], [2, 2])
+        self.assertEqual(groups["place"][0]["pts"], 25.0)
+        rest = {r["label"]: r["gp"] for r in groups["rest"]}
+        self.assertEqual(rest, {"Deux soirs de suite": 1, "1 jour de repos": 1, "2 jours ou plus": 1})
+        self.assertEqual([r["label"] for r in groups["month"]], ["Novembre 2025", "Décembre 2025"])
+        self.assertEqual(groups["opp"][0]["label"], "MIA")  # trié par points
+        # Adresse réelle : 25 pts / (2 × (10 + 0,44 × 2))
+        self.assertAlmostEqual(groups["form"][0]["ts"], round(25 / (2 * (10 + 0.88)), 3))
+        self.assertEqual(player_season.splits([]), [])
+
+    def test_zones_against_league(self):
+        from parquet import player_season
+
+        shots = [[0, 0, 1, "Restricted Area", "", "", 1, "", ""], [0, 0, 0, "Restricted Area", "", "", 1, "", ""], [200, 200, 1, "Above the Break 3", "", "", 25, "", ""]]
+        league = [["Restricted Area", "Center(C)", "", 100, 60], ["Above the Break 3", "Center(C)", "", 100, 35]]
+        zones = {z["key"]: z for z in player_season._zones(shots, league)}
+        self.assertEqual(zones["Restricted Area"]["pct"], 0.5)
+        self.assertEqual(zones["Restricted Area"]["league"], 0.6)
+        self.assertAlmostEqual(zones["Restricted Area"]["share"], 0.667, places=3)
+        self.assertEqual(zones["Mid-Range"]["fga"], 0)
+        self.assertNotIn("Backcourt", zones)
+
+
+
     def test_clock(self):
         self.assertEqual(nba.fmt_clock("PT05M23.00S"), "5:23")
         self.assertEqual(nba.fmt_clock("PT00M23.40S"), "23.4")

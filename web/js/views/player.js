@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { lineChart } from "../charts.js";
+import { seasonView } from "./player-season.js";
 import { chips, errorState, headshot, loading, section, segmented, statTable, swapIn, tabs, teamLogo, wl } from "../components.js";
 import { silhouetteUrl, team, teamBand, teamByTri } from "../teams.js";
 import { iconScale } from "../icons.js";
@@ -525,6 +526,10 @@ export async function render(ctx) {
       section(awards, () => api(`/player/${id}/awards`, { signal: ctx.signal }), ({ data }) => awardsView(data.awards));
       section(path, career, (c) => stintsView(c.regular));
       section(highs, career, (c) => highsView(c.careerHighs));
+    } else if (tab === "season") {
+      const holder = h("div");
+      panel.replaceChildren(holder);
+      seasonView(holder, id, ctx, career);
     } else if (tab === "stats") {
       const holder = h("div");
       panel.replaceChildren(holder);
@@ -571,6 +576,7 @@ export async function render(ctx) {
     tabs(
       [
         { id: "profile", label: "Profil" },
+        { id: "season", label: "Saison en détail" },
         { id: "stats", label: "Statistiques" },
         { id: "games", label: "Derniers matchs" },
       ],

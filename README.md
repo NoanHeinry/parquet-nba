@@ -33,6 +33,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Classement par conférence et leaders statistiques de la saison.
 - Course aux playoffs : pour chaque équipe, ce qui reste à jouer (dont à domicile), le nombre de victoires au mieux, le rythme actuel sur 82 matchs, son statut (qualifié, play-in assuré, en course, au mieux play-in, éliminé), le nombre magique ou le retard sur la 6e et la 10e place, et la difficulté du calendrier restant (bilan moyen des adversaires, classé sur 30).
 - Palmarès depuis 1947 : chaque saison avec son champion (et le finaliste, le score de la série) et les lauréats des grands trophées (MVP, MVP des Finales, rookie, défenseur, sixième homme, progression) ; vue par trophée avec les plus titrés, et titres par franchise.
+- Fiche joueur, onglet « Saison en détail » : la carte de tous ses tirs de la saison, en zones chaudes (hexagones dont la taille dit le volume et la couleur l'adresse comparée à la moyenne de la ligue au même endroit) ou tir par tir, son adresse zone par zone face à la ligue, et ses moyennes selon le contexte (forme récente, domicile ou extérieur, victoires ou défaites, jours de repos, mois, adversaire). Toutes ses saisons depuis 1996-97.
 - Records de tous les temps : les 50 meilleurs en carrière dans huit catégories (points, rebonds, passes, interceptions, contres, paniers à 3 points, lancers francs, matchs), en saison régulière ou en playoffs, avec, pour les joueurs en activité, l'écart avec celui qui les précède et le nombre de matchs qu'il leur faudrait à leur rythme actuel.
 - Course aux trophées : classement maison des favoris pour le MVP, le rookie de l'année, le défenseur de l'année, le sixième homme et la meilleure progression, calculé chaque jour à partir des statistiques officielles (poids de chaque critère affichés), avec les chiffres qui comptent pour chacun.
 - Drafts : l'ordre complet de chaque draft depuis 1947 (tour, rang du choix, équipe sous son nom de l'époque, joueur, université, lycée ou club), avec ce que chaque joueur est devenu (saisons en NBA, en activité ou non, moyennes). Filtres par tour et par provenance, recherche, navigation d'année en année et vue de tous les choix d'une équipe ; le 1er choix en pied en tête de page.
@@ -77,6 +78,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 | ![Ordre d'une draft, avec le devenir de chaque joueur](docs/captures/18-draft.png) | ![Jeu « Qui est-ce ? » : la silhouette, deux indices et quatre noms](docs/captures/19-qui-est-ce.png) |
 | ![Course aux trophées : les favoris du MVP](docs/captures/20-trophees.png) | ![Course aux playoffs : statut, nombre magique et calendrier de chaque équipe](docs/captures/21-course-aux-playoffs.png) |
 | ![Palmarès : champion et lauréats de chaque saison](docs/captures/22-palmares.png) | ![Records de tous les temps, avec les joueurs en activité](docs/captures/23-records.png) |
+| ![Saison d'un joueur : zones chaudes et adresse par zone](docs/captures/24-saison-joueur.png) | |
 
 Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 

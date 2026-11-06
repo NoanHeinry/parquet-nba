@@ -12554,3 +12554,156 @@ body.is-immersive main .pl-head h2.pl-title,
     grid-column: 2;
   }
 }
+
+/* ================================================================ 3.0 Fiche joueur : saison en détail */
+
+.ps-tools {
+  margin-bottom: 4px;
+}
+
+.ps-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-shots {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+
+.ps-court-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ps-court .court {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.court.heat polygon {
+  stroke: var(--bg);
+  stroke-width: 0.8;
+  opacity: 0.94;
+}
+
+.court.heat polygon:hover {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.ps-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.ps-legend-scale {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.ps-legend-scale i {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.ps-legend-size {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.ps-total {
+  margin: 0 0 10px;
+  color: var(--text-2);
+}
+
+.ps-total b {
+  font-family: var(--font-poster);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.ps-zones {
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-zone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px 60px 82px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.ps-zone-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ps-zone-name b {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ps-zone-name small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ps-zone-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.ps-zone-bar i {
+  display: block;
+  height: 100%;
+  background: var(--text-2);
+  transform: scaleX(var(--k, 0));
+  transform-origin: left center;
+}
+
+.ps-zone-pct {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.ps-zone-diff {
+  padding: 3px 0;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--c) 26%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c) 70%, transparent);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .ps-shots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ps-zone {
+    grid-template-columns: minmax(0, 1fr) 60px 52px 74px;
+    gap: 8px;
+  }
+}

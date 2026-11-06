@@ -274,6 +274,19 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_selector(".pl-card")
         self.assertIn("6×", self.page.text_content(".pl-most-list"))
 
+    def test_player_season_tab_shot_chart_and_splits(self):
+        self.open("#/joueur/1722532")
+        self.page.click('[role="tab"][data-tab="season"]')
+        self.page.wait_for_selector(".court.heat polygon")
+        self.assertGreater(self.page.locator(".court.heat polygon").count(), 30)
+        self.assertEqual(self.page.locator(".ps-zone").count(), 7)
+        self.page.click(".chip:has-text('Tous les tirs')")
+        self.page.wait_for_selector(".court .made")
+        groups = self.page.locator(".stat-table tr.group").all_text_contents()
+        self.assertEqual(groups[:3], ["Forme", "Lieu", "Résultat"])
+        self.assertIn("Par adversaire", groups)
+        self.assertIn("2025-26", self.page.locator(".ps-tools select").input_value())
+
     # ------------------------------------------------------------ jeu « Qui est-ce ? »
 
     def quiz_photos(self, full=True):

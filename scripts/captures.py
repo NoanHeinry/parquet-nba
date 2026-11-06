@@ -184,6 +184,14 @@ def main() -> None:
             nba.standings = real_standings
         shot(page, "22-palmares.png", "#/trophees/palmares", before=lambda p: p.wait_for_selector(".pl-season"), scroll=520)
         shot(page, "23-records.png", "#/records", before=lambda p: p.wait_for_selector(".rc-step"), scroll=430)
+        def season_tab(p):
+            p.click('[role="tab"][data-tab="season"]')
+            p.wait_for_selector(".ps-zone")
+            p.wait_for_timeout(500)
+            top = p.evaluate("document.querySelector('.ps-shots').getBoundingClientRect().top + window.scrollY")
+            p.evaluate(f"window.scrollTo(0, {top} - 110)")
+
+        shot(page, "24-saison-joueur.png", "#/joueur/1722532", before=season_tab)
         shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()
