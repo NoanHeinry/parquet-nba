@@ -17,6 +17,7 @@ import * as compare from "./views/compare.js";
 import * as status from "./views/status.js";
 import * as infos from "./views/infos.js";
 import { initNotificationsUI } from "./notifications.js";
+import { enableImmersive } from "./menu.js";
 
 // Les couleurs d'équipe et les versions de logos dépendent du thème : on redessine la page.
 function redraw() {
@@ -205,6 +206,7 @@ route("/infos", infos.render, "infos");
 route("/infos/(mouvements)", infos.render, "infos");
 route("/etat", status.render, null);
 
+enableImmersive();
 initTheme();
 initSpoilerMode();
 initMotion();

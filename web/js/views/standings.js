@@ -6,6 +6,7 @@ import * as f from "../format.js";
 import { errorState, loading, segmented, staleBanner, teamLogo } from "../components.js";
 import { team } from "../teams.js";
 import { iconTrophy } from "../icons.js";
+import { poster } from "../poster.js";
 
 const CLINCH = {
   x: "Qualifié pour les playoffs",
@@ -70,8 +71,9 @@ function table(rows) {
 
 export async function render(ctx) {
   let season = null;
+  const top = poster(ctx, { kicker: "Saison régulière", title: "Classement" });
   const container = h("div");
-  ctx.outlet.append(container);
+  ctx.outlet.append(top.el, container);
 
   const load = async () => {
     container.replaceChildren(loading("Chargement du classement…"));
@@ -104,13 +106,22 @@ export async function render(ctx) {
       iconTrophy(15),
       "Tableau des playoffs"
     );
+    // En tête de page : l'équipe qui mène la ligue, son logo en grand et son bilan en fond.
+    const leader = data.rows.slice().sort((a, b) => b.w - a.w || a.l - b.l)[0];
+    top.update({
+      kicker: `Saison ${data.season}, saison régulière`,
+      actions: [sub, playoffsBtn, seasonSel],
+      ...(leader
+        ? {
+            teamId: leader.teamId,
+            visual: teamLogo(leader.teamId, 400),
+            visualKind: "logo",
+            ghost: `${leader.w}-${leader.l}`,
+            meta: [h("a", { href: `#/equipe/${leader.teamId}` }, `En tête de la ligue : ${team(leader.teamId)?.fullName || leader.name}, ${leader.w}-${leader.l}`)],
+          }
+        : {}),
+    });
     container.replaceChildren(
-      h(
-        "div",
-        { class: "page-head" },
-        h("div", null, h("h1", { class: "page-title visually-hidden" }, "Classement")),
-        h("div", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" } }, sub, playoffsBtn, seasonSel)
-      ),
       staleBanner(meta) || "",
       ...blocks,
       h(

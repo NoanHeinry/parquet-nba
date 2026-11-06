@@ -4,6 +4,7 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, headshot, loading, segmented } from "../components.js";
 import { normalize, playerIndex } from "../search.js";
+import { poster } from "../poster.js";
 import { team, teamColor, teams } from "../teams.js";
 
 const PAGE = 60;
@@ -28,15 +29,25 @@ function card(p) {
 }
 
 export async function render(ctx) {
-  ctx.outlet.append(loading("Chargement de la liste des joueurs…"));
+  const top = poster(ctx, { kicker: "Actuels et anciens", title: "Joueurs" });
+  const body = h("div", null, loading("Chargement de la liste des joueurs…"));
+  ctx.outlet.append(top.el, body);
   let players;
   try {
     players = await playerIndex();
   } catch (err) {
-    ctx.outlet.replaceChildren(errorState(err, () => location.reload()));
+    body.replaceChildren(errorState(err, () => location.reload()));
     return;
   }
   if (!ctx.active) return;
+  // En tête de page : le meilleur marqueur parmi les joueurs en activité.
+  const active = players.filter((p) => p.active);
+  const star = active.slice().sort((a, b) => (b.pts || 0) - (a.pts || 0))[0];
+  top.update({
+    ghost: String(active.length || players.length),
+    kicker: `${f.int(active.length)} en activité, ${f.int(players.length)} dans l'histoire`,
+    ...(star ? { teamId: star.teamId || null, visual: headshot(star.id, { size: "big", alt: "" }), visualKind: "cutout" } : {}),
+  });
 
   const params = new URLSearchParams(sessionStorage.getItem("parquet-players") || "");
   const state = {
@@ -155,8 +166,7 @@ export async function render(ctx) {
   const scopeHolder = h("div", null, scopeControl());
 
   const field = (label, control) => h("label", { class: "field" }, label, control);
-  ctx.outlet.replaceChildren(
-    h("h1", { class: "page-title visually-hidden" }, "Joueurs"),
+  body.replaceChildren(
     h("div", { class: "toolbar" }, input, scopeHolder),
     h("div", { class: "toolbar" }, field("Équipe actuelle", teamSel), field("Poste", posSel), field("Pays", countrySel), field("Trier par", sortSel)),
     count,

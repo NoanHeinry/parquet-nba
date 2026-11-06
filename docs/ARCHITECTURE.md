@@ -165,7 +165,8 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/icons.js` | Icônes SVG |
 | `js/views/stage.js` | Scène d'ouverture de l'accueil : le joueur du match de chaque rencontre (portrait détouré, nom ajusté à la largeur, couleurs d'équipe, défilement automatique, onglets, glissement au doigt) |
 | `js/views/recap.js` | « La nuit en chiffres » sur l'accueil, avec les vidéos de la nuit |
-| `js/menu.js` | Accueil sans en-tête : logo et bouton flottants, menu plein écran qui reprend la recherche et les boutons de l'en-tête (déplacés, puis remis en place en quittant l'accueil) |
+| `js/menu.js` | Site sans en-tête : logo et bouton flottants, menu plein écran qui reprend la recherche et les boutons de l'en-tête |
+| `js/poster.js` | En-tête « affiche » commun aux pages : titre ajusté à la largeur, visuel détouré ou logo, chiffre fantôme, statistiques, actions, mis à jour quand les données arrivent |
 | `js/scroll.js` | Défilement doux à la molette, sommaire numéroté de la page, apparition des sections, boucle d'animation (position et vitesse de défilement) pour les effets de profondeur et le bandeau des scores, compteurs ; tout est coupé si le système demande moins d'animations |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |

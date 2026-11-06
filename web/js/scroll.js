@@ -287,3 +287,33 @@ export function marquee(ctx, m, el) {
     track.style.transform = `translate3d(${(-x).toFixed(1)}px, 0, 0) skewX(${skew.toFixed(2)}deg)`;
   });
 }
+
+// Effet de profondeur à la souris : --mx et --my (de -1 à 1) suivent le pointeur en douceur ;
+// la feuille de style décale chaque plan d'une quantité différente.
+export function pointerDepth(ctx, el) {
+  if (reducedMotion() || !matchMedia("(pointer: fine)").matches) return;
+  let tx = 0;
+  let ty = 0;
+  let mx = 0;
+  let my = 0;
+  let raf = 0;
+  const step = () => {
+    mx += (tx - mx) * 0.08;
+    my += (ty - my) * 0.08;
+    el.style.setProperty("--mx", mx.toFixed(3));
+    el.style.setProperty("--my", my.toFixed(3));
+    raf = Math.abs(tx - mx) + Math.abs(ty - my) > 0.002 ? requestAnimationFrame(step) : 0;
+  };
+  const aim = (x, y) => {
+    tx = x;
+    ty = y;
+    if (!raf) raf = requestAnimationFrame(step);
+  };
+  el.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const r = el.getBoundingClientRect();
+    aim(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+  });
+  el.addEventListener("pointerleave", () => aim(0, 0));
+  ctx.onCleanup(() => cancelAnimationFrame(raf));
+}

@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, loading } from "../components.js";
+import { poster } from "../poster.js";
 
 async function saveYoutubeKey(key) {
   const res = await fetch("/api/settings/youtube", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ key }) });
@@ -87,7 +88,7 @@ function youtubeSettings(ctx) {
 export async function render(ctx) {
   const box = h("div");
   ctx.outlet.append(
-    h("h1", { class: "page-title visually-hidden" }, "État des sources"),
+    poster(ctx, { kicker: "Diagnostic", lines: ["État des", "sources"], size: "slim" }).el,
     box,
     youtubeSettings(ctx)
   );

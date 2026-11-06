@@ -130,9 +130,12 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_selector(".menu-panel", state="hidden")
         self.page.click(".menu-fab")
         self.page.click('.menu-link:has-text("Classement")')
-        self.page.wait_for_selector(".topbar #global-search")
-        self.assertTrue(self.page.locator(".topbar").is_visible())
-        self.assertEqual(self.page.locator(".menu-fab, .section-index").count(), 0)
+        # Même grammaire sur tout le site : pas de barre, une affiche en tête, le menu flottant.
+        self.page.wait_for_selector(".poster .poster-title")
+        self.assertIn("Classement", self.page.text_content(".poster-title"))
+        self.assertFalse(self.page.locator(".topbar").is_visible())
+        self.assertEqual(self.page.locator(".menu-fab").count(), 1)
+        self.assertEqual(self.page.locator(".section-index").count(), 0)
 
     def test_motion_toggle_overrides_system_setting(self):
         # Windows peut demander aux sites de limiter les animations : le bouton passe outre.
@@ -141,10 +144,12 @@ class InterfaceTests(unittest.TestCase):
             self.open("#/equipes")
             root = "document.documentElement.dataset.motion"
             self.assertEqual(self.page.evaluate(root), "reduce")
+            self.page.click(".menu-fab")
             self.page.click("#motion-toggle")
             self.assertEqual(self.page.evaluate(root), "full")
             self.open("#/equipes")  # le choix est retenu au rechargement
             self.assertEqual(self.page.evaluate(root), "full")
+            self.page.click(".menu-fab")
             self.page.click("#motion-toggle")
             self.assertEqual(self.page.evaluate(root), "reduce")
         finally:

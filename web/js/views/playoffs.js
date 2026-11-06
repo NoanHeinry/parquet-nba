@@ -7,6 +7,7 @@ import { errorState, loading, segmented, staleBanner, teamLogo } from "../compon
 import { team, teamColor } from "../teams.js";
 import { iconEye, iconTrophy } from "../icons.js";
 import { isHidden, isRevealed, seriesKey, setRevealed } from "../spoiler.js";
+import { poster } from "../poster.js";
 
 function renderMatchupCard(series) {
   if (!series) {
@@ -247,8 +248,9 @@ export async function render(ctx) {
   let selectedSeason = ctx.params?.[0] || null;
   let viewMode = "tree";
 
+  const top = poster(ctx, { kicker: "Tableau final", title: "Playoffs" });
   const container = h("div");
-  ctx.outlet.append(container);
+  ctx.outlet.append(top.el, container);
 
   const load = async () => {
     container.replaceChildren(loading("Chargement de l'arbre des playoffs…"));
@@ -353,13 +355,15 @@ export async function render(ctx) {
 
     updateView();
 
+    // L'année des finales en fond ; le logo du champion en grand quand il est connu (et pas masqué).
+    const champ = data.champion && !isHidden(`champ:${data.season}`) ? data.champion : null;
+    top.update({
+      kicker: `Saison ${data.season}`,
+      ghost: String(Number(String(data.season).slice(0, 4)) + 1 || ""),
+      actions: [sub, toggleAllBtn, seasonSel],
+      ...(champ?.id ? { teamId: champ.id, visual: teamLogo(champ.id, 400), visualKind: "logo", meta: [`Champion : ${champ.fullName || champ.name}`] } : { visual: [], teamId: null, meta: [] }),
+    });
     container.replaceChildren(
-      h(
-        "div",
-        { class: "page-head" },
-        h("div", null, h("h1", { class: "page-title visually-hidden" }, "Playoffs NBA")),
-        h("div", { style: { display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" } }, sub, toggleAllBtn, seasonSel)
-      ),
       staleBanner(meta) || "",
       champBanner || "",
       modeToolbar,

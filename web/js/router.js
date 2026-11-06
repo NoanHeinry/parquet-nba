@@ -1,6 +1,8 @@
 // Navigation par ancre (#/...) : chaque page reçoit un contexte qui s'arrête proprement
 // quand on change de page (requêtes annulées, actualisations automatiques stoppées).
 
+import { smoothWheel } from "./scroll.js";
+
 const routes = [];
 let current = null;
 
@@ -61,6 +63,8 @@ async function render(outlet) {
   document.getElementById("tooltip").hidden = true;
   const params = match ? match.m.slice(1).map(decodeURIComponent) : [];
   current = makeContext(outlet, params);
+  // Défilement doux à la molette sur toutes les pages (coupé si les animations sont réduites).
+  current.scroller = smoothWheel(current);
   for (const a of document.querySelectorAll(".mainnav a")) {
     if (match && a.dataset.nav === match.r.nav) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");

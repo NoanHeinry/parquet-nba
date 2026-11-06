@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { errorState, headshot, loading, staleBanner, teamLogo } from "../components.js";
+import { poster } from "../poster.js";
 
 const CATEGORIES = [
   { key: "pts", title: "Points", unit: "par match" },
@@ -42,19 +43,31 @@ function board(cat, rows) {
 }
 
 export async function render(ctx) {
-  ctx.outlet.append(loading("Chargement des leaders…"));
+  const top = poster(ctx, { kicker: "Saison régulière", title: "Leaders" });
+  const body = h("div", null, loading("Chargement des leaders…"));
+  ctx.outlet.append(top.el, body);
   let res;
   try {
     res = await api("/leaders", { signal: ctx.signal });
   } catch (err) {
     if (err.name === "AbortError") return;
-    ctx.outlet.replaceChildren(errorState(err, () => location.reload()));
+    body.replaceChildren(errorState(err, () => location.reload()));
     return;
   }
   const { data, meta } = res;
-  ctx.outlet.replaceChildren(
-    h("div", { class: "page-head" }, h("h1", { class: "page-title visually-hidden" }, "Leaders"), h("span", { class: "note" }, `Saison ${data.season}, saison régulière`)),
-    staleBanner(meta) || "",
-    h("div", { class: "boards" }, CATEGORIES.map((c) => board(c, data.boards[c.key] || [])))
-  );
+  // En tête de page, le meilleur marqueur de la saison.
+  const best = (data.boards.pts || [])[0];
+  top.update({
+    kicker: `Saison ${data.season}, saison régulière`,
+    ...(best
+      ? {
+          teamId: best.teamId,
+          visual: headshot(best.id, { size: "big", alt: "" }),
+          visualKind: "cutout",
+          ghost: f.num(best.value, 1),
+          meta: [h("a", { href: `#/joueur/${best.id}` }, `Meilleur marqueur : ${best.name}, ${f.num(best.value, 1)} points par match`)],
+        }
+      : {}),
+  });
+  body.replaceChildren(staleBanner(meta) || "", h("div", { class: "boards" }, CATEGORIES.map((c) => board(c, data.boards[c.key] || []))));
 }

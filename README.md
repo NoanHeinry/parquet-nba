@@ -35,7 +35,8 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 
 **Confort et mobilité**
 - Recherche instantanée accessible partout (touche `/`).
-- Sur l'accueil, pas d'en-tête : un bouton rond en haut à droite ouvre un menu plein écran (rubriques, recherche, alertes, anti-spoiler, thème).
+- Pas de barre en haut : sur tout le site, un bouton rond en haut à droite ouvre un menu plein écran (rubriques, recherche, alertes, anti-spoiler, animations, thème).
+- Chaque page s'ouvre sur une affiche dans l'esprit de l'accueil : titre en très grand, portrait détouré ou logo, chiffre en fond (numéro de maillot, bilan, nombre de joueurs…), halo aux couleurs de l'équipe ; les sections montent en place au défilement.
 - Alertes en direct, tant qu'un onglet Parquet est ouvert : coup d'envoi et résultat des équipes favorites, fins de match serrées selon la définition de la NBA (5 dernières minutes, 5 points d'écart ou moins). Notifications système quand la connexion le permet, alertes dans la page sinon ; une alerte n'est jamais envoyée deux fois.
 - Mode anti-spoiler pour regarder les matchs en différé : scores, box score, fil des actions, résumé de la nuit, champion des playoffs et alertes restent masqués jusqu'à ce qu'on les révèle, match par match ou d'un coup. Les révélations sont retenues pendant la session.
 - Progressive Web App (PWA) : installable sur ordinateur, et sur téléphone via une connexion sécurisée (voir le guide), fonctionnement hors ligne avec les dernières données connues.

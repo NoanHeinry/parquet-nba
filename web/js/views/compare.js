@@ -8,6 +8,7 @@ import { errorState, headshot, loading, segmented, teamLogo } from "../component
 import { playerIndex, searchPlayers } from "../search.js";
 import { team, teamColor, teamPair } from "../teams.js";
 import { iconScale } from "../icons.js";
+import { poster } from "../poster.js";
 
 const PRESETS = [
   { label: "LeBron James vs Michael Jordan", p1: 2544, p2: 893 },
@@ -152,8 +153,9 @@ function searchSlot(label, onSelect, allPlayers, placeholder = "Chercher un joue
 }
 
 export async function render(ctx) {
+  const top = poster(ctx, { kicker: "Deux joueurs, face à face", title: "Comparer", ghost: "VS" });
   const container = h("div", { class: "compare-page" });
-  ctx.outlet.replaceChildren(container);
+  ctx.outlet.replaceChildren(top.el, container);
 
   let p1Id = ctx.params[0] ? Number(ctx.params[0]) : null;
   let p2Id = ctx.params[1] ? Number(ctx.params[1]) : null;
@@ -192,8 +194,14 @@ export async function render(ctx) {
   const draw = async () => {
     container.replaceChildren();
 
-    // En-tête de la page
-    const head = h("h1", { class: "page-title visually-hidden" }, "Comparateur de joueurs");
+    // En-tête : les deux joueurs choisis, détourés côte à côte.
+    const chosen = [p1Id, p2Id].map((id) => allPlayers.find((p) => p.id === id)).filter(Boolean);
+    top.update({
+      kicker: chosen.length === 2 ? `${chosen[0].first} ${chosen[0].last} contre ${chosen[1].first} ${chosen[1].last}` : "Deux joueurs, face à face",
+      visual: chosen.map((p) => headshot(p.id, { size: "big", alt: "" })),
+      visualKind: chosen.length === 2 ? "cutout is-pair" : "cutout",
+      teamId: chosen[0]?.teamId || null,
+    });
 
     // Duels suggérés (presets)
     const presetsBar = h(
@@ -252,7 +260,7 @@ export async function render(ctx) {
     const vsBadge = h("div", { class: "compare-vs" }, "VS");
     const selectionGrid = h("div", { class: "compare-selection-grid" }, col1, vsBadge, col2);
 
-    container.append(head, presetsBar, selectionGrid);
+    container.append(presetsBar, selectionGrid);
 
     // Si les deux joueurs ne sont pas encore sélectionnés
     if (!p1Id || !p2Id) {

@@ -10,7 +10,7 @@ import * as f from "../format.js";
 import { teamLogo } from "../components.js";
 import { headshotUrl, team, teamColor } from "../teams.js";
 import { isHidden, setRevealed } from "../spoiler.js";
-import { countUp, reducedMotion } from "../scroll.js";
+import { countUp, pointerDepth, reducedMotion } from "../scroll.js";
 
 function arrow(dir) {
   return s(
@@ -97,32 +97,7 @@ export function createStage(ctx) {
   });
 
   // Le nom et le joueur suivent légèrement la souris, en sens opposés (effet de profondeur).
-  if (!reducedMotion() && matchMedia("(pointer: fine)").matches) {
-    let tx = 0;
-    let ty = 0;
-    let mx = 0;
-    let my = 0;
-    let raf = 0;
-    const step = () => {
-      mx += (tx - mx) * 0.08;
-      my += (ty - my) * 0.08;
-      el.style.setProperty("--mx", mx.toFixed(3));
-      el.style.setProperty("--my", my.toFixed(3));
-      raf = Math.abs(tx - mx) + Math.abs(ty - my) > 0.002 ? requestAnimationFrame(step) : 0;
-    };
-    const aim = (x, y) => {
-      tx = x;
-      ty = y;
-      if (!raf) raf = requestAnimationFrame(step);
-    };
-    el.addEventListener("pointermove", (e) => {
-      if (e.pointerType !== "mouse") return;
-      const r = el.getBoundingClientRect();
-      aim(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
-    });
-    el.addEventListener("pointerleave", () => aim(0, 0));
-    ctx.onCleanup(() => cancelAnimationFrame(raf));
-  }
+  pointerDepth(ctx, el);
 
   const go = (i, byUser = false) => {
     if (!stars.length) return;

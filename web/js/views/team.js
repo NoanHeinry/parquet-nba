@@ -8,13 +8,13 @@ import { favorites, headshot, loading, playerCell, section, segmented, statTable
 import { team, teamBand, teamColor } from "../teams.js";
 import { iconCalendar, iconStar } from "../icons.js";
 import { injuryRow, movesByDay, reportSource } from "../news.js";
+import { poster } from "../poster.js";
 
 const SOCIAL = { Facebook: "Facebook", Instagram: "Instagram", Twitter: "X (Twitter)", X: "X", Website: "Site officiel", Tiktok: "TikTok", YouTube: "YouTube" };
 
+// En-tête de la fiche : le nom en très grand, le logo en grand à droite, le bilan en fond.
 function hero(t, ctx) {
-  const band = teamBand(t.id);
-  const meta = h("div", { class: "hero-meta" }, h("span", null, `Fondée en ${t.founded}`), h("span", null, `Conférence ${t.confFr}, division ${t.divFr}`));
-  const favBtn = h("button", { class: "fav-btn", type: "button", style: { display: "inline-flex", alignItems: "center", gap: "6px" } });
+  const favBtn = h("button", { class: "btn fav-btn", type: "button" });
   const syncFav = () => {
     const on = favorites().has(t.id);
     favBtn.replaceChildren(iconStar(on, 14), on ? "Équipe favorite" : "Ajouter aux favorites");
@@ -26,23 +26,35 @@ function hero(t, ctx) {
   });
   syncFav();
 
+  const top = poster(ctx, {
+    size: "full",
+    kicker: `${t.city} · Conférence ${t.confFr}`,
+    title: t.name,
+    teamId: t.id,
+    visual: teamLogo(t.id, 400, t.fullName),
+    visualKind: "logo",
+    ghost: t.founded ? String(t.founded) : "",
+    meta: [h("span", null, `Fondée en ${t.founded}`), h("span", null, `Division ${t.divFr}`)],
+    actions: [favBtn],
+  });
+
   api("/standings", { signal: ctx.signal })
     .then(({ data }) => {
       const r = data.rows.find((x) => x.teamId === t.id);
-      if (r) {
-        const conf = t.conf === "East" ? "l'Est" : "l'Ouest";
-        meta.prepend(h("span", null, `${data.fallback ? `Saison ${data.season} : ` : ""}${r.w}-${r.l}, ${r.rank}e de ${conf}`));
-      }
+      if (!r || !ctx.active) return;
+      top.update({
+        ghost: `${r.w}-${r.l}`,
+        stats: [
+          { label: "Victoires", v: r.w },
+          { label: "Défaites", v: r.l },
+          { label: `Rang ${t.conf === "East" ? "à l'Est" : "à l'Ouest"}`, v: r.rank },
+        ],
+        meta: [h("span", null, data.fallback ? `Bilan de la saison ${data.season}` : `Saison ${data.season}`), h("span", null, `Fondée en ${t.founded}`), h("span", null, `Division ${t.divFr}`)],
+      });
     })
     .catch(() => {});
 
-  return h(
-    "section",
-    { class: "hero", style: { "--team-bg": band.bg, "--team-ink": band.ink } },
-    teamLogo(t.id, 108, t.fullName, { plate: true }),
-    h("div", null, h("div", { class: "kicker" }, t.city), h("h1", null, t.name), meta),
-    favBtn
-  );
+  return top.el;
 }
 
 function rosterView(container, t, ctx) {

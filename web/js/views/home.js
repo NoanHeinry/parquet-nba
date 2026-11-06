@@ -9,8 +9,7 @@ import { gameKey, isRevealed, isSpoilerFree } from "../spoiler.js";
 import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
 import { createStage } from "./stage.js";
-import { immersive } from "../menu.js";
-import { countUp, enterFx, exitProgress, marquee, motion, reducedMotion, reveal, sectionIndex, smoothWheel } from "../scroll.js";
+import { countUp, enterFx, exitProgress, marquee, motion, reducedMotion, reveal, sectionIndex } from "../scroll.js";
 import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
 
@@ -65,7 +64,8 @@ function refreshDelay(data) {
 
 export async function render(ctx) {
   const requested = ctx.params[0] || null;
-  immersive(ctx);
+  document.body.classList.add("is-home");
+  ctx.onCleanup(() => document.body.classList.remove("is-home"));
 
   // La page : la scène des joueurs du match, puis les matchs, les chiffres de la nuit,
   // le classement et les meilleurs marqueurs. Un sommaire numéroté suit la lecture à droite.
@@ -78,7 +78,7 @@ export async function render(ctx) {
   ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec));
   gamesSec.append(loading("Chargement des matchs…"));
 
-  const scroller = smoothWheel(ctx);
+  const scroller = ctx.scroller;
   const index = sectionIndex(
     ctx,
     [

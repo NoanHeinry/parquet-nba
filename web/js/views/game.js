@@ -109,7 +109,9 @@ function scoreboard(game, previous, { onToggleReveal, isRevealed } = {}) {
 
   return h(
     "div",
-    { class: "scoreboard", style: { "--away": colors.away, "--home": colors.home } },
+    { class: "scoreboard", style: { "--away": colors.away, "--home": colors.home, "--team": colors.away } },
+    h("div", { class: "stage-band back", "aria-hidden": "true" }),
+    h("div", { class: "stage-band back thin", "aria-hidden": "true" }),
     h("div", { class: "sb-grid" }, teamBlock("away"), center, teamBlock("home")),
     meta.length ? h("p", { class: "sb-meta" }, meta.join(". ")) : null
   );
@@ -550,8 +552,14 @@ export async function render(ctx) {
   document.title = `${box.game.away?.tri || "?"} – ${box.game.home?.tri || "?"} · Parquet`;
   ctx.onCleanup(() => (document.title = "Parquet"));
 
+  // L'entrée animée de l'en-tête (logos, score, bandes) ne se joue qu'au premier affichage,
+  // pas à chaque actualisation du score en direct.
+  let intro = true;
   const drawHead = () => {
-    head.replaceChildren(staleBanner(meta) || "", scoreboard(box.game, previous, { onToggleReveal: toggleReveal, isRevealed }));
+    const sb = scoreboard(box.game, previous, { onToggleReveal: toggleReveal, isRevealed });
+    if (intro) sb.classList.add("is-intro");
+    intro = false;
+    head.replaceChildren(staleBanner(meta) || "", sb);
   };
 
   let extrasPromise = null;

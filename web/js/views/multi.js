@@ -9,6 +9,7 @@ import { iconExpand, iconLightning } from "../icons.js";
 import { checkScoreboard, isClutch } from "../notifications.js";
 import { gameKey, isHidden, setRevealed } from "../spoiler.js";
 import { team, teamPair } from "../teams.js";
+import { poster } from "../poster.js";
 
 const SELECTION_KEY = "parquet-multi-selection";
 
@@ -85,8 +86,9 @@ function panel(game, pbp, previous) {
 }
 
 export async function render(ctx) {
+  const top = poster(ctx, { kicker: "Tous les matchs en direct", title: "Multi-matchs", size: "slim" });
   const wrapper = h("div", { class: "multi-page" });
-  ctx.outlet.append(wrapper);
+  ctx.outlet.append(top.el, wrapper);
   wrapper.append(loading("Chargement des matchs…"));
 
   let board = null;
@@ -196,17 +198,12 @@ export async function render(ctx) {
   }
 
   const live = board.games.filter((g) => g.status === 2).length;
+  top.update({
+    kicker: live ? `${live} ${live > 1 ? "matchs" : "match"} en direct` : "Aucun match en direct",
+    ghost: String(live || ""),
+    actions: [h("a", { class: "btn", href: "#/" }, "Retour aux matchs"), fullscreenBtn],
+  });
   wrapper.replaceChildren(
-    h(
-      "div",
-      { class: "page-head" },
-      h(
-        "div",
-        null,
-        h("h1", { class: "page-title visually-hidden" }, "Multi-matchs")
-      ),
-      h("div", { class: "toolbar", style: { margin: 0 } }, h("a", { class: "btn", href: "#/" }, "Retour aux matchs"), fullscreenBtn)
-    ),
     chipsBox,
     gateBox,
     grid,

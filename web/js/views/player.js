@@ -8,6 +8,7 @@ import { chips, errorState, headshot, loading, section, segmented, statTable, sw
 import { team, teamBand, teamByTri } from "../teams.js";
 import { iconScale } from "../icons.js";
 import { moveRow, statusBadge } from "../news.js";
+import { poster } from "../poster.js";
 
 // ---------------------------------------------------------------- palmarès
 
@@ -395,34 +396,38 @@ function draftText(p) {
   return `${p.draftYear}, ${p.draftRound === 1 ? "1er" : `${p.draftRound}e`} tour, ${p.draftNumber === 1 ? "1er" : `${p.draftNumber}e`} choix`;
 }
 
-function heroView(p) {
+// En-tête de la fiche, comme la scène de l'accueil : prénom et nom en très grand, portrait
+// détouré, numéro de maillot en fond et moyennes de la saison.
+function heroView(p, ctx) {
   const t = p.teamId ? team(p.teamId) : null;
-  const band = t ? teamBand(t.id) : { bg: "var(--surface-2)", ink: "var(--text)" };
-  const pic = headshot(p.id, { size: "big", cls: "shot", alt: p.name });
   const badges = [];
   if (p.greatest75) badges.push(h("span", { class: "badge" }, "Parmi les 75 plus grands joueurs de l'histoire"));
   if (!p.active) badges.push(h("span", { class: "badge" }, p.to ? `Carrière terminée en ${p.to}` : "Retraité"));
   const metaBits = [];
-  if (t && p.active) metaBits.push(h("a", { href: `#/equipe/${t.id}`, style: { display: "inline-flex", gap: "8px", alignItems: "center" } }, teamLogo(t.id, 20, "", { plate: true }), t.fullName));
+  if (t && p.active) metaBits.push(h("a", { href: `#/equipe/${t.id}`, style: { display: "inline-flex", gap: "8px", alignItems: "center" } }, teamLogo(t.id, 22), t.fullName));
   if (p.jersey && p.active) metaBits.push(h("span", null, `n° ${p.jersey}`));
   if (p.pos) metaBits.push(h("span", null, f.position(p.pos)));
-  return h(
-    "section",
-    { class: "hero player-hero", style: { "--team-bg": band.bg, "--team-ink": band.ink } },
-    p.jersey && p.active ? h("div", { class: "jersey", "aria-hidden": "true" }, p.jersey) : null,
-    pic,
-    h(
-      "div",
-      { class: "info" },
-      h("div", { class: "first" }, p.first),
-      h("h1", null, p.last),
-      h("div", { class: "hero-meta" }, metaBits),
-      badges.length ? h("div", { class: "hero-meta", style: { marginTop: "12px" } }, badges) : null,
-      h("div", { style: { marginTop: "14px" } },
-        h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}`, style: { display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px" } }, iconScale(15), "Comparer ce joueur")
-      )
-    )
-  );
+  const hl = p.headline && p.headline.pts !== null ? p.headline : null;
+  if (hl) metaBits.push(h("span", null, hl.season === "Career" ? "Moyennes en carrière" : `Moyennes ${hl.season}`));
+  return poster(ctx, {
+    size: "full",
+    cls: "player-poster",
+    kicker: [t && p.active ? t.fullName : "", p.from ? `${p.from}–${p.active ? "aujourd'hui" : p.to}` : ""].filter(Boolean).join(" · "),
+    lines: [p.first, p.last],
+    teamId: t && p.active ? t.id : null,
+    visual: headshot(p.id, { size: "big", alt: "" }),
+    visualKind: "cutout",
+    ghost: p.jersey && p.active ? p.jersey : "",
+    meta: [...metaBits, ...badges],
+    stats: hl
+      ? [
+          { label: "Points", v: f.num(hl.pts) },
+          { label: "Rebonds", v: f.num(hl.reb) },
+          { label: "Passes", v: f.num(hl.ast) },
+        ]
+      : [],
+    actions: [h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}` }, iconScale(15), "Comparer ce joueur")],
+  }).el;
 }
 
 function factsView(p) {
@@ -456,18 +461,6 @@ export async function render(ctx) {
   }
   document.title = `${info.name} · Parquet`;
   ctx.onCleanup(() => (document.title = "Parquet"));
-
-  const headline = info.headline && info.headline.pts !== null
-    ? h(
-        "div",
-        { class: "section", style: { marginTop: "22px" } },
-        h("div", { class: "tiles" },
-          h("div", { class: "tile" }, h("div", { class: "k" }, "Points par match"), h("div", { class: "v" }, f.num(info.headline.pts)), h("div", { class: "s" }, info.headline.season === "Career" ? "en carrière" : `saison ${info.headline.season}`)),
-          h("div", { class: "tile" }, h("div", { class: "k" }, "Rebonds par match"), h("div", { class: "v" }, f.num(info.headline.reb)), h("div", { class: "s" }, info.headline.season === "Career" ? "en carrière" : `saison ${info.headline.season}`)),
-          h("div", { class: "tile" }, h("div", { class: "k" }, "Passes par match"), h("div", { class: "v" }, f.num(info.headline.ast)), h("div", { class: "s" }, info.headline.season === "Career" ? "en carrière" : `saison ${info.headline.season}`))
-        )
-      )
-    : null;
 
   const panel = h("div");
   let tab = "profile";
@@ -558,10 +551,9 @@ export async function render(ctx) {
     .catch(() => {});
 
   ctx.outlet.replaceChildren(
-    heroView(info),
+    heroView(info, ctx),
     injury,
     factsView(info),
-    headline || "",
     tabs(
       [
         { id: "profile", label: "Profil" },

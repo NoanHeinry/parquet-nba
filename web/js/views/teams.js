@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import { errorState, favorites, loading, teamLogo } from "../components.js";
 import { iconStar } from "../icons.js";
+import { poster } from "../poster.js";
 
 const LAYOUT = [
   { conf: "East", title: "Conférence Est", divs: ["Atlantic", "Central", "Southeast"] },
@@ -11,16 +12,29 @@ const LAYOUT = [
 ];
 
 export async function render(ctx) {
-  ctx.outlet.append(loading("Chargement des équipes…"));
+  const top = poster(ctx, { kicker: "Deux conférences, six divisions", title: "Équipes", ghost: "30" });
+  const body = h("div", null, loading("Chargement des équipes…"));
+  ctx.outlet.append(top.el, body);
   let data;
   try {
     data = (await api("/teams", { signal: ctx.signal })).data;
   } catch (err) {
     if (err.name === "AbortError") return;
-    ctx.outlet.replaceChildren(errorState(err, () => location.reload()));
+    body.replaceChildren(errorState(err, () => location.reload()));
     return;
   }
   const favs = favorites();
+  // En vedette : la première équipe favorite, sinon le meilleur bilan.
+  const withRecord = data.teams.filter((t) => t.record);
+  const star = data.teams.find((t) => favs.has(t.id)) || withRecord.sort((a, b) => b.record.w - a.record.w)[0];
+  if (star) {
+    top.update({
+      teamId: star.id,
+      visual: teamLogo(star.id, 400),
+      visualKind: "logo",
+      meta: [h("a", { href: `#/equipe/${star.id}` }, favs.has(star.id) ? `Ton équipe : ${star.fullName || star.name}` : `Meilleur bilan : ${star.fullName || star.name}${star.record ? `, ${star.record.w}-${star.record.l}` : ""}`)],
+    });
+  }
 
   const blocks = LAYOUT.map((c) =>
     h(
@@ -52,8 +66,5 @@ export async function render(ctx) {
     )
   );
 
-  ctx.outlet.replaceChildren(
-    h("h1", { class: "page-title visually-hidden" }, "Équipes"),
-    ...blocks
-  );
+  body.replaceChildren(...blocks);
 }

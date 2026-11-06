@@ -68,13 +68,13 @@ def main() -> None:
         def shot(page, name, hash_, *, before=None, scroll=0, full=False, clip=None, element=None):
             page.goto(base + hash_)
             page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(900)
+            page.wait_for_timeout(1600)  # fin des animations d'entrée
             if before:
                 before(page)
                 page.wait_for_timeout(700)
             if scroll:
                 page.evaluate(f"window.scrollTo(0, {scroll})")
-                page.wait_for_timeout(300)
+                page.wait_for_timeout(900)
             if not (before and getattr(before, "keeps_pointer", False)):
                 page.mouse.move(2, 2)
             if element:

@@ -1,8 +1,8 @@
-// Accueil sans en-tête : le logo et un bouton rond flottent au-dessus de la page, et le menu
-// descend en plein écran (liens en grand, recherche, alertes, anti-spoiler, thème).
+// Site sans en-tête : le logo et un bouton rond flottent au-dessus des pages, et le menu
+// descend en plein écran (liens en grand, recherche, alertes, anti-spoiler, animations, thème).
 //
 // Les contrôles de l'en-tête (recherche, boutons) sont déplacés dans le menu, pas recopiés :
-// ils gardent ainsi leur comportement, et retrouvent leur place en quittant l'accueil.
+// ils gardent ainsi leur comportement.
 
 import { h, s } from "./dom.js";
 
@@ -123,8 +123,9 @@ function close(restoreFocus = true) {
   if (restoreFocus && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }
 
-// Passe la page en mode immersif (sans en-tête) le temps de la page courante.
-export function immersive(ctx) {
+// Tout le site est sans en-tête : la recherche et les boutons passent dans le menu, une fois
+// pour toutes, et le logo et le bouton rond flottent au-dessus de chaque page.
+export function enableImmersive() {
   const { panel, fab, brand, tools } = build();
   const inner = document.querySelector(".topbar-inner");
   const search = inner?.querySelector(".search");
@@ -133,15 +134,4 @@ export function immersive(ctx) {
   if (actions) tools.append(actions);
   document.body.append(brand, fab, panel);
   document.body.classList.add("is-immersive");
-
-  ctx.onCleanup(() => {
-    close(false);
-    panel.hidden = true;
-    document.body.classList.remove("is-immersive", "menu-open");
-    brand.remove();
-    fab.remove();
-    panel.remove();
-    if (inner && search) inner.append(search);
-    if (inner && actions) inner.append(actions);
-  });
 }
