@@ -172,6 +172,23 @@ def _moves() -> str:
     return f"{len(data['items'])} transactions"
 
 
+def _teams_adv() -> str:
+    from . import teamstats
+
+    rows = teamstats._fetch_advanced(nba.current_season()) or teamstats._fetch_advanced(nba.previous_season())
+    need(len(rows) == 30, f"{len(rows)} équipes au lieu de 30")
+    need(rows[0].get("off") is not None and rows[0].get("pace") is not None, "colonnes OFF_RATING ou PACE absentes")
+    return "30 équipes"
+
+
+def _h2h() -> str:
+    from . import teamstats
+
+    games = teamstats._fetch_h2h(1610612738, 1610612747)
+    need(len(games) > at_least(100, 20), f"seulement {len(games)} confrontations Celtics-Lakers")
+    return f"{len(games)} confrontations Celtics-Lakers"
+
+
 def _wiki() -> str:
     net.wiki_json("https://fr.wikipedia.org/w/api.php", {"action": "query", "meta": "siteinfo", "format": "json"})
     return "Wikipédia répond"
@@ -194,6 +211,8 @@ CHECKS: list[tuple[str, str, str, Callable[[], str]]] = [
     ("playoffs", "Tableau des playoffs", "Playoffs", _playoffs),
     ("injuries", "Rapport des blessures", "Infos, matchs", _injuries),
     ("moves", "Transactions", "Infos", _moves),
+    ("teams", "Statistiques des équipes", "Équipes (statistiques avancées)", _teams_adv),
+    ("h2h", "Confrontations", "Face-à-face", _h2h),
     ("wiki", "Biographies", "Fiches joueur et équipe", _wiki),
 ]
 

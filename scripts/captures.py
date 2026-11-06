@@ -192,6 +192,8 @@ def main() -> None:
             p.evaluate(f"window.scrollTo(0, {top} - 110)")
 
         shot(page, "24-saison-joueur.png", "#/joueur/1722532", before=season_tab)
+        shot(page, "25-equipes-attaque-defense.png", "#/equipes/stats", before=lambda p: p.wait_for_selector(".eff-team"), scroll=430)
+        shot(page, "26-face-a-face.png", "#/face-a-face/1610612738/1610612747", before=lambda p: p.wait_for_selector(".h2h-game"))
         shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()

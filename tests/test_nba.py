@@ -236,6 +236,40 @@ class PlayerSeasonTests(unittest.TestCase):
         self.assertIsNone(nba.valid_season("2025"))
 
 
+class TeamStatsTests(unittest.TestCase):
+    def test_ranks_respect_direction(self):
+        from parquet import teamstats
+
+        rows = [{"teamId": 1, "off": 120, "def": 110}, {"teamId": 2, "off": 110, "def": 105}, {"teamId": 3, "off": 115, "def": 115}]
+        teamstats.rank(rows)
+        self.assertEqual([r["ranks"]["off"] for r in rows], [1, 3, 2])
+        self.assertEqual([r["ranks"]["def"] for r in rows], [2, 1, 3])  # moins encaissé = mieux
+
+    def test_head_to_head_summary(self):
+        from parquet import teamstats
+
+        def g(day, season, win, pts, opp, po=False):
+            return {"id": day, "date": day, "season": season, "playoffs": po, "home": True, "win": win, "pts": pts, "opp": opp}
+
+        games = [
+            g("2026-01-10", "2025-26", True, 110, 100),
+            g("2025-12-01", "2025-26", True, 99, 98),
+            g("2025-05-10", "2024-25", False, 90, 100, True),
+            g("2025-05-08", "2024-25", True, 105, 101, True),
+            g("2025-05-06", "2024-25", False, 88, 120, True),
+            g("2024-11-01", "2024-25", False, 100, 104),
+        ]
+        s = teamstats.summarize_h2h(games)
+        self.assertEqual(s["regular"], {"w": 2, "l": 1})
+        self.assertEqual(s["playoffs"], {"w": 1, "l": 2})
+        self.assertEqual(s["streak"], 2)
+        self.assertEqual(s["series"], [{"season": "2024-25", "w": 1, "l": 2, "won": False}])
+        self.assertEqual(s["best"]["pts"], 110)
+        self.assertEqual(s["worst"]["opp"], 120)
+        self.assertEqual(s["since"], "2024-25")
+        self.assertEqual(teamstats.summarize_h2h([])["total"], 0)
+
+
 class GameTests(unittest.TestCase):
     def test_live_game(self):
         g = nba.normalize_game(LIVE_GAME, "2026-10-13")

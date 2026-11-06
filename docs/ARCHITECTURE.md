@@ -72,6 +72,9 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/palmares` | Champions et lauréats des grands trophées depuis 1947, plus titrés, titres par franchise | `parquet/palmares.py` (liste fixe tirée de NBA.com, mise à jour une fois par an), index des joueurs pour retrouver les identifiants |
 | `GET /api/player/{id}/season?season=AAAA-AA` | Saison d'un joueur en détail : tous ses tirs (position, réussite, zone), adresse par zone comparée à la ligue, moyennes selon le contexte (forme, lieu, résultat, repos, mois, adversaire) | `shotchartdetail`, `playergamelog` (`parquet/player_season.py`) |
 | `GET /api/verify` | Vérification complète : chaque source interrogée sans cache, réponse contrôlée (champs, volumes), niveau ok / format inattendu / injoignable | `parquet/verify.py` (aussi `run.py --verifier`) |
+| `GET /api/teams/advanced?season=AAAA-AA` | Statistiques avancées des 30 équipes (pour 100 possessions) et leur rang dans chaque catégorie | `leaguedashteamstats` (`parquet/teamstats.py`) |
+| `GET /api/team/{id}/profile` | Profil de jeu d'une équipe et ses cinq les plus utilisés | `leaguedashteamstats`, `leaguedashlineups` |
+| `GET /api/h2h/{a}/{b}` | Face-à-face : bilans, séries de playoffs, derniers matchs, prochains rendez-vous | `leaguegamefinder`, calendrier |
 | `GET /api/settings` · `POST /api/settings/youtube` | État de la clé YouTube (jamais la clé elle-même) ; enregistrement après vérification | `data/settings.json` |
 | `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
@@ -190,6 +193,7 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/views/palmares.js` | Page « Palmarès » : saisons, trophées, titres par franchise |
 | `js/views/records.js` | Page « Records » : podium, joueurs en activité, top 50 |
 | `js/views/player-season.js` | Onglet « Saison en détail » de la fiche joueur : carte des tirs (zones chaudes en hexagones ou tir par tir), zones, moyennes selon le contexte |
+| `js/views/h2h.js` | Page « Face-à-face » entre deux équipes |
 | `js/views/draft.js` | Page « Draft » : ordre de chaque draft par tour, ou tous les choix d'une équipe par année ; filtres, recherche, 1er choix en pied dans l'en-tête |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |

@@ -880,6 +880,56 @@ def shot_chart(pid: int, season: str) -> dict:
     return wrap(rs("Shot_Chart_Detail", hdr, rows), rs("LeagueAverages", lg_hdr, lg_rows))
 
 
+def team_dash(season: str) -> dict:
+    """Statistiques avancées des 30 équipes (saison passée seulement : la saison en cours
+    n'a pas commencé en démo)."""
+    hdr = ["TEAM_ID", "TEAM_NAME", "GP", "W", "L", "OFF_RATING", "DEF_RATING", "NET_RATING", "AST_PCT", "OREB_PCT", "DREB_PCT", "TM_TOV_PCT", "EFG_PCT", "TS_PCT", "PACE"]
+    rows = []
+    if season < "2026-27":
+        for t in TEAMS:
+            r = rng("teamdash", season, t["id"])
+            off, deff = round(r.uniform(108, 122), 1), round(r.uniform(107, 120), 1)
+            w = max(12, min(70, int(41 + (off - deff) * 2.6 + r.uniform(-4, 4))))
+            rows.append([t["id"], f"{t['city']} {t['name']}", 82, w, 82 - w, off, deff, round(off - deff, 1), round(r.uniform(0.54, 0.7), 3),
+                         round(r.uniform(0.22, 0.34), 3), round(r.uniform(0.68, 0.76), 3), round(r.uniform(0.12, 0.16), 3),
+                         round(r.uniform(0.51, 0.58), 3), round(r.uniform(0.55, 0.61), 3), round(r.uniform(96, 103), 1)])
+    return wrap(rs("LeagueDashTeamStats", hdr, rows))
+
+
+def lineups(team_id: int, season: str) -> dict:
+    hdr = ["GROUP_SET", "GROUP_ID", "GROUP_NAME", "TEAM_ID", "GP", "MIN", "OFF_RATING", "DEF_RATING", "NET_RATING"]
+    roster = [pid for pid, p in PLAYERS.items() if p["teamId"] == team_id][:9]
+    rows = []
+    if season < "2026-27" and len(roster) >= 5:
+        r = rng("lineups", team_id, season)
+        for k in range(8):
+            five = sorted(r.sample(roster, 5)) if k else sorted(roster[:5])
+            names = " - ".join(f"{PLAYERS[i]['first'][0]}. {PLAYERS[i]['last']}" for i in five)
+            off, deff = round(r.uniform(104, 128), 1), round(r.uniform(102, 124), 1)
+            rows.append(["5 Man Lineups", "-" + "-".join(map(str, five)) + "-", names, team_id, r.randint(4, 60), round(r.uniform(20, 700) / (k + 1), 1), off, deff, round(off - deff, 1)])
+    return wrap(rs("Lineups", hdr, rows))
+
+
+def head_to_head(a: int, b: int) -> dict:
+    """Confrontations depuis 1990 : quatre matchs par saison, parfois une série de playoffs."""
+    hdr = ["SEASON_ID", "TEAM_ID", "GAME_ID", "GAME_DATE", "MATCHUP", "WL", "PTS", "PLUS_MINUS"]
+    by_id = {t["id"]: t for t in TEAMS}
+    ta, tb = by_id[a], by_id[b]
+    r = rng("h2h", min(a, b), max(a, b))
+    rows = []
+    for year in range(1990, 2026):
+        games = [(f"2{year}", date(year, 11, 1) + timedelta(days=r.randint(0, 150))) for _ in range(r.choice([2, 3, 4]))]
+        if r.random() < 0.12:
+            start = date(year + 1, 4, 22)
+            games += [(f"4{year}", start + timedelta(days=2 * k)) for k in range(r.randint(4, 7))]
+        for k, (sid, day) in enumerate(games):
+            pts = r.randint(92, 128)
+            pm = r.choice([-1, 1]) * r.randint(1, 22)
+            home = k % 2 == 0
+            rows.append([sid, a, f"00{sid[0]}{str(year)[2:]}{k:05d}", day.isoformat(), f"{ta['tri']} {'vs.' if home else '@'} {tb['tri']}", "W" if pm > 0 else "L", pts, pm])
+    return wrap(rs("LeagueGameFinderResults", hdr, rows))
+
+
 # ---------------------------------------------------------------- Wikipédia
 
 def wiki(url: str, params: dict) -> dict:
@@ -1074,6 +1124,12 @@ def handle(url: str, params: dict | None):
         ep = url.rsplit("/", 1)[1]
         if ep == "leaguedashplayerstats":
             return league_dash(params["Season"], params.get("MeasureType", "Base"), params.get("StarterBench", ""))
+        if ep == "leaguegamefinder" and params.get("VsTeamID"):
+            return head_to_head(int(params["TeamID"]), int(params["VsTeamID"]))
+        if ep == "leaguedashteamstats":
+            return team_dash(params["Season"])
+        if ep == "leaguedashlineups":
+            return lineups(int(params["TeamID"]), params["Season"])
         if ep in ("commonplayoffseries", "leaguegamefinder"):
             if params["Season"] >= "2026-27":
                 return wrap(rs("PlayoffSeries", [], []), rs("LeagueGameFinderResults", [], []))

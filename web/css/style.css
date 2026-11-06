@@ -13604,3 +13604,470 @@ input[type="search"].select {
     box-shadow: none;
   }
 }
+
+/* ================================================================ 3.4 Équipes en profondeur */
+
+.ts-map {
+  padding: 8px 0;
+}
+
+.eff-map {
+  display: block;
+  width: 100%;
+  max-width: 980px;
+  height: auto;
+}
+
+.eff-grid line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.eff-grid text,
+.eff-axis {
+  fill: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-text);
+}
+
+.eff-axis {
+  fill: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 13px;
+}
+
+.eff-corner {
+  fill: var(--accent);
+  font-family: var(--font-display);
+  font-size: 13px;
+}
+
+.eff-avg {
+  stroke: var(--text-2);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 5;
+}
+
+.eff-team {
+  cursor: pointer;
+}
+
+.eff-team circle {
+  fill: var(--surface-2);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.eff-team:hover circle,
+.eff-team:focus-visible circle {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  outline: none;
+}
+
+.eff-team:focus {
+  outline: none;
+}
+
+.ts-cell {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ts-rank {
+  min-width: 26px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.stat-table b.pos,
+.tp-net.pos {
+  color: var(--win);
+}
+
+.stat-table b.neg,
+.tp-net.neg {
+  color: var(--loss);
+}
+
+/* -- profil de jeu d'une équipe */
+.tp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 40px;
+}
+
+.tp-item {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rank label val"
+    "rank bar bar";
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tp-rank {
+  grid-area: rank;
+  font-family: var(--font-poster);
+  font-size: 28px;
+  color: var(--text-2);
+}
+
+.tp-item.is-top .tp-rank {
+  color: var(--accent);
+}
+
+.tp-item.is-low .tp-rank {
+  color: var(--loss);
+}
+
+.tp-label {
+  grid-area: label;
+  display: flex;
+  flex-direction: column;
+}
+
+.tp-label b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.tp-label small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tp-val {
+  grid-area: val;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.tp-bar {
+  grid-area: bar;
+  height: 4px;
+  background: var(--surface-3);
+}
+
+.tp-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(var(--k, 0));
+  transform-origin: left center;
+}
+
+.tp-lineups {
+  display: flex;
+  flex-direction: column;
+}
+
+.tp-lineup {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 96px 70px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tp-five {
+  display: flex;
+}
+
+.tp-five a {
+  display: block;
+  width: 52px;
+  aspect-ratio: 260 / 190;
+  margin-right: -10px;
+  overflow: hidden;
+  background: var(--surface-2);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+.tp-five .headshot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 0;
+  background: none;
+}
+
+.tp-names {
+  padding-left: 12px;
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.tp-min {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.tp-min small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.tp-net {
+  font-family: var(--font-poster);
+  font-size: 24px;
+  font-weight: 400;
+  text-align: right;
+}
+
+/* -- face-à-face */
+.h2h-pick {
+  align-items: center;
+}
+
+.h2h-logos {
+  display: flex;
+  align-items: center;
+  gap: 4%;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+}
+
+.h2h-logos .logo {
+  width: 44%;
+  height: auto;
+}
+
+.h2h-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.h2h-next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.h2h-next-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+}
+
+.h2h-next-item:hover {
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.h2h-next-item b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.h2h-next-item small {
+  color: var(--muted);
+}
+
+.h2h-tug {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.h2h-tug-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.h2h-tug-side b {
+  font-family: var(--font-poster);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.h2h-tug-side small {
+  max-width: 120px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.h2h-tug-side.is-b {
+  text-align: right;
+}
+
+.h2h-tug-bar {
+  position: relative;
+  height: 14px;
+  background: var(--b);
+}
+
+.h2h-tug-bar i {
+  position: absolute;
+  inset: 0;
+  background: var(--a);
+  transform: scaleX(var(--k, 0.5));
+  transform-origin: left center;
+  box-shadow: 2px 0 0 var(--bg);
+}
+
+.h2h-series {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.h2h-serie {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+}
+
+.h2h-serie-year {
+  min-width: 64px;
+  font-family: var(--font-poster);
+  font-size: 18px;
+  color: var(--text-2);
+}
+
+.h2h-games {
+  display: flex;
+  flex-direction: column;
+}
+
+.h2h-game {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0 10px 12px;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid var(--loss);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.h2h-game.is-win {
+  border-left-color: var(--win);
+}
+
+.h2h-game:hover .h2h-score b {
+  color: var(--accent);
+}
+
+.h2h-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.h2h-po {
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+}
+
+.h2h-where {
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+
+.h2h-score {
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.h2h-score small {
+  margin-left: 8px;
+  font-family: var(--font-text);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.h2h-seasons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px;
+}
+
+.h2h-season {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  background: var(--surface);
+  box-shadow: inset 0 -3px 0 var(--line-strong);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.h2h-season b {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.h2h-season.is-a {
+  box-shadow: inset 0 -3px 0 var(--win);
+}
+
+.h2h-season.is-b {
+  box-shadow: inset 0 -3px 0 var(--loss);
+}
+
+.sb-h2h {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 800px) {
+  .tp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tp-lineup {
+    grid-template-columns: auto minmax(0, 1fr) 60px;
+  }
+
+  .tp-names {
+    display: none;
+  }
+
+  .h2h-game {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .h2h-where {
+    display: none;
+  }
+
+  .h2h-tug-side small {
+    display: none;
+  }
+}

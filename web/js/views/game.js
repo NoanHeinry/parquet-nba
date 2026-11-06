@@ -113,7 +113,14 @@ function scoreboard(game, previous, { onToggleReveal, isRevealed } = {}) {
     h("div", { class: "stage-band back", "aria-hidden": "true" }),
     h("div", { class: "stage-band back thin", "aria-hidden": "true" }),
     h("div", { class: "sb-grid" }, teamBlock("away"), center, teamBlock("home")),
-    meta.length ? h("p", { class: "sb-meta" }, meta.join(". ")) : null
+    meta.length || (game.away?.id && game.home?.id)
+      ? h(
+          "p",
+          { class: "sb-meta" },
+          meta.join(". "),
+          game.away?.id && game.home?.id ? [meta.length ? " " : "", h("a", { class: "sb-h2h", href: `#/face-a-face/${game.away.id}/${game.home.id}` }, "Historique des confrontations")] : null
+        )
+      : null
   );
 }
 

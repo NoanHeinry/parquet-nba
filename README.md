@@ -31,6 +31,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.
 - Tableau des playoffs : arbre complet de la post-saison NBA (1er tour, demi-finales, finales de conférence, Finales NBA), statut et avancement des séries (4-1, 4-2...), détail match par match avec scores, lien vers les box scores et sélecteur de saisons historiques.
 - Classement par conférence et leaders statistiques de la saison.
+- Équipes en profondeur : carte attaque / défense des 30 équipes (points marqués et encaissés pour 100 possessions, logos placés sur le graphique) et tableau complet triable (écart, rythme, adresse réelle, paniers assistés, rebonds offensifs, balles perdues, avec le rang de chacune) ; sur la fiche d'une équipe, un onglet « Profil de jeu » (son rang dans chaque catégorie et ses cinq les plus utilisés) ; et le face-à-face entre deux équipes : bilan en saison régulière et en playoffs, séries de playoffs, rapport de force, derniers matchs, saison par saison et prochains rendez-vous (lien depuis chaque match).
 - Course aux playoffs : pour chaque équipe, ce qui reste à jouer (dont à domicile), le nombre de victoires au mieux, le rythme actuel sur 82 matchs, son statut (qualifié, play-in assuré, en course, au mieux play-in, éliminé), le nombre magique ou le retard sur la 6e et la 10e place, et la difficulté du calendrier restant (bilan moyen des adversaires, classé sur 30).
 - Palmarès depuis 1947 : chaque saison avec son champion (et le finaliste, le score de la série) et les lauréats des grands trophées (MVP, MVP des Finales, rookie, défenseur, sixième homme, progression) ; vue par trophée avec les plus titrés, et titres par franchise.
 - Fiche joueur, onglet « Saison en détail » : la carte de tous ses tirs de la saison, en zones chaudes (hexagones dont la taille dit le volume et la couleur l'adresse comparée à la moyenne de la ligue au même endroit) ou tir par tir, son adresse zone par zone face à la ligue, et ses moyennes selon le contexte (forme récente, domicile ou extérieur, victoires ou défaites, jours de repos, mois, adversaire). Toutes ses saisons depuis 1996-97.
@@ -79,7 +80,8 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 | ![Ordre d'une draft, avec le devenir de chaque joueur](docs/captures/18-draft.png) | ![Jeu « Qui est-ce ? » : la silhouette, deux indices et quatre noms](docs/captures/19-qui-est-ce.png) |
 | ![Course aux trophées : les favoris du MVP](docs/captures/20-trophees.png) | ![Course aux playoffs : statut, nombre magique et calendrier de chaque équipe](docs/captures/21-course-aux-playoffs.png) |
 | ![Palmarès : champion et lauréats de chaque saison](docs/captures/22-palmares.png) | ![Records de tous les temps, avec les joueurs en activité](docs/captures/23-records.png) |
-| ![Saison d'un joueur : zones chaudes et adresse par zone](docs/captures/24-saison-joueur.png) | |
+| ![Saison d'un joueur : zones chaudes et adresse par zone](docs/captures/24-saison-joueur.png) | ![Attaque et défense des 30 équipes](docs/captures/25-equipes-attaque-defense.png) |
+| ![Face-à-face entre deux équipes](docs/captures/26-face-a-face.png) | |
 
 Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 

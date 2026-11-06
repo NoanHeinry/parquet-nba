@@ -2,6 +2,7 @@
 // Marques fines, grille discrète, valeurs dans une infobulle et toujours lisibles ailleurs (tableaux).
 
 import { h, s } from "./dom.js";
+import { isDarkTheme, logoUrl } from "./teams.js";
 
 // ------------------------------------------------------------ infobulle
 
@@ -396,6 +397,63 @@ export function heatChart(shots, league, { radius = 14, pct = (v) => `${Math.rou
     g.append(hex);
   }
   svg.append(g);
+  return svg;
+}
+
+// ------------------------------------------------------------ carte attaque / défense
+
+// Les 30 équipes placées selon leurs points marqués (vers la droite = meilleure attaque) et
+// encaissés (vers le haut = meilleure défense), pour 100 possessions. Les traits pointillés
+// marquent la moyenne de la ligue : en haut à droite, les équipes complètes.
+export function efficiencyMap(teams, { onPick = null, fmt = (v) => v.toFixed(1) } = {}) {
+  const W = 760;
+  const H = 520;
+  const pad = { l: 56, r: 24, t: 24, b: 50 };
+  const xs = teams.map((t) => t.off);
+  const ys = teams.map((t) => t.def);
+  const span = (vals) => {
+    const lo = Math.min(...vals);
+    const hi = Math.max(...vals);
+    const m = Math.max(1, (hi - lo) * 0.08);
+    return [Math.floor(lo - m), Math.ceil(hi + m)];
+  };
+  const [x0, x1] = span(xs);
+  const [y0, y1] = span(ys);
+  const X = (v) => pad.l + ((v - x0) / (x1 - x0)) * (W - pad.l - pad.r);
+  const Y = (v) => pad.t + ((v - y0) / (y1 - y0)) * (H - pad.t - pad.b); // défense : moins encaissé en haut
+  const avgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+  const avgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+  const svg = s("svg", { class: "eff-map", viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Attaque et défense des 30 équipes" });
+  const grid = s("g", { class: "eff-grid" });
+  for (let v = x0; v <= x1; v += 2) {
+    grid.append(s("line", { x1: X(v), x2: X(v), y1: pad.t, y2: H - pad.b }), s("text", { x: X(v), y: H - pad.b + 18, "text-anchor": "middle" }, String(v)));
+  }
+  for (let v = y0; v <= y1; v += 2) {
+    grid.append(s("line", { x1: pad.l, x2: W - pad.r, y1: Y(v), y2: Y(v) }), s("text", { x: pad.l - 10, y: Y(v) + 4, "text-anchor": "end" }, String(v)));
+  }
+  svg.append(grid);
+  svg.append(
+    s("line", { class: "eff-avg", x1: X(avgX), x2: X(avgX), y1: pad.t, y2: H - pad.b }),
+    s("line", { class: "eff-avg", x1: pad.l, x2: W - pad.r, y1: Y(avgY), y2: Y(avgY) }),
+    s("text", { class: "eff-axis", x: W - pad.r, y: H - 8, "text-anchor": "end" }, "Points marqués pour 100 possessions →"),
+    s("text", { class: "eff-axis", x: 14, y: pad.t, transform: `rotate(-90 14 ${pad.t})`, "text-anchor": "end" }, "← Points encaissés (moins = mieux)"),
+    s("text", { class: "eff-corner", x: W - pad.r - 6, y: pad.t + 16, "text-anchor": "end" }, "Bonne attaque, bonne défense"),
+    s("text", { class: "eff-corner", x: pad.l + 6, y: H - pad.b - 8 }, "À la peine des deux côtés")
+  );
+  const variant = isDarkTheme() ? "D" : "L";
+  const size = 34;
+  for (const t of teams) {
+    const g = s("g", { class: "eff-team", tabindex: "0", role: "link", "aria-label": `${t.name} : ${fmt(t.off)} marqués, ${fmt(t.def)} encaissés` });
+    g.append(s("circle", { cx: X(t.off), cy: Y(t.def), r: size / 2 + 3 }), s("image", { href: logoUrl(t.teamId, variant), x: X(t.off) - size / 2, y: Y(t.def) - size / 2, width: size, height: size }));
+    const lines = [t.name, `${fmt(t.off)} marqués, ${fmt(t.def)} encaissés`, `Écart ${t.net > 0 ? "+" : ""}${fmt(t.net)}, bilan ${t.w}-${t.l}`];
+    g.addEventListener("pointermove", (e) => showTip(e, lines));
+    g.addEventListener("pointerleave", hideTip);
+    if (onPick) {
+      g.addEventListener("click", () => onPick(t));
+      g.addEventListener("keydown", (e) => e.key === "Enter" && onPick(t));
+    }
+    svg.append(g);
+  }
   return svg;
 }
 

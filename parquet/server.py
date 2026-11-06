@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, extras, history, nba, net, player_season, season, settings, teams_meta, verify
+from . import __version__, extras, history, nba, net, player_season, season, settings, teams_meta, teamstats, verify
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -155,6 +155,23 @@ def api_teams(q):
     if q.get("meta"):
         return _no_meta({"teams": teams_meta.TEAMS})
     return nba.teams_overview()
+
+
+@route(r"/api/teams/advanced")
+def api_teams_advanced(q):
+    return teamstats.league_advanced(q.get("season"))
+
+
+@route(r"/api/team/(\d+)/profile")
+def api_team_profile(q, team_id):
+    return teamstats.team_profile(int(team_id))
+
+
+@route(r"/api/h2h/(\d+)/(\d+)")
+def api_h2h(q, a, b):
+    if a == b:
+        raise ValueError("Choisis deux équipes différentes.")
+    return teamstats.head_to_head(int(a), int(b))
 
 
 @route(r"/api/team/(\d+)")

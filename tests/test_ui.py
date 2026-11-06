@@ -307,14 +307,35 @@ class InterfaceTests(unittest.TestCase):
             self.assertIn(self.page.evaluate("document.documentElement.dataset.theme"), ("light", "dark"))
             self.page.keyboard.press("Escape")
 
-    def test_status_page_deep_verification_and_browser_card(self):
+    def test_team_advanced_stats_profile_and_head_to_head(self):
+        self.open("#/equipes")
+        self.page.click(".seg-links a[href='#/equipes/stats']")
+        self.page.wait_for_selector(".eff-map .eff-team")
+        self.assertEqual(self.page.locator(".eff-team").count(), 30)
+        self.assertEqual(self.page.locator(".stat-table tbody tr").count(), 30)
+        self.page.click(".stat-table th[data-sort='def']")
+        self.assertIn("1e", self.page.locator(".stat-table tbody tr").first.locator("td").nth(4).text_content())
+        self.open("#/equipe/1610612738")
+        self.page.click('[role="tab"][data-tab="profile"]')
+        self.page.wait_for_selector(".tp-item")
+        self.assertEqual(self.page.locator(".tp-item").count(), 8)
+        self.assertGreater(self.page.locator(".tp-lineup").count(), 0)
+        self.page.select_option(".toolbar select", "1610612747")
+        self.page.wait_for_selector(".h2h-game")
+        self.assertIn("#/face-a-face/1610612738/1610612747", self.page.url)
+        self.assertIn("Celtics", self.page.text_content(".poster-title"))
+        self.assertGreater(self.page.locator(".h2h-game").count(), 5)
+        self.page.click(".h2h-pick .btn.square")
+        self.page.wait_for_function("location.hash === '#/face-a-face/1610612747/1610612738'")
+
+
         self.open("#/etat")
         self.page.wait_for_selector("#navigateur .verify-row")
         self.assertGreaterEqual(self.page.locator("#navigateur .verify-row").count(), 8)
         self.page.click("#verification .btn.primary")
         self.page.wait_for_selector("#verification .verify-row", timeout=90000)
-        self.assertEqual(self.page.locator("#verification .verify-row").count(), 17)
-        self.assertGreaterEqual(self.page.locator("#verification .verify-row.is-ok").count(), 16)
+        self.assertEqual(self.page.locator("#verification .verify-row").count(), 19)
+        self.assertGreaterEqual(self.page.locator("#verification .verify-row.is-ok").count(), 18)
         self.assertTrue(self.page.locator("#verification button:has-text('Copier le rapport')").is_visible())
 
     # ------------------------------------------------------------ jeu « Qui est-ce ? »

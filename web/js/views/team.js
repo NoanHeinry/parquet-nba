@@ -5,7 +5,7 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { columnChart } from "../charts.js";
 import { favorites, headshot, loading, playerCell, section, segmented, statTable, swapIn, tabs, teamLogo, toggleFavorite, wl } from "../components.js";
-import { team, teamBand, teamColor } from "../teams.js";
+import { team, teamBand, teamColor, teams } from "../teams.js";
 import { iconCalendar, iconStar } from "../icons.js";
 import { injuryRow, movesByDay, reportSource } from "../news.js";
 import { poster } from "../poster.js";
@@ -591,6 +591,87 @@ function tile(k, v, s) {
   return h("div", { class: "tile" }, h("div", { class: "k" }, k), h("div", { class: "v" }, v), s ? h("div", { class: "s" }, s) : null);
 }
 
+// Onglet « Profil de jeu » : où l'équipe se situe dans la ligue (rang sur 30 dans chaque
+// catégorie), ses cinq les plus utilisés et l'accès au face-à-face.
+const PROFILE = [
+  ["off", "Attaque", "points marqués pour 100 possessions", (v) => f.num(v, 1)],
+  ["def", "Défense", "points encaissés pour 100 possessions", (v) => f.num(v, 1)],
+  ["net", "Écart", "différence pour 100 possessions", (v) => `${v > 0 ? "+" : ""}${f.num(v, 1)}`],
+  ["pace", "Rythme", "possessions par match", (v) => f.num(v, 1)],
+  ["ts", "Adresse réelle", "tirs à 3 pts et lancers compris", (v) => `${f.num(v * 100, 1)} %`],
+  ["astPct", "Paniers assistés", "part des paniers sur une passe", (v) => `${f.num(v * 100, 1)} %`],
+  ["orebPct", "Rebonds offensifs", "part des rebonds pris en attaque", (v) => `${f.num(v * 100, 1)} %`],
+  ["tov", "Balles perdues", "pour 100 possessions", (v) => `${f.num(v * 100, 1)} %`],
+];
+
+function profileView(container, t, ctx) {
+  section(container, () => api(`/team/${t.id}/profile`, { signal: ctx.signal }), ({ data }) => {
+    const me = data.team;
+    const out = [];
+    const others = teams()
+      .filter((x) => x.id !== t.id)
+      .sort((a, b) => a.fullName.localeCompare(b.fullName));
+    const vs = h("select", { class: "select", "aria-label": "Face-à-face avec" }, h("option", { value: "" }, "Face-à-face avec…"), others.map((x) => h("option", { value: x.id }, x.fullName)));
+    vs.addEventListener("change", () => vs.value && (location.hash = `#/face-a-face/${t.id}/${vs.value}`));
+    out.push(h("div", { class: "toolbar" }, vs, h("a", { class: "btn", href: "#/equipes/stats" }, "Toutes les équipes")));
+    if (me) {
+      out.push(
+        h(
+          "section",
+          { class: "section" },
+          h("h2", { class: "section-title" }, `Profil de jeu, saison ${data.season}`),
+          h(
+            "div",
+            { class: "tp-grid" },
+            PROFILE.map(([key, label, sub, fmt]) => {
+              const rank = me.ranks?.[key];
+              const k = rank ? (30 - rank) / 29 : 0;
+              return h(
+                "div",
+                { class: `tp-item${rank && rank <= 5 ? " is-top" : rank && rank >= 26 ? " is-low" : ""}`, style: { "--k": k.toFixed(3) } },
+                h("span", { class: "tp-rank num" }, rank ? `${rank}e` : "–"),
+                h("span", { class: "tp-label" }, h("b", null, label), h("small", null, sub)),
+                h("span", { class: "tp-val num" }, me[key] === null || me[key] === undefined ? "–" : fmt(me[key])),
+                h("span", { class: "tp-bar", "aria-hidden": "true" }, h("i"))
+              );
+            })
+          ),
+          h("p", { class: "note" }, `Rang sur 30 (1er = le meilleur). Moyenne de la ligue : ${f.num(data.league.off, 1)} marqués et ${f.num(data.league.def, 1)} encaissés pour 100 possessions.`)
+        )
+      );
+    }
+    if (data.lineups.length) {
+      out.push(
+        h(
+          "section",
+          { class: "section" },
+          h("h2", { class: "section-title" }, "Les cinq les plus utilisés"),
+          h(
+            "div",
+            { class: "tp-lineups" },
+            data.lineups.map((l) =>
+              h(
+                "div",
+                { class: "tp-lineup" },
+                h(
+                  "span",
+                  { class: "tp-five" },
+                  l.ids.map((id, i) => h("a", { href: `#/joueur/${id}`, title: l.names[i] || "" }, headshot(id, { alt: l.names[i] || "" })))
+                ),
+                h("span", { class: "tp-names" }, l.names.join(", ")),
+                h("span", { class: "tp-min num" }, `${f.int(l.min)} min`, h("small", null, f.plural(l.gp, "match", "matchs"))),
+                h("b", { class: `tp-net num${l.net > 0 ? " pos" : l.net < 0 ? " neg" : ""}` }, `${l.net > 0 ? "+" : ""}${f.num(l.net, 1)}`)
+              )
+            )
+          ),
+          h("p", { class: "note" }, "Écart pour 100 possessions quand ces cinq joueurs sont ensemble sur le terrain.")
+        )
+      );
+    }
+    return out;
+  });
+}
+
 export async function render(ctx) {
   const id = Number(ctx.params[0]);
   const t = team(id);
@@ -612,6 +693,7 @@ export async function render(ctx) {
     if (tab === "roster") rosterView(box, t, ctx);
     else if (tab === "schedule") scheduleView(box, t, ctx);
     else if (tab === "news") newsView(box, t, ctx);
+    else if (tab === "profile") profileView(box, t, ctx);
     else franchiseView(box, t, ctx);
   };
   ctx.outlet.append(
@@ -621,6 +703,7 @@ export async function render(ctx) {
       [
         { id: "roster", label: "Effectif" },
         { id: "schedule", label: "Calendrier" },
+        { id: "profile", label: "Profil de jeu" },
         { id: "news", label: "Infirmerie et mouvements" },
         { id: "franchise", label: "Histoire et palmarès" },
       ],
