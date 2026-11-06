@@ -216,6 +216,25 @@ class InterfaceTests(unittest.TestCase):
         self.assertEqual(self.page.locator(".dr-future.is-none").count(), 60)
         self.assertEqual(self.errors, [])
 
+    def test_outdated_server_shows_restart_notice(self):
+        # Fenêtre de Parquet jamais refermée après une mise à jour : le serveur répond encore
+        # avec l'ancienne version, l'interface le signale.
+        def old_status(route):
+            route.fulfill(status=200, content_type="application/json", body='{"data":{"version":"1.5.0","demo":true},"meta":{}}')
+
+        self.page.route("**/api/status", old_status)
+        self.open("#/draft")
+        notice = self.page.wait_for_selector(".update-notice")
+        self.assertIn("1.5.0", notice.text_content())
+        self.assertIn("relance", notice.text_content())
+        self.page.click(".update-close")
+        self.assertEqual(self.page.locator(".update-notice").count(), 0)
+
+    def test_current_server_shows_no_notice(self):
+        self.open("#/")
+        self.page.wait_for_timeout(400)
+        self.assertEqual(self.page.locator(".update-notice").count(), 0)
+
     def test_motion_toggle_overrides_system_setting(self):
         # Windows peut demander aux sites de limiter les animations : le bouton passe outre.
         self.page.emulate_media(reduced_motion="reduce")

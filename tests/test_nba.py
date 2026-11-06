@@ -55,6 +55,19 @@ SCHEDULE_GAME = {
 }
 
 
+class VersionTests(unittest.TestCase):
+    def test_server_interface_and_offline_cache_share_the_version(self):
+        import re
+
+        import parquet
+
+        web = Path(__file__).resolve().parent.parent / "web"
+        app = re.search(r'APP_VERSION = "([^"]+)"', (web / "js" / "app.js").read_text(encoding="utf-8")).group(1)
+        sw = re.search(r'VERSION = "([^"]+)"', (web / "sw.js").read_text(encoding="utf-8")).group(1)
+        self.assertEqual(app, parquet.__version__)
+        self.assertEqual(sw, parquet.__version__)
+
+
 class FormatTests(unittest.TestCase):
     def test_clock(self):
         self.assertEqual(nba.fmt_clock("PT05M23.00S"), "5:23")

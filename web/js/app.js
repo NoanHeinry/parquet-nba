@@ -218,15 +218,57 @@ initPwa();
 initNotificationsUI();
 const outlet = document.getElementById("main");
 
+// Version de l'interface : elle doit correspondre à celle du serveur (parquet/__init__.py).
+const APP_VERSION = "1.12.1";
+
+// Compare deux numéros de version (1.5.0 < 1.12.0).
+const versionCmp = (a, b) => {
+  const pa = String(a).split(".").map(Number);
+  const pb = String(b).split(".").map(Number);
+  for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
+  return 0;
+};
+
+function topBanner(text) {
+  const banner = document.createElement("div");
+  banner.className = "demo-banner";
+  banner.textContent = text;
+  document.querySelector(".topbar").after(banner);
+}
+
+// Avertissement de version : un encart fixé en bas de l'écran, qu'on peut fermer.
+function updateNotice(text) {
+  const box = document.createElement("div");
+  box.className = "update-notice";
+  box.setAttribute("role", "alert");
+  const msg = document.createElement("p");
+  msg.textContent = text;
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "update-close";
+  close.setAttribute("aria-label", "Fermer");
+  close.textContent = "×";
+  close.addEventListener("click", () => box.remove());
+  box.append(msg, close);
+  document.body.append(box);
+}
+
 // Mode démonstration (python run.py --demo) : un bandeau rappelle que les données sont fictives.
+// Après une mise à jour, si Parquet tourne encore avec l'ancien serveur (fenêtre jamais
+// refermée), les nouvelles pages n'ont pas de données : un bandeau dit quoi faire.
 appStatus()
   .then((st) => {
+    const diff = st.version ? versionCmp(st.version, APP_VERSION) : 0;
+    if (diff < 0) {
+      updateNotice(
+        `Parquet a été mis à jour (${APP_VERSION}), mais le programme lancé sur l'ordinateur est encore l'ancienne version (${st.version}). Ferme la fenêtre de Parquet puis relance-le : certaines pages restent vides en attendant.`
+      );
+    } else if (diff > 0) {
+      updateNotice(`Une nouvelle version de Parquet (${st.version}) est prête : recharge la page (Ctrl+F5 sur ordinateur) pour l'afficher.`);
+    }
     if (!st.demo) return;
     document.documentElement.dataset.demo = "1";
-    const banner = document.createElement("div");
-    banner.className = "demo-banner";
-    banner.textContent = "Mode démonstration : joueurs, scores et statistiques fictifs, sans connexion à NBA.com.";
-    document.querySelector(".topbar").after(banner);
+    topBanner("Mode démonstration : joueurs, scores et statistiques fictifs, sans connexion à NBA.com.");
   })
   .catch(() => {});
 
