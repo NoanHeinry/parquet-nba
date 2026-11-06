@@ -15,6 +15,8 @@ import sys
 import tempfile
 import time
 import unittest
+import urllib.error
+import urllib.request
 from pathlib import Path
 from unittest import mock
 
@@ -128,11 +130,17 @@ class TermuxCommandTests(unittest.TestCase):
         env = {**self.env, "PARQUET_ACCES": "code-secret"}
         server = subprocess.Popen(["bash", str(COMMAND), "serveur", "--demo"], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         try:
-            lines = []
-            for line in server.stdout:
-                lines.append(line)
-                if "est lancé" in line:
-                    break
+            # Attend que le serveur réponde (401 : il demande le code).
+            end = time.time() + 20
+            while time.time() < end:
+                try:
+                    urllib.request.urlopen(f"http://127.0.0.1:{self.port}/api/status", timeout=1)
+                except urllib.error.HTTPError as exc:
+                    if exc.code == 401:
+                        break
+                except OSError:
+                    pass
+                time.sleep(0.2)
             again = self.parquet("serveur")
             # Protégé par un code, Parquet répond 401 : la commande doit quand même le voir tourner.
             self.assertIn("tourne déjà", again.stdout)
@@ -143,7 +151,7 @@ class TermuxCommandTests(unittest.TestCase):
         finally:
             if server.poll() is None:
                 server.kill()
-        self.assertIn("Protégé par un code d'accès", "".join(lines) + out)
+        self.assertIn("Protégé par un code d'accès", out)
         boot = Path(self.env["HOME"]) / ".termux" / "boot" / "parquet-serveur"
         self.assertIn("démarrera", self.parquet("demarrage", "oui").stdout)
         self.assertIn("exec parquet serveur", boot.read_text())
