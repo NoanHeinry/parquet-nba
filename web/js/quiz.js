@@ -228,6 +228,7 @@ export class Deck {
     // Les joueurs vus récemment passent en fin de paquet (sauf pour le défi, identique pour tous).
     this.order = seed ? order : [...order.filter((p) => !recent.has(p.id)), ...order.filter((p) => recent.has(p.id))];
     this.cursor = 0;
+    this.found = false;
     this.queue = [];
     this.tail = Promise.resolve();
     this.allowBust = this.level === "expert";
@@ -238,13 +239,17 @@ export class Deck {
       const p = this.order[this.cursor++];
       const pic = await pictureFor(p, this.allowBust);
       if (!pic) continue;
+      this.found = true;
       const rand = this.seed ? rng(`${this.seed}:choix:${p.id}`) : Math.random;
       const others = distractors(p, this.pool.length >= 8 ? this.pool : this.active, rand, 3, this.rank);
       const choices = shuffle([p, ...others], rand);
       return { player: p, picture: pic, choices, hints: hints(p) };
     }
-    // Paquet épuisé : on recommence un tour (série très longue).
-    if (!this.order.length) return null;
+    // Paquet épuisé : on recommence un tour (série très longue). Si aucun joueur n'avait de photo
+    // (hors ligne, photos bloquées), on s'arrête : un nouveau tour ne trouverait rien non plus, et les
+    // échecs déjà en mémoire répondraient tout de suite, en boucle, ce qui figerait la page.
+    if (!this.order.length || !this.found) return null;
+    this.found = false;
     this.cursor = 0;
     this.order = shuffle(this.order, this.rand);
     return this.build();

@@ -496,6 +496,16 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_selector(".qz-frame.is-bust", timeout=20000)
         self.page.wait_for_selector(".qz-choice:not([disabled])")
 
+    def test_quiz_without_any_photo_reports_error_instead_of_freezing(self):
+        # Hors ligne : aucune photo ne répond. Le paquet ne doit pas reboucler sans fin.
+        self.page.route("https://ak-static.cms.nba.com/**", lambda route: route.abort())
+        self.page.route("https://cdn.nba.com/**", lambda route: route.abort())
+        self.open("#/jeu/partie")
+        self.page.wait_for_selector("text=Impossible de charger les photos", timeout=20000)
+        self.open("#/")
+        self.page.wait_for_timeout(1500)
+        self.assertGreater(self.page.evaluate("document.querySelectorAll('*').length"), 50)
+
     def test_quiz_chrono_runs_clock_and_chains_players(self):
         self.quiz_photos()
         self.open("#/jeu/chrono")
