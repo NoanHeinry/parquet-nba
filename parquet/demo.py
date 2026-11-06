@@ -739,6 +739,47 @@ def player_index() -> dict:
     return wrap(rs("PlayerIndex", hdr, rows))
 
 
+def draft_history() -> dict:
+    """Une draft fictive par saison depuis 1990 (deux tours de 30 choix) : les joueurs de la démo
+    à leur année de draft, d'anciens joueurs de l'index, et des inconnus jamais arrivés en NBA."""
+    hdr = ["PERSON_ID", "PLAYER_NAME", "SEASON", "ROUND_NUMBER", "ROUND_PICK", "OVERALL_PICK", "DRAFT_TYPE", "TEAM_ID", "TEAM_CITY",
+           "TEAM_NAME", "TEAM_ABBREVIATION", "ORGANIZATION", "ORGANIZATION_TYPE", "PLAYER_PROFILE_FLAG"]
+    idx = player_index()["resultSets"][0]
+    col = {k: i for i, k in enumerate(idx["headers"])}
+    by_year: dict[int, list] = {}
+    for row in idx["rowSet"]:
+        y = row[col["DRAFT_YEAR"]]
+        if y and 1990 <= y <= 2026:
+            by_year.setdefault(y, []).append(row)
+    rows = []
+    for year in range(1990, 2027):
+        r = rng("draft", year)
+        cands = sorted(by_year.get(year, []), key=lambda x: -(x[col["PTS"]] or 0))[:45]
+        order = [t["id"] for t in TEAMS]
+        r.shuffle(order)
+        for pick in range(1, 61):
+            rnd, rpick = (1, pick) if pick <= 30 else (2, pick - 30)
+            tid = order[(rpick - 1) % len(order)]
+            t = teams_meta.team(tid)
+            if cands:
+                c = cands.pop(0)
+                pid, name = c[col["PERSON_ID"]], f"{c[col['PLAYER_FIRST_NAME']]} {c[col['PLAYER_LAST_NAME']]}"
+                org, flag = c[col["COLLEGE"]] or "", 1
+                country = c[col["COUNTRY"]]
+            else:
+                pid, name = 900000 + year * 100 + pick, f"{r.choice(FIRST)} {r.choice(LAST)}"
+                org, flag, country = r.choice(COLLEGES), 0, r.choice(COUNTRIES)
+            if org:
+                org_type = "College/University"
+            elif country != "USA":
+                org, org_type = f"Club ({country})", "Other Team/Club"
+            else:
+                org_type = "High School"
+                org = "Lycée de démonstration"
+            rows.append([pid, name, str(year), rnd, rpick, pick, "Draft", tid, t["city"], t["name"], t["tri"], org, org_type, flag])
+    return wrap(rs("DraftHistory", hdr, rows))
+
+
 # ---------------------------------------------------------------- Wikipédia
 
 def wiki(url: str, params: dict) -> dict:
@@ -799,6 +840,8 @@ def _handle_base(url: str, params: dict | None):
             return league_leaders(params["Season"])
         if ep == "playerindex":
             return player_index()
+        if ep == "drafthistory":
+            return draft_history()
         if ep == "scoreboardv3":
             return scoreboard_v3(params["GameDate"])
         if ep == "scheduleleaguev2":

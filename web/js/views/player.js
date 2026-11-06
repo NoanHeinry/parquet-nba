@@ -456,7 +456,7 @@ function factsView(p) {
     item("Taille", f.heightM(p.height)),
     item("Poids", f.weightKg(p.weight)),
     item("Formation", p.school),
-    item("Draft", draftText(p)),
+    item("Draft", p.draftYear && !p.undrafted ? h("a", { href: `#/draft/${p.draftYear}`, title: `Voir toute la draft ${p.draftYear}` }, draftText(p)) : draftText(p)),
     item("Carrière NBA", years),
     item("Expérience", p.exp ? f.plural(p.exp, "saison", "saisons") : p.active ? "Rookie" : "")
   );

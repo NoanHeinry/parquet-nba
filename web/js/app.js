@@ -16,6 +16,7 @@ import * as leaders from "./views/leaders.js";
 import * as compare from "./views/compare.js";
 import * as status from "./views/status.js";
 import * as infos from "./views/infos.js";
+import * as draft from "./views/draft.js";
 import { initNotificationsUI } from "./notifications.js";
 import { enableImmersive } from "./menu.js";
 
@@ -202,6 +203,9 @@ route("/leaders", leaders.render, "leaders");
 route("/comparer", compare.render, "comparer");
 route("/comparer/(\\d+)", compare.render, "comparer");
 route("/comparer/(\\d+)/(\\d+)", compare.render, "comparer");
+route("/draft", draft.render, "draft");
+route("/draft/(\\d{4})", draft.render, "draft");
+route("/draft/equipe/(\\d+)", draft.renderTeam, "draft");
 route("/infos", infos.render, "infos");
 route("/infos/(mouvements)", infos.render, "infos");
 route("/etat", status.render, null);

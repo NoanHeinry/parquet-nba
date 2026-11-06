@@ -9598,3 +9598,289 @@ html[data-motion="reduce"] .pp-full {
     width: 40%;
   }
 }
+
+/* ================================================================ 2.5 Draft */
+
+/* En-tête : le 1er choix en pied, en noir et blanc comme les autres affiches. */
+.poster-visual.is-full {
+  height: 96%;
+}
+
+.poster-visual.is-full img {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  aspect-ratio: 440 / 700;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: grayscale(1) contrast(1.08) brightness(1.04);
+  animation: cut-enter 1s var(--ease-out) 0.2s both;
+}
+
+html[data-motion="reduce"] .poster-visual.is-full img {
+  animation: none;
+}
+
+.draft-tools {
+  align-items: center;
+}
+
+.dr-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dr-step {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.dr-search {
+  width: min(320px, 100%);
+}
+
+.draft-count:empty {
+  display: none;
+}
+
+.draft-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 34px 0 4px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--text);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.draft-group:first-child {
+  margin-top: 6px;
+}
+
+.draft-group a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.draft-group a:hover {
+  color: var(--accent);
+}
+
+.draft-group .count {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+/* Rangées ouvertes, sans cadre : numéro du choix en très grand, puis le joueur, l'équipe et
+   ce qu'il est devenu. */
+.draft-row {
+  display: grid;
+  grid-template-columns: 76px 62px minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 4px 18px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dr-pick {
+  font-family: var(--font-poster);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--text-2);
+  text-align: right;
+}
+
+.draft-row.is-first .dr-pick {
+  font-size: 52px;
+  color: var(--accent);
+}
+
+.dr-photo {
+  display: block;
+  width: 62px;
+  aspect-ratio: 260 / 190;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.dr-photo .headshot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 0;
+  background: none;
+}
+
+.dr-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dr-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+a.dr-name:hover {
+  color: var(--accent);
+}
+
+.dr-who small,
+.dr-team small {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.dr-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.dr-team:hover {
+  color: var(--accent);
+}
+
+.dr-team .logo,
+.dr-team .logo-fallback {
+  flex: none;
+}
+
+/* Mode équipe : l'année et le rang du choix à la place de l'équipe. */
+.dr-team.is-year {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.dr-future {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.dr-future.is-none {
+  color: var(--muted);
+}
+
+.dr-seasons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.dr-active {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dr-avg {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.draft-source {
+  margin-top: 22px;
+}
+
+@media (max-width: 860px) {
+  .draft-row {
+    grid-template-columns: 52px 54px minmax(0, 1fr);
+    grid-template-areas:
+      "pick photo who"
+      "pick photo team"
+      "pick photo future";
+    gap: 2px 12px;
+    padding: 12px 0;
+  }
+
+  .dr-pick {
+    grid-area: pick;
+    font-size: 32px;
+    align-self: start;
+  }
+
+  .draft-row.is-first .dr-pick {
+    font-size: 40px;
+  }
+
+  .dr-photo {
+    grid-area: photo;
+    width: 54px;
+    align-self: start;
+  }
+
+  .dr-who {
+    grid-area: who;
+  }
+
+  .dr-team {
+    grid-area: team;
+    font-size: 13px;
+    font-weight: 500;
+    gap: 6px;
+  }
+
+  .dr-team .logo,
+  .dr-team .logo-fallback {
+    width: 20px;
+    height: 20px;
+  }
+
+  .dr-future {
+    grid-area: future;
+    font-size: 13px;
+  }
+
+  .dr-search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .poster-compact .poster-visual.is-full {
+    height: 62%;
+    opacity: 0.55;
+  }
+}

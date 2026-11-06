@@ -35,7 +35,7 @@ function hero(t, ctx) {
     visualKind: "logo",
     ghost: t.founded ? String(t.founded) : "",
     meta: [h("span", null, `Fondée en ${t.founded}`), h("span", null, `Division ${t.divFr}`)],
-    actions: [favBtn],
+    actions: [favBtn, h("a", { class: "btn", href: `#/draft/equipe/${t.id}` }, "Choix de draft")],
   });
 
   api("/standings", { signal: ctx.signal })

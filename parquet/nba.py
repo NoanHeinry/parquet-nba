@@ -1448,6 +1448,83 @@ def player_index() -> tuple[dict, dict]:
     return _cache().get("players:index", 24 * 3600, _fetch_player_index)
 
 
+# ---------------------------------------------------------------------------
+# Draft
+# ---------------------------------------------------------------------------
+
+
+def _fetch_draft_history() -> dict:
+    """Tous les choix de draft depuis 1947 (stats.nba.com, endpoint drafthistory)."""
+    picks = []
+    for r in result_sets(stats_json("drafthistory", {"LeagueID": "00"})).get("DraftHistory", []):
+        picks.append(
+            {
+                "id": _int(r.get("PERSON_ID")),
+                "name": r.get("PLAYER_NAME") or "",
+                "year": _int(r.get("SEASON")),
+                "round": _int(r.get("ROUND_NUMBER")),
+                "roundPick": _int(r.get("ROUND_PICK")),
+                "pick": _int(r.get("OVERALL_PICK")),
+                "type": r.get("DRAFT_TYPE") or "",
+                "teamId": _int(r.get("TEAM_ID"), None),
+                "teamCity": r.get("TEAM_CITY") or "",
+                "teamName": r.get("TEAM_NAME") or "",
+                "tri": r.get("TEAM_ABBREVIATION") or "",
+                "org": r.get("ORGANIZATION") or "",
+                "orgType": r.get("ORGANIZATION_TYPE") or "",
+                "profile": _int(r.get("PLAYER_PROFILE_FLAG")) == 1,
+            }
+        )
+    if not picks:
+        raise SourceError("Historique des drafts indisponible", source="stats.nba.com")
+    return {"picks": picks}
+
+
+def draft_history() -> tuple[dict, dict]:
+    return _cache().get("draft:history", 24 * 3600, _fetch_draft_history)
+
+
+def _career_by_player() -> dict[int, dict]:
+    """Ce que sont devenus les joueurs, d'après l'index : saisons jouées, activité, moyennes
+    (de la saison en cours pour les joueurs actifs, de la carrière pour les autres)."""
+    try:
+        idx, _ = player_index()
+    except SourceError:
+        return {}
+    pos = {k: i for i, k in enumerate(idx["fields"])}
+    out = {}
+    for row in idx["rows"]:
+        first, last = row[pos["from"]], row[pos["to"]]
+        out[row[pos["id"]]] = {
+            "seasons": (last - first + 1) if first and last else 0,
+            "active": bool(row[pos["active"]]),
+            "pos": row[pos["pos"]] or "",
+            "teamId": row[pos["teamId"]],
+            "pts": row[pos["pts"]],
+            "reb": row[pos["reb"]],
+            "ast": row[pos["ast"]],
+            "timeframe": row[pos["statsTf"]] or "",
+        }
+    return out
+
+
+def draft(year: int | None = None, team: int | None = None) -> tuple[dict, dict]:
+    """Une draft (tous ses choix, dans l'ordre) ou tous les choix d'une équipe."""
+    data, meta = draft_history()
+    picks = data["picks"]
+    years = sorted({p["year"] for p in picks if p["year"]}, reverse=True)
+    if team:
+        chosen = sorted((p for p in picks if p["teamId"] == team), key=lambda p: (-p["year"], p["pick"]))
+        year = None
+    else:
+        if year not in years:
+            year = years[0] if years else None
+        chosen = sorted((p for p in picks if p["year"] == year), key=lambda p: (p["pick"] or 999, p["round"]))
+    careers = _career_by_player()
+    out = [{**p, "career": careers.get(p["id"])} for p in chosen]
+    return {"year": year, "team": team, "years": years, "picks": out}, meta
+
+
 def player_info(player_id: int) -> tuple[dict, dict]:
     def fetch() -> dict:
         rs = result_sets(stats_json("commonplayerinfo", {"PlayerID": player_id, "LeagueID": "00"}))

@@ -154,6 +154,7 @@ def main() -> None:
         shot(page, "12-videos-du-match.png", "#/match/0012600050", before=videos_tab)
         shot(page, "13-cles-du-match.png", "#/match/0012600050", before=keys)
         shot(page, "14-blessures.png", "#/infos", before=lambda p: p.wait_for_selector(".inj-game"))
+        shot(page, "18-draft.png", "#/draft/2003", before=lambda p: p.wait_for_selector(".draft-row"), scroll=300)
         shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()

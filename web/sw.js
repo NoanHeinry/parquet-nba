@@ -4,7 +4,7 @@
 // toujours essayé en premier, et le cache ne sert que de secours quand le serveur est arrêté.
 // Ainsi, une mise à jour du code est visible dès le lancement suivant, sans mélange de versions.
 
-const VERSION = "1.11.1";
+const VERSION = "1.12.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;
@@ -55,6 +55,7 @@ const STATIC_ASSETS = [
   "./js/views/compare.js",
   "./js/views/status.js",
   "./js/views/infos.js",
+  "./js/views/draft.js",
 ];
 
 self.addEventListener("install", (event) => {

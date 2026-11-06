@@ -196,6 +196,13 @@ def api_player_index(q):
     return nba.player_index()
 
 
+@route(r"/api/draft")
+def api_draft(q):
+    year = _int_param(q, "year")
+    team = _int_param(q, "team")
+    return nba.draft(year=year, team=team)
+
+
 @route(r"/api/player/(\d+)")
 def api_player(q, player_id):
     return nba.player_info(int(player_id))

@@ -352,6 +352,22 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(data["date"], "2026-10-14")
         self.assertTrue(any(g["status"] == 2 for g in data["games"]))
 
+    def test_draft_by_year_and_by_team(self):
+        data, _ = nba.draft(2015)
+        self.assertEqual(data["year"], 2015)
+        self.assertEqual([p["pick"] for p in data["picks"]], list(range(1, 61)))
+        self.assertEqual({p["round"] for p in data["picks"]}, {1, 2})
+        self.assertEqual(data["years"][0], 2026)
+        # Les anciens joueurs passés en NBA ont leur bilan (saisons, moyennes).
+        self.assertTrue(any(p["career"] and p["career"]["seasons"] > 0 for p in data["picks"]))
+        # Année inconnue : la draft la plus récente.
+        self.assertEqual(nba.draft(1800)[0]["year"], 2026)
+        team, _ = nba.draft(team=1610612738)
+        self.assertTrue(team["picks"])
+        self.assertTrue(all(p["teamId"] == 1610612738 for p in team["picks"]))
+        years = [p["year"] for p in team["picks"]]
+        self.assertEqual(years, sorted(years, reverse=True))
+
     def test_playoff_bracket_is_consistent(self):
         data, _ = nba.playoffs()
         self.assertTrue(data["available"])

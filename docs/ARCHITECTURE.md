@@ -65,6 +65,7 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/videos/night?date=AAAA-MM-JJ` | « Nightly Recap » et « Top 10 Plays of the Night » de la journée | idem |
 | `GET /api/injuries?team=&game=` | Dernier rapport officiel des blessures, lu et traduit | PDF publié par la NBA toutes les 15 minutes |
 | `GET /api/transactions?team=&player=&type=&days=` | Signatures, échanges, joueurs libérés, contrats | liste officielle des mouvements (`NBA_Player_Movement.json`) |
+| `GET /api/draft?year=AAAA` · `GET /api/draft?team={id}` | Une draft complète dans l'ordre (la plus récente par défaut) ou tous les choix d'une équipe, avec le devenir de chaque joueur (saisons, en activité, moyennes) et la liste des années disponibles | `drafthistory` (mis en cache 24 h), index des joueurs |
 | `GET /api/settings` · `POST /api/settings/youtube` | État de la clé YouTube (jamais la clé elle-même) ; enregistrement après vérification | `data/settings.json` |
 | `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
@@ -168,6 +169,7 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/menu.js` | Site sans en-tête : logo et bouton flottants, menu plein écran qui reprend la recherche et les boutons de l'en-tête |
 | `js/poster.js` | En-tête « affiche » commun aux pages : titre ajusté à la largeur, visuel détouré ou logo, chiffre fantôme, statistiques, actions, mis à jour quand les données arrivent |
 | `js/scroll.js` | Sommaire numéroté de la page, apparition des sections, compteurs ; le défilement reste celui du navigateur et toutes les animations passent par le compositeur (déplacement, transparence) ; coupé quand les animations sont réduites |
+| `js/views/draft.js` | Page « Draft » : ordre de chaque draft par tour, ou tous les choix d'une équipe par année ; filtres, recherche, 1er choix en pied dans l'en-tête |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |
 | `js/news.js` | Affichage partagé des blessures (statuts colorés) et des transactions |

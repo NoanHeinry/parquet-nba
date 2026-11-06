@@ -182,6 +182,40 @@ class InterfaceTests(unittest.TestCase):
         self.assertEqual(self.page.locator(".player-poster .pp-full").count(), 0)
         self.assertTrue(self.page.locator(".player-poster .pp-face").is_visible())
 
+    def test_draft_page_lists_picks_filters_and_switches_view(self):
+        self.open("#/draft/2003")
+        self.page.wait_for_selector(".draft-row")
+        rows = self.page.locator(".draft-row")
+        self.assertEqual(rows.count(), 60)
+        self.assertEqual(rows.first.locator(".dr-pick").text_content(), "1")
+        self.assertEqual([g.text_content().split("30")[0].strip() for g in self.page.locator(".draft-group").all()], ["1er tour", "2e tour"])
+        self.assertIn("2003", self.page.locator(".poster-kicker").text_content())
+        # Le lien Draft figure dans le menu.
+        self.assertEqual(self.page.locator(".menu-link[href='#/draft']").count(), 1)
+        # Filtre par tour, puis recherche.
+        self.page.click(".draft-tools .chip:text-is('2e tour')")
+        self.assertEqual(rows.count(), 30)
+        self.assertTrue(all(int(n) > 30 for n in rows.locator(".dr-pick").all_text_contents()))
+        self.page.click(".draft-tools .chip:text-is('Tous les tours')")
+        name = rows.nth(2).locator(".dr-name").text_content()
+        self.page.fill(".dr-search", name.lower())
+        self.page.wait_for_function("document.querySelectorAll('.draft-row').length < 60")
+        self.assertIn(name, rows.locator(".dr-name").all_text_contents())
+        # Année suivante, puis tous les choix d'une équipe depuis une rangée.
+        self.page.fill(".dr-search", "")
+        self.page.click(".dr-step:has-text('2004')")
+        self.page.wait_for_function("document.querySelector('.poster-kicker')?.textContent.includes('2004')")
+        self.page.locator(".draft-row a.dr-team").first.click()
+        self.page.wait_for_selector(".draft-row .dr-team.is-year")
+        self.assertIn("#/draft/equipe/", self.page.url)
+        years = [int(g.text_content()[:4]) for g in self.page.locator(".draft-group").all()]
+        self.assertEqual(years, sorted(years, reverse=True))
+        # Une draft sans joueur passé en NBA s'affiche quand même.
+        self.open("#/draft/2026")
+        self.page.wait_for_selector(".draft-row")
+        self.assertEqual(self.page.locator(".dr-future.is-none").count(), 60)
+        self.assertEqual(self.errors, [])
+
     def test_motion_toggle_overrides_system_setting(self):
         # Windows peut demander aux sites de limiter les animations : le bouton passe outre.
         self.page.emulate_media(reduced_motion="reduce")
