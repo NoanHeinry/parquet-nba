@@ -9556,3 +9556,45 @@ html[data-motion="reduce"] .pp-full {
     width: min(72%, 380px);
   }
 }
+
+/* Joueur en pied plus grand, selon la place : l'en-tête grandit avec la hauteur de l'écran, la
+   zone des photos s'étend dans la marge de droite sur les grands écrans, et le joueur en pied y
+   prend la plus grande part (le portrait reste un cadre d'appoint). */
+@media (min-width: 701px) {
+  .player-poster {
+    min-height: clamp(520px, 78vh, 1180px);
+  }
+
+  .poster-visual.is-duo {
+    top: calc(var(--banner-h, 0px) + 72px);
+    right: max(20px, calc((100vw - var(--page)) / 4));
+  }
+
+  .pp-full {
+    max-width: 74%;
+  }
+
+  .pp-card {
+    width: min(34%, 300px);
+  }
+}
+
+@media (min-width: 1280px) {
+  .player-poster {
+    min-height: clamp(600px, 88vh, 1180px);
+  }
+}
+
+@media (max-width: 700px) {
+  .player-poster {
+    padding-top: calc(var(--banner-h, 0px) + 84px + 48vh);
+  }
+
+  .poster-visual.is-duo {
+    height: calc(48vh - 8px);
+  }
+
+  .pp-card {
+    width: 40%;
+  }
+}
