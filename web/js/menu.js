@@ -1,5 +1,6 @@
 // Site sans en-tête : le logo et un bouton rond flottent au-dessus des pages, et le menu
-// descend en plein écran (liens en grand, recherche, alertes, anti-spoiler, animations, thème).
+// descend en plein écran : recherche et réglages en haut, puis toutes les pages rangées par
+// thème, visibles d'un coup d'œil sans faire défiler.
 //
 // Les contrôles de l'en-tête (recherche, boutons) sont déplacés dans le menu, pas recopiés :
 // ils gardent ainsi leur comportement.
@@ -34,14 +35,91 @@ function brandMark() {
   );
 }
 
+// Le menu, rangé par thème. Chaque lien a une courte description. Une page de la barre
+// principale (index.html) absente d'ici est ajoutée au dernier groupe : rien ne se perd.
+const GROUPS = [
+  {
+    title: "La saison",
+    items: [
+      ["#/", "Matchs", "Scores, résultats, calendrier"],
+      ["#/classement", "Classement", "Conférences Est et Ouest"],
+      ["#/classement/course", "Course aux playoffs", "Qualifiés, nombres magiques"],
+      ["#/playoffs", "Playoffs", "Le tableau, série par série"],
+      ["#/leaders", "Leaders", "Les meilleurs par catégorie"],
+      ["#/trophees", "Trophées", "Les favoris de la saison"],
+    ],
+  },
+  {
+    title: "Équipes et joueurs",
+    items: [
+      ["#/equipes", "Équipes", "Les 30 franchises"],
+      ["#/joueurs", "Joueurs", "D'hier et d'aujourd'hui"],
+      ["#/comparer", "Comparer", "Deux joueurs côte à côte"],
+      ["#/draft", "Draft", "Chaque draft depuis 1947"],
+    ],
+  },
+  {
+    title: "Histoire",
+    items: [
+      ["#/trophees/palmares", "Palmarès", "Champions et trophées depuis 1947"],
+      ["#/records", "Records", "Les meilleurs de tous les temps"],
+    ],
+  },
+  {
+    title: "Et aussi",
+    items: [
+      ["#/jeu", "Qui est-ce ?", "Le jeu des silhouettes"],
+      ["#/infos", "Infos", "Blessures et transactions"],
+    ],
+  },
+];
+
+// Lien de la page affichée : celui dont l'adresse correspond le plus précisément.
+function activeHref(hrefs) {
+  const hash = location.hash || "#/";
+  const path = hash.replace(/^#/, "") || "/";
+  let best = null;
+  for (const href of hrefs) {
+    const p = href.replace(/^#/, "");
+    const ok =
+      p === "/"
+        ? path === "/" || path.startsWith("/matchs") || path.startsWith("/match/") || path === "/multi"
+        : path === p || path.startsWith(`${p}/`) || (p === "/joueurs" && path.startsWith("/joueur/")) || (p === "/equipes" && path.startsWith("/equipe/"));
+    if (ok && (!best || p.length > best.replace(/^#/, "").length)) best = href;
+  }
+  return best;
+}
+
 function build() {
   if (built) return built;
-  const links = [...document.querySelectorAll(".mainnav a")].map((a, i) =>
-    h(
-      "a",
-      { class: "menu-link", href: a.getAttribute("href"), dataset: { nav: a.dataset.nav || "" }, style: `--i: ${i}` },
-      h("span", { class: "menu-num" }, `${String(i + 1).padStart(2, "0")}.`),
-      h("span", { class: "menu-label" }, a.textContent)
+  const known = new Set(GROUPS.flatMap((g) => g.items.map((it) => it[0])));
+  const groups = GROUPS.map((g) => ({ ...g, items: [...g.items] }));
+  for (const a of document.querySelectorAll(".mainnav a")) {
+    const href = a.getAttribute("href");
+    if (!known.has(href)) groups.at(-1).items.push([href, a.textContent, ""]);
+  }
+  let i = 0;
+  const nav = h(
+    "nav",
+    { class: "menu-nav", "aria-label": "Navigation principale" },
+    groups.map((g) =>
+      h(
+        "section",
+        { class: "menu-group" },
+        h("h2", { class: "menu-group-title" }, g.title),
+        h(
+          "div",
+          { class: "menu-group-links" },
+          g.items.map(([href, label, desc]) =>
+            h(
+              "a",
+              { class: "menu-link", href, style: `--i: ${i++}` },
+              h("span", { class: "menu-label" }, label),
+              desc ? h("span", { class: "menu-desc" }, desc) : null
+            )
+          )
+        )
+      )
     )
   );
   const tools = h("div", { class: "menu-tools" });
@@ -51,8 +129,8 @@ function build() {
     h(
       "div",
       { class: "menu-inner" },
-      h("nav", { class: "menu-nav", "aria-label": "Navigation principale" }, links),
-      h("div", { class: "menu-side" }, tools, h("a", { class: "menu-small", href: "#/etat" }, "État des sources"))
+      h("div", { class: "menu-side" }, tools, h("a", { class: "menu-small", href: "#/etat" }, "État des sources")),
+      nav
     )
   );
   const fab = h(
@@ -92,9 +170,10 @@ function build() {
 function open() {
   const { panel, fab } = built;
   lastFocus = document.activeElement;
-  for (const a of panel.querySelectorAll(".menu-link")) {
-    const current = document.querySelector(`.mainnav a[data-nav="${a.dataset.nav}"]`)?.getAttribute("aria-current");
-    if (current) a.setAttribute("aria-current", current);
+  const links = [...panel.querySelectorAll(".menu-link")];
+  const current = activeHref(links.map((a) => a.getAttribute("href")));
+  for (const a of links) {
+    if (a.getAttribute("href") === current) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
   panel.hidden = false;
@@ -123,6 +202,8 @@ function close(restoreFocus = true) {
   if (restoreFocus && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
 }
 
+const BUTTON_LABELS = { "notif-toggle": "Alertes", "spoiler-toggle": "Anti-spoiler", "motion-toggle": "Animations", "theme-toggle": "Thème" };
+
 // Tout le site est sans en-tête : la recherche et les boutons passent dans le menu, une fois
 // pour toutes, et le logo et le bouton rond flottent au-dessus de chaque page.
 export function enableImmersive() {
@@ -131,7 +212,17 @@ export function enableImmersive() {
   const search = inner?.querySelector(".search");
   const actions = inner?.querySelector(".topbar-actions");
   if (search) tools.append(search);
-  if (actions) tools.append(actions);
+  if (actions) {
+    // Chaque réglage reçoit un nom visible sous son icône (cliquer sur le nom suffit).
+    for (const [id, text] of Object.entries(BUTTON_LABELS)) {
+      const btn = actions.querySelector(`#${id}`);
+      if (!btn) continue;
+      const wrap = h("span", { class: "menu-btn" });
+      btn.replaceWith(wrap);
+      wrap.append(btn, h("label", { class: "menu-btn-label", for: id }, text));
+    }
+    tools.append(actions);
+  }
   document.body.append(brand, fab, panel);
   document.body.classList.add("is-immersive");
 }

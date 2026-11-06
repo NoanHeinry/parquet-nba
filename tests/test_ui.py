@@ -287,6 +287,26 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Par adversaire", groups)
         self.assertIn("2025-26", self.page.locator(".ps-tools select").input_value())
 
+    def test_menu_fits_on_one_screen_and_marks_current_page(self):
+        for width, height in ((1366, 768), (390, 740)):
+            self.page.set_viewport_size({"width": width, "height": height})
+            self.open("#/classement/course")
+            self.page.click(".menu-fab")
+            self.page.wait_for_selector(".menu-panel.is-open")
+            self.page.wait_for_timeout(600)
+            overflow = self.page.evaluate("(() => { const p = document.querySelector('.menu-panel'); return p.scrollHeight - p.clientHeight; })()")
+            self.assertLessEqual(overflow, 0, f"le menu défile en {width}×{height}")
+            self.assertEqual(self.page.locator(".menu-group").count(), 4)
+            current = self.page.locator(".menu-link[aria-current]")
+            self.assertEqual(current.count(), 1)
+            self.assertEqual(current.get_attribute("href"), "#/classement/course")
+            # Chaque lien de la barre principale figure dans le menu.
+            for href in self.page.locator(".mainnav a").evaluate_all("els => els.map(a => a.getAttribute('href'))"):
+                self.assertEqual(self.page.locator(f".menu-panel .menu-link[href='{href}']").count(), 1, href)
+            self.page.click("label[for='theme-toggle']")
+            self.assertIn(self.page.evaluate("document.documentElement.dataset.theme"), ("light", "dark"))
+            self.page.keyboard.press("Escape")
+
     def test_status_page_deep_verification_and_browser_card(self):
         self.open("#/etat")
         self.page.wait_for_selector("#navigateur .verify-row")
