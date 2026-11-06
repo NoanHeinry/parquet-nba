@@ -163,6 +163,25 @@ def main() -> None:
             p.wait_for_timeout(500)
 
         shot(page, "19-qui-est-ce.png", "#/jeu/partie", before=quiz_hints)
+        shot(page, "20-trophees.png", "#/trophees", before=lambda p: p.wait_for_selector(".aw-row"), scroll=620)
+        # La saison de démonstration est terminée : pour montrer une course encore ouverte, le
+        # classement est ramené à une trentaine de matchs le temps de cette capture.
+        real_standings = nba.standings
+
+        def mid_season(season=None):
+            data, meta = real_standings(season)
+            rows = []
+            for r in data["rows"]:
+                w = round(r["w"] * 0.37)
+                l = max(0, 31 - w - (r["rank"] % 3))
+                rows.append({**r, "w": w, "l": l, "pct": w / max(1, w + l), "clinch": ""})
+            return {**data, "rows": rows, "fallback": False, "requested": data["season"]}, meta
+
+        nba.standings = mid_season
+        try:
+            shot(page, "21-course-aux-playoffs.png", "#/classement/course", before=lambda p: p.wait_for_selector(".race-row"), scroll=460)
+        finally:
+            nba.standings = real_standings
         shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()

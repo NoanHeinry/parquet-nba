@@ -66,6 +66,8 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/injuries?team=&game=` | Dernier rapport officiel des blessures, lu et traduit | PDF publié par la NBA toutes les 15 minutes |
 | `GET /api/transactions?team=&player=&type=&days=` | Signatures, échanges, joueurs libérés, contrats | liste officielle des mouvements (`NBA_Player_Movement.json`) |
 | `GET /api/draft?year=AAAA` · `GET /api/draft?team={id}` | Une draft complète dans l'ordre (la plus récente par défaut) ou tous les choix d'une équipe, avec le devenir de chaque joueur (saisons, en activité, moyennes) et la liste des années disponibles | `drafthistory` (mis en cache 24 h), index des joueurs |
+| `GET /api/race` | Course aux playoffs : matchs restants, victoires au mieux, rythme, statut, nombres magiques et d'élimination, retard sur la 6e et la 10e place, difficulté du calendrier restant | classement, calendrier de la saison (`parquet/season.py`) |
+| `GET /api/awards/race?season=AAAA-AA` | Course aux trophées : favoris du MVP, rookie, défenseur, sixième homme et meilleure progression (indice pondéré expliqué) | `leaguedashplayerstats` (classiques, avancées, en sortie de banc, saison précédente), classement, index des joueurs |
 | `GET /api/settings` · `POST /api/settings/youtube` | État de la clé YouTube (jamais la clé elle-même) ; enregistrement après vérification | `data/settings.json` |
 | `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
@@ -102,6 +104,10 @@ Le cache (`parquet/cache.py`) garde les entrées récentes en mémoire et toutes
 - **Cadence** : au plus deux requêtes simultanées vers `stats.nba.com`, espacées d'au moins 350 ms. Les paramètres sont envoyés triés, l'API y étant sensible.
 - **Bascule** : si le scoreboard du CDN est refusé, le CDN est mis de côté pendant 10 minutes et toutes les données de match passent par `stats.nba.com`.
 - **Ressources pas encore publiées** : un 403 du CDN sur le box score d'un match à venir n'est pas une erreur ; la page affiche l'avant-match et se met à jour seule au coup d'envoi.
+
+## Saison en cours (`parquet/season.py`)
+
+Rien d'officiel : la NBA ne publie ni nombre magique ni favoris aux trophées. `race_rows` calcule, pour une conférence, les matchs restants, le nombre de victoires au mieux, le statut (qualifié si au plus 5 équipes peuvent encore l'égaler ou le dépasser, éliminé si au moins 10 équipes ont déjà plus de victoires qu'il ne peut en compter ; les égalités comptent contre l'équipe faute de départages), les nombres magiques et d'élimination (82 + 1 − victoires − défaites du poursuivant) et le retard sur la 6e et la 10e place. La difficulté du calendrier restant est le pourcentage de victoires moyen des adversaires encore à jouer. `build_awards` classe les candidats par une somme pondérée d'écarts à la moyenne (z-scores) ; les poids sont affichés dans l'interface.
 
 ## Vidéos, blessures et transactions (`parquet/extras.py`)
 
@@ -171,6 +177,8 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/scroll.js` | Sommaire numéroté de la page, apparition des sections, compteurs ; le défilement reste celui du navigateur et toutes les animations passent par le compositeur (déplacement, transparence) ; coupé quand les animations sont réduites |
 | `js/quiz.js` | Moteur du jeu « Qui est-ce ? » : tirage des joueurs (reproductible pour le défi du jour), noms proposés, indices, points, photos préparées à l'avance, progression gardée dans le navigateur |
 | `js/views/quiz.js` | Pages du jeu : accueil (défi, modes, réglages, historique, album), partie (silhouette dessinée sur un canevas puis révélée), bilan, encart de l'accueil |
+| `js/views/race.js` | Page « Course aux playoffs » : statut, barre des victoires possibles, nombres magiques, calendrier restant |
+| `js/views/awards.js` | Page « Trophées » : course aux trophées de la saison |
 | `js/views/draft.js` | Page « Draft » : ordre de chaque draft par tour, ou tous les choix d'une équipe par année ; filtres, recherche, 1er choix en pied dans l'en-tête |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |

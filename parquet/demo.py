@@ -884,12 +884,36 @@ def _handle_base(url: str, params: dict | None):
 
 # ---------------------------------------------------------------- ajouts : leaders (dash), playoffs
 
-def league_dash(season: str) -> dict:
+def league_dash(season: str, measure: str = "Base", bench: str = "") -> dict:
+    """Statistiques de la ligue par joueur : classiques, avancées (PIE, cotes offensive et
+    défensive) ou seulement en sortie de banc, cohérentes d'un appel à l'autre."""
     ll = league_leaders(season)["resultSet"]
     idx = {hname: i for i, hname in enumerate(ll["headers"])}
-    hdr = ["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "TEAM_ABBREVIATION", "GP", "MIN", "FGM", "FGA", "FG_PCT", "FG3M", "FTM", "FTA", "REB", "AST", "STL", "BLK", "TOV", "PTS"]
-    rows = [[r[idx["PLAYER_ID"]], r[idx["PLAYER"]], r[idx["TEAM_ID"]], r[idx["TEAM"]], r[idx["GP"]], r[idx["MIN"]], r[idx["FGM"]], r[idx["FGA"]], r[idx["FG_PCT"]],
-             r[idx["FG3M"]], r[idx["FTM"]], r[idx["FTA"]], r[idx["REB"]], r[idx["AST"]], r[idx["STL"]], r[idx["BLK"]], r[idx["TOV"]], r[idx["PTS"]]] for r in ll["rowSet"]]
+    if measure == "Advanced":
+        hdr = ["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "TEAM_ABBREVIATION", "GP", "MIN", "OFF_RATING", "DEF_RATING", "NET_RATING", "TS_PCT", "USG_PCT", "PIE"]
+        rows = []
+        for r in ll["rowSet"]:
+            g = rng("adv", season, r[idx["PLAYER_ID"]])
+            off, deff = round(g.uniform(104, 124), 1), round(g.uniform(103, 120), 1)
+            pie = round(0.04 + (r[idx["PTS"]] + r[idx["REB"]] + r[idx["AST"]]) / 420 + g.uniform(-0.02, 0.02), 3)
+            rows.append([r[idx["PLAYER_ID"]], r[idx["PLAYER"]], r[idx["TEAM_ID"]], r[idx["TEAM"]], r[idx["GP"]], r[idx["MIN"]], off, deff,
+                         round(off - deff, 1), round(g.uniform(0.5, 0.66), 3), round(g.uniform(0.14, 0.34), 3), pie])
+        return wrap(rs("LeagueDashPlayerStats", hdr, rows))
+    hdr = ["PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "TEAM_ABBREVIATION", "GP", "MIN", "FGM", "FGA", "FG_PCT", "FG3M", "FTM", "FTA", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PTS"]
+    rows = []
+    for r in ll["rowSet"]:
+        row = [r[idx["PLAYER_ID"]], r[idx["PLAYER"]], r[idx["TEAM_ID"]], r[idx["TEAM"]], r[idx["GP"]], r[idx["MIN"]], r[idx["FGM"]], r[idx["FGA"]], r[idx["FG_PCT"]],
+               r[idx["FG3M"]], r[idx["FTM"]], r[idx["FTA"]], r[idx["OREB"]], round(max(0.5, r[idx["REB"]] * 0.78), 1), r[idx["REB"]], r[idx["AST"]], r[idx["STL"]], r[idx["BLK"]], r[idx["TOV"]], r[idx["PTS"]]]
+        if bench == "Bench":
+            # Un joueur sur quatre sort surtout du banc (moins de minutes, un peu moins de points).
+            g = rng("bench", season, row[0])
+            if g.random() > 0.25:
+                continue
+            gp = row[4]
+            row[4] = int(gp * g.uniform(0.6, 1.0))
+            row[5] = round(row[5] * 0.78, 1)
+            row[19] = round(row[19] * 0.8, 1)
+        rows.append(row)
     return wrap(rs("LeagueDashPlayerStats", hdr, rows))
 
 
@@ -945,7 +969,7 @@ def handle(url: str, params: dict | None):
     if "stats.nba.com" in url:
         ep = url.rsplit("/", 1)[1]
         if ep == "leaguedashplayerstats":
-            return league_dash(params["Season"])
+            return league_dash(params["Season"], params.get("MeasureType", "Base"), params.get("StarterBench", ""))
         if ep in ("commonplayoffseries", "leaguegamefinder"):
             if params["Season"] >= "2026-27":
                 return wrap(rs("PlayoffSeries", [], []), rs("LeagueGameFinderResults", [], []))

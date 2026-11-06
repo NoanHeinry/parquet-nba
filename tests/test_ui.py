@@ -223,6 +223,31 @@ class InterfaceTests(unittest.TestCase):
         self.assertEqual(self.page.locator(".dr-future.is-none").count(), 60)
         self.assertEqual(self.errors, [])
 
+    def test_playoff_race_page(self):
+        self.open("#/classement")
+        self.page.click(".poster-actions a[href='#/classement/course']")
+        self.page.wait_for_selector(".race-row")
+        self.assertEqual(self.page.locator(".race-row").count(), 30)
+        self.assertEqual(self.page.locator(".race-cut").count(), 4)
+        # Saison de démonstration terminée : tout est joué.
+        self.assertEqual(self.page.locator(".rr-badge.is-in").count(), 12)
+        self.assertEqual(self.page.locator(".rr-badge.is-out").count(), 10)
+        self.page.click(".segmented button:has-text('Ouest')")
+        self.assertEqual(self.page.locator(".race-row").count(), 15)
+        self.assertIn("Conférence Ouest", self.page.text_content(".race-title"))
+        self.assertEqual(self.page.locator(".menu-link[href='#/trophees']").count(), 1)
+
+    def test_awards_race_page(self):
+        self.open("#/trophees")
+        self.page.wait_for_selector(".aw-block")
+        self.assertEqual(self.page.locator(".aw-block").count(), 5)
+        for key in ("mvp", "roy", "dpoy", "smoy", "mip"):
+            self.assertGreater(self.page.locator(f"#trophee-{key} .aw-row").count(), 0, key)
+        first = self.page.locator("#trophee-mvp .aw-row").first
+        self.assertEqual(first.locator(".aw-share small").text_content(), "100")
+        self.assertIn("Favori pour le MVP", self.page.text_content(".poster-meta"))
+        self.assertIn("→", self.page.text_content("#trophee-mip .aw-row"))
+
     # ------------------------------------------------------------ jeu « Qui est-ce ? »
 
     def quiz_photos(self, full=True):

@@ -110,7 +110,7 @@ export async function render(ctx) {
     const leader = data.rows.slice().sort((a, b) => b.w - a.w || a.l - b.l)[0];
     top.update({
       kicker: `Saison ${data.season}, saison régulière`,
-      actions: [sub, playoffsBtn, seasonSel],
+      actions: [sub, h("a", { class: "btn primary", href: "#/classement/course" }, "Course aux playoffs"), playoffsBtn, seasonSel],
       ...(leader
         ? {
             teamId: leader.teamId,

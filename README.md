@@ -31,6 +31,8 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 - Comparateur de joueurs : duel face-à-face (carrière, saison actuelle, playoffs), comparaison détaillée des palmarès, courbes de trajectoire superposées saison par saison (S1, S2, ...) et sélection rapide de duels légendaires.
 - Tableau des playoffs : arbre complet de la post-saison NBA (1er tour, demi-finales, finales de conférence, Finales NBA), statut et avancement des séries (4-1, 4-2...), détail match par match avec scores, lien vers les box scores et sélecteur de saisons historiques.
 - Classement par conférence et leaders statistiques de la saison.
+- Course aux playoffs : pour chaque équipe, ce qui reste à jouer (dont à domicile), le nombre de victoires au mieux, le rythme actuel sur 82 matchs, son statut (qualifié, play-in assuré, en course, au mieux play-in, éliminé), le nombre magique ou le retard sur la 6e et la 10e place, et la difficulté du calendrier restant (bilan moyen des adversaires, classé sur 30).
+- Course aux trophées : classement maison des favoris pour le MVP, le rookie de l'année, le défenseur de l'année, le sixième homme et la meilleure progression, calculé chaque jour à partir des statistiques officielles (poids de chaque critère affichés), avec les chiffres qui comptent pour chacun.
 - Drafts : l'ordre complet de chaque draft depuis 1947 (tour, rang du choix, équipe sous son nom de l'époque, joueur, université, lycée ou club), avec ce que chaque joueur est devenu (saisons en NBA, en activité ou non, moyennes). Filtres par tour et par provenance, recherche, navigation d'année en année et vue de tous les choix d'une équipe ; le 1er choix en pied en tête de page.
 - Page « Infos » : le rapport officiel des blessures de la NBA (publié toutes les 15 minutes en PDF, lu et traduit en français : statut et blessure de chaque joueur, match par match) et toutes les transactions de la ligue (signatures, échanges, joueurs libérés, contrats), avec des rappels sur les pages des équipes et des joueurs.
 
@@ -71,6 +73,7 @@ Pour l'essayer sans connexion : `python run.py --demo` lance l'application sur d
 | **La nuit en chiffres** | **Menu de l'accueil** |
 | ![Meilleurs de la nuit : le chiffre en grand, le joueur détouré devant](docs/captures/16-chiffres-de-la-nuit.png) | ![Menu déroulant plein écran](docs/captures/17-menu.png) |
 | ![Ordre d'une draft, avec le devenir de chaque joueur](docs/captures/18-draft.png) | ![Jeu « Qui est-ce ? » : la silhouette, deux indices et quatre noms](docs/captures/19-qui-est-ce.png) |
+| ![Course aux trophées : les favoris du MVP](docs/captures/20-trophees.png) | ![Course aux playoffs : statut, nombre magique et calendrier de chaque équipe](docs/captures/21-course-aux-playoffs.png) |
 
 Les captures sont générées automatiquement à partir du mode démo : `python scripts/captures.py`.
 

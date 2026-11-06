@@ -68,6 +68,68 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(sw, parquet.__version__)
 
 
+class RaceTests(unittest.TestCase):
+    def rows(self, records):
+        return [
+            {"teamId": 100 + i, "rank": i + 1, "w": w, "l": l, "pct": w / (w + l) if w + l else 0, "conf": "East"}
+            for i, (w, l) in enumerate(records)
+        ]
+
+    def test_clinch_elimination_and_magic_numbers(self):
+        from parquet import season
+
+        records = [(60, 10), (50, 20), (48, 22), (45, 25), (42, 28), (40, 30), (39, 31), (36, 34), (35, 35), (33, 37), (30, 40), (25, 45), (20, 50), (15, 55), (10, 60)]
+        out = season.race_rows(self.rows(records), remaining={100: [101, 102]}, home_left={100: 1})
+        by_rank = {r["rank"]: r for r in out}
+        self.assertEqual(by_rank[1]["status"], "playoffs")
+        self.assertEqual(by_rank[1]["left"], 12)
+        self.assertEqual(by_rank[1]["maxW"], 72)
+        self.assertEqual(by_rank[1]["homeLeft"], 1)
+        self.assertAlmostEqual(by_rank[1]["sos"], (50 / 70 + 48 / 70) / 2, places=3)
+        self.assertEqual(by_rank[6]["status"], "race")
+        # 83 - 40 victoires de la 6e - 31 défaites de la 7e
+        self.assertEqual(by_rank[6]["magic6"], 12)
+        self.assertEqual(by_rank[7]["gb6"], 1.0)
+        self.assertEqual(by_rank[7]["elim6"], 83 - 40 - 31)
+        # 10-60 : au mieux 22 victoires, dix équipes en ont déjà plus.
+        self.assertEqual(by_rank[15]["status"], "out")
+        self.assertIsNone(by_rank[15]["elim10"])
+        # 20-50 : 32 victoires au mieux, dix équipes en ont déjà plus.
+        self.assertEqual(by_rank[13]["status"], "out")
+        # 25-45 : 37 au mieux ; sept équipes en ont déjà plus (plus de top 6), pas dix.
+        self.assertEqual(by_rank[12]["status"], "playin-max")
+        self.assertEqual(by_rank[12]["elim10"], 83 - 33 - 45)
+
+    def test_finished_season_is_settled(self):
+        from parquet import season
+
+        records = [(82 - k * 3, k * 3) for k in range(15)]
+        out = season.race_rows(self.rows(records))
+        self.assertEqual([r["status"] for r in out], ["playoffs"] * 6 + ["playin"] * 4 + ["out"] * 5)
+        self.assertTrue(all(r["left"] == 0 for r in out))
+
+    def test_awards_ranking_rules(self):
+        from parquet import season
+
+        def b(pid, gp, mn, pts, reb, ast, stl=1.0, blk=0.5, team=1):
+            return {"PLAYER_ID": pid, "PLAYER_NAME": f"J{pid}", "TEAM_ID": team, "GP": gp, "MIN": mn, "PTS": pts, "REB": reb, "AST": ast, "STL": stl, "BLK": blk, "DREB": reb * 0.8, "FG_PCT": 0.5}
+
+        base = {1: b(1, 60, 36, 31, 8, 9, team=1), 2: b(2, 60, 34, 22, 5, 4, team=2), 3: b(3, 20, 36, 40, 10, 10), 4: b(4, 58, 30, 18, 4, 3, stl=2.2, blk=2.4),
+                5: b(5, 55, 27, 16, 3, 2), 6: b(6, 59, 25, 12, 4, 2)}
+        prev = {2: b(2, 70, 26, 11, 3, 2), 1: b(1, 70, 36, 30, 8, 9)}
+        bench = {5: b(5, 50, 26, 16, 3, 2), 6: b(6, 10, 25, 12, 4, 2)}
+        res = season.build_awards(base, {}, bench, prev, {1: 0.8, 2: 0.4}, rookies={4, 5})
+        mvp = [p["id"] for p in res["mvp"]]
+        self.assertEqual(mvp[0], 1)
+        self.assertNotIn(3, mvp)  # pas assez de matchs joués
+        self.assertEqual(res["mvp"][0]["share"], 100.0)
+        self.assertEqual([p["id"] for p in res["roy"]][0], 4)
+        self.assertEqual([p["id"] for p in res["dpoy"]][0], 4)
+        self.assertEqual([p["id"] for p in res["smoy"]], [5])  # 6 a surtout été titulaire
+        self.assertEqual([p["id"] for p in res["mip"]][0], 2)
+        self.assertEqual(res["mip"][0]["dPts"], 11.0)
+
+
 class FormatTests(unittest.TestCase):
     def test_clock(self):
         self.assertEqual(nba.fmt_clock("PT05M23.00S"), "5:23")
@@ -364,6 +426,17 @@ class DemoTests(unittest.TestCase):
         data, _ = nba.scoreboard(None)
         self.assertEqual(data["date"], "2026-10-14")
         self.assertTrue(any(g["status"] == 2 for g in data["games"]))
+
+    def test_playoff_race_and_awards_race_in_demo(self):
+        from parquet import season
+
+        race, _ = season.playoff_race()
+        self.assertEqual(set(race["conferences"]), {"East", "West"})
+        self.assertEqual(len(race["conferences"]["East"]), 15)
+        aw, _ = season.awards_race()
+        self.assertEqual([a["key"] for a in aw["awards"]], ["mvp", "roy", "dpoy", "smoy", "mip"])
+        self.assertTrue(all(a["players"] for a in aw["awards"]))
+        self.assertTrue(aw["advanced"])
 
     def test_draft_by_year_and_by_team(self):
         data, _ = nba.draft(2015)

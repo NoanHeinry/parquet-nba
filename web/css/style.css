@@ -11325,3 +11325,596 @@ body.is-immersive main .qz-teaser h2.qzt-title,
     font-size: 240px;
   }
 }
+
+/* ================================================================ 2.7 Course aux playoffs */
+
+.race-confs {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  margin-top: 8px;
+}
+
+body.is-immersive main .race-conf h2.race-title,
+.race-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 0 0 6px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--text);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.race-title .count {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.race-row {
+  display: grid;
+  grid-template-columns: 40px minmax(170px, 1.1fr) minmax(170px, 1.4fr) 132px minmax(200px, 1.5fr) minmax(130px, 0.9fr);
+  align-items: center;
+  gap: 6px 18px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rr-rank {
+  font-family: var(--font-poster);
+  font-size: 28px;
+  line-height: 1;
+  text-align: right;
+  color: var(--text-2);
+}
+
+.race-row.is-in .rr-rank {
+  color: var(--text);
+}
+
+.race-row.is-out {
+  opacity: 0.62;
+}
+
+.rr-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.rr-team > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rr-team b {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rr-team small,
+.rr-range small,
+.rr-left small,
+.rr-status small,
+.rr-sos small {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.rr-team:hover b {
+  color: var(--accent);
+}
+
+.rr-range {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.rr-bar {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.rr-won,
+.rr-poss {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.rr-won {
+  border-radius: 999px 0 0 999px;
+  background: color-mix(in oklab, var(--team) 80%, var(--text) 20%);
+}
+
+.rr-poss {
+  background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--team) 40%, transparent) 0 4px, transparent 4px 8px);
+}
+
+.rr-line {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text);
+  opacity: 0.55;
+}
+
+.rr-line.is-10 {
+  opacity: 0.3;
+}
+
+.rr-pace {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.rr-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.rr-left small {
+  white-space: nowrap;
+}
+
+.rr-left b {
+  font-family: var(--font-poster);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.rr-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.rr-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.rr-badge.is-in {
+  background: var(--win);
+  color: #0b0b0b;
+}
+
+.rr-badge.is-pi {
+  background: color-mix(in oklab, var(--accent) 70%, var(--surface));
+  color: var(--accent-ink);
+}
+
+.rr-badge.is-race {
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.rr-badge.is-max {
+  background: color-mix(in oklab, var(--loss) 22%, var(--surface));
+}
+
+.rr-badge.is-out {
+  background: color-mix(in oklab, var(--loss) 70%, var(--surface));
+  color: #fff;
+}
+
+.rr-sos {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.rr-sos-meter {
+  display: block;
+  width: 100%;
+  max-width: 140px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.rr-sos-meter i {
+  display: block;
+  height: 100%;
+  background: color-mix(in oklab, var(--loss) calc(var(--k, 0) * 100%), var(--win));
+  transform: scaleX(var(--k, 0));
+  transform-origin: left center;
+}
+
+.race-cut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.race-cut::after {
+  content: "";
+  flex: 1;
+  border-top: 1.5px dashed color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+.race-cut.is-out {
+  color: var(--loss);
+}
+
+.race-cut.is-out::after {
+  border-top-color: color-mix(in oklab, var(--loss) 50%, transparent);
+}
+
+.race-how {
+  margin-top: 36px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.race-how summary {
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.race-how ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .race-row {
+    grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "rank team status"
+      "rank range range"
+      "rank left sos";
+    padding: 14px 0;
+  }
+
+  .rr-rank {
+    grid-area: rank;
+    align-self: start;
+  }
+
+  .rr-team {
+    grid-area: team;
+  }
+
+  .rr-range {
+    grid-area: range;
+  }
+
+  .rr-left {
+    grid-area: left;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .rr-status {
+    grid-area: status;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .rr-sos {
+    grid-area: sos;
+    align-items: flex-end;
+  }
+}
+
+@media (max-width: 560px) {
+  .race-row {
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-areas:
+      "rank team"
+      "rank status"
+      "rank range"
+      "rank left"
+      "rank sos";
+  }
+
+  .rr-status,
+  .rr-sos {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .rr-rank {
+    font-size: 22px;
+  }
+}
+
+/* ================================================================ 2.8 Trophées */
+
+.aw-page {
+  display: flex;
+  flex-direction: column;
+  gap: 42px;
+}
+
+.aw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aw-nav a {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.aw-nav a:hover {
+  border-color: var(--accent);
+}
+
+.aw-block {
+  scroll-margin-top: 90px;
+}
+
+.aw-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--text);
+}
+
+.aw-tag {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 64px;
+  height: 64px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-poster);
+  font-size: 22px;
+}
+
+body.is-immersive main .aw-head h2.aw-title,
+.aw-title {
+  margin: 0;
+  font-family: var(--font-poster);
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.aw-head p {
+  margin: 4px 0 0;
+  color: var(--text-2);
+}
+
+.aw-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.aw-row {
+  display: grid;
+  grid-template-columns: 44px 84px minmax(0, 1fr) minmax(120px, 220px);
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.aw-row:hover .aw-who > b {
+  color: var(--accent);
+}
+
+.aw-rank {
+  font-family: var(--font-poster);
+  font-size: 30px;
+  line-height: 1;
+  text-align: right;
+  color: var(--text-2);
+}
+
+.aw-pic {
+  display: block;
+  width: 84px;
+  aspect-ratio: 260 / 190;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--team) 30%, var(--surface-2));
+}
+
+.aw-pic .headshot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 0;
+  background: none;
+}
+
+.aw-who {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.aw-who > b {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.aw-who > small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.aw-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 4px;
+}
+
+.aw-stats span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.aw-stats b {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.aw-stats small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.aw-share {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aw-share i {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent) calc(var(--share) * 100%), var(--surface-3) 0);
+}
+
+.aw-share small {
+  min-width: 28px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-2);
+}
+
+.aw-row.is-first {
+  grid-template-columns: 44px 168px minmax(0, 1fr) minmax(120px, 220px);
+  padding: 18px 0;
+}
+
+.aw-row.is-first .aw-rank {
+  font-size: 46px;
+  color: var(--accent);
+}
+
+.aw-row.is-first .aw-pic {
+  width: 168px;
+}
+
+.aw-row.is-first .aw-who > b {
+  font-family: var(--font-poster);
+  font-size: 34px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.aw-how {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.aw-disclaimer {
+  margin-top: -10px;
+}
+
+@media (max-width: 700px) {
+  .aw-row,
+  .aw-row.is-first {
+    grid-template-columns: 30px 72px minmax(0, 1fr);
+    gap: 10px 12px;
+  }
+
+  .aw-row.is-first .aw-pic,
+  .aw-pic {
+    width: 72px;
+  }
+
+  .aw-share {
+    grid-column: 3;
+  }
+
+  .aw-rank,
+  .aw-row.is-first .aw-rank {
+    font-size: 24px;
+  }
+
+  .aw-row.is-first .aw-who > b {
+    font-size: 24px;
+  }
+
+  .aw-tag {
+    min-width: 50px;
+    height: 50px;
+    font-size: 17px;
+  }
+}
