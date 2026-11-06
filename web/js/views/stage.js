@@ -10,7 +10,7 @@ import * as f from "../format.js";
 import { teamLogo } from "../components.js";
 import { headshotUrl, team, teamColor } from "../teams.js";
 import { isHidden, setRevealed } from "../spoiler.js";
-import { countUp, pointerDepth, reducedMotion } from "../scroll.js";
+import { countUp, reducedMotion } from "../scroll.js";
 
 function arrow(dir) {
   return s(
@@ -95,9 +95,6 @@ export function createStage(ctx) {
     ro.disconnect();
     io.disconnect();
   });
-
-  // Le nom et le joueur suivent légèrement la souris, en sens opposés (effet de profondeur).
-  pointerDepth(ctx, el);
 
   const go = (i, byUser = false) => {
     if (!stars.length) return;

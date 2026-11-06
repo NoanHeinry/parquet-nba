@@ -8987,3 +8987,21 @@ body.is-immersive main h2:not(.stage-name):not(.name) {
     height: 50%;
   }
 }
+
+/* Scène du joueur du match : sans effet de parallaxe. Le nom, le portrait et les bandes restent
+   fixes à la souris et au défilement ; la scène s'efface seulement dans le fond en descendant. */
+.stage .name-layer {
+  translate: none;
+  transform: none;
+  opacity: 1;
+}
+
+.stage .cut-layer {
+  translate: none;
+  transform: translateX(-50%);
+}
+
+.stage .stage-band,
+.stage .stage-band.thin {
+  translate: none;
+}
