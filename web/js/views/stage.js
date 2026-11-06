@@ -1,6 +1,6 @@
 // Scène d'ouverture de l'accueil : le joueur du match de chaque rencontre de la nuit, en grand.
-// Halo à la couleur de son équipe, nom en très gros derrière lui, portrait détouré par-dessus
-// (les portraits officiels de la NBA ont déjà un fond transparent), sa ligne de stats et le match.
+// Halo à la couleur de son équipe, nom en très gros derrière lui, le joueur en pied par-dessus
+// (photo officielle détourée, ou à défaut son portrait), sa ligne de stats et le match.
 // Un joueur par match ; on passe de l'un à l'autre avec les onglets, les flèches, le clavier ou
 // en glissant le doigt, et la scène avance seule tant qu'on n'y touche pas.
 
@@ -8,7 +8,7 @@ import { api } from "../api.js";
 import { h, s } from "../dom.js";
 import * as f from "../format.js";
 import { teamLogo } from "../components.js";
-import { headshotUrl, team, teamColor } from "../teams.js";
+import { headshotUrl, silhouetteUrl, team, teamColor } from "../teams.js";
 import { isHidden, setRevealed } from "../spoiler.js";
 import { countUp, reducedMotion } from "../scroll.js";
 
@@ -272,16 +272,26 @@ export function createStage(ctx) {
     paint(p.teamId);
     const g = p.game;
     const label = f.gameLabel(g);
+    // Le joueur en pied (photo officielle détourée) ; à défaut, son portrait.
     const cut = h("img", {
       class: "stage-cutout",
-      src: headshotUrl(p.id, "big"),
+      src: silhouetteUrl(p.id),
       alt: p.name,
-      width: 1040,
-      height: 760,
       decoding: "async",
       referrerpolicy: "no-referrer",
     });
-    cut.addEventListener("error", () => cut.remove());
+    const cutLayer = h("a", { class: "stage-layer cut-layer is-full", href: `#/joueur/${p.id}`, tabindex: "-1", "aria-hidden": "true" }, cut);
+    let slide = null;
+    cut.addEventListener("error", () => {
+      if (cut.dataset.fallback) {
+        cut.remove();
+        return;
+      }
+      cut.dataset.fallback = "1";
+      cutLayer.classList.replace("is-full", "is-bust");
+      slide?.classList.remove("has-full");
+      cut.src = headshotUrl(p.id, "big");
+    });
     const stats = h(
       "div",
       { class: "stage-stats" },
@@ -291,7 +301,7 @@ export function createStage(ctx) {
         return h("div", { class: "ss-item", style: { "--i": i } }, h("small", null, it.label), v);
       })
     );
-    setSlide(
+    slide = setSlide(
       [
         ...bands(),
         h(
@@ -302,7 +312,7 @@ export function createStage(ctx) {
           h("a", { class: "stage-top-score num", href: `#/match/${g.id}` }, `${g.away.tri} ${g.away.score} – ${g.home.score} ${g.home.tri}`)
         ),
         h("div", { class: "stage-layer name-layer" }, nameBlock([p.first, p.last])),
-        h("a", { class: "stage-layer cut-layer", href: `#/joueur/${p.id}`, tabindex: "-1", "aria-hidden": "true" }, cut),
+        cutLayer,
         h(
           "div",
           { class: "stage-left" },
@@ -319,10 +329,11 @@ export function createStage(ctx) {
       ],
       dir
     );
+    if (cutLayer.classList.contains("is-full")) slide.classList.add("has-full");
     syncTabs();
     // Le portrait suivant est chargé d'avance.
     const next = stars[(index + 1) % stars.length];
-    if (next && next !== p) new Image().src = headshotUrl(next.id, "big");
+    if (next && next !== p) new Image().src = silhouetteUrl(next.id);
   }
 
   // Sans joueur à montrer (journée pas encore jouée), la date et le programme.

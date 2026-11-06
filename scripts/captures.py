@@ -31,8 +31,18 @@ SILHOUETTE = (
 )
 
 
+FULL_BODY = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 700">'
+    '<g fill="#8a8f98"><circle cx="220" cy="78" r="46"/>'
+    '<path d="M150 140h140l38 190-30 8-26-120v170l24 290h-48l-28-250-28 250h-48l24-290V218l-26 120-30-8z"/></g></svg>'
+)
+
+
 def placeholder(route):
     url = route.request.url
+    if "/silos/" in url:
+        route.fulfill(status=200, content_type="image/svg+xml", body=FULL_BODY)
+        return
     if "/logos/nba/" in url:
         t = teams_meta.team(url.split("/logos/nba/")[1].split("/")[0]) or {"colors": ["#888", "#ccc"], "tri": "?"}
         svg = (
@@ -63,6 +73,7 @@ def main() -> None:
         def context(width=1360, height=860, scheme="dark", scale=1):
             ctx = browser.new_context(viewport={"width": width, "height": height}, color_scheme=scheme, device_scale_factor=scale, service_workers="block")
             ctx.route("https://cdn.nba.com/**", placeholder)
+            ctx.route("https://ak-static.cms.nba.com/wp-content/uploads/silos/**", placeholder)
             return ctx
 
         def shot(page, name, hash_, *, before=None, scroll=0, full=False, clip=None, element=None):

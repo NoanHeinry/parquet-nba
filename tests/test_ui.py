@@ -57,6 +57,13 @@ class InterfaceTests(unittest.TestCase):
         self.context = self.browser.new_context(viewport={"width": 1280, "height": 900}, service_workers="block")
         # Pas d'accès à NBA.com pendant les tests : logos et photos remplacés par une pastille.
         self.context.route("https://cdn.nba.com/**", lambda route: route.fulfill(status=200, content_type="image/svg+xml", body=PLACEHOLDER))
+        # Photos en pied : un seul joueur (Zacharie Weiss en démo) en a une.
+        self.context.route(
+            "https://ak-static.cms.nba.com/**",
+            lambda route: route.fulfill(status=200, content_type="image/svg+xml", body=PLACEHOLDER)
+            if route.request.url.endswith("/1722532.png")
+            else route.fulfill(status=404, body=""),
+        )
         self.page = self.context.new_page()
         self.errors = []
         self.page.on("pageerror", lambda exc: self.errors.append(str(exc)))
@@ -136,6 +143,27 @@ class InterfaceTests(unittest.TestCase):
         self.assertFalse(self.page.locator(".topbar").is_visible())
         self.assertEqual(self.page.locator(".menu-fab").count(), 1)
         self.assertEqual(self.page.locator(".section-index").count(), 0)
+
+    def test_stage_uses_full_body_photo_with_portrait_fallback(self):
+        self.open("#/matchs/2026-10-13")
+        self.page.wait_for_selector(".stage-tab.is-active")
+        layer = ".stage .slide:not(.is-leaving) .cut-layer"
+        img = layer + " img"
+        # Chaque joueur : la photo en pied s'il en a une, sinon son portrait (jamais de vide).
+        seen = set()
+        for _ in range(self.page.locator(".stage-tab").count()):
+            self.page.wait_for_function(f"document.querySelector('{img}')?.complete")
+            src = self.page.get_attribute(img, "src")
+            cls = self.page.get_attribute(layer, "class")
+            seen.add("full" if "/silos/" in src else "bust")
+            if "/silos/" in src:
+                self.assertIn("is-full", cls)
+            else:
+                self.assertIn("/headshots/", src)
+                self.assertIn("is-bust", cls)
+            self.page.click(".stage-arrows .stage-round >> nth=1")
+            self.page.wait_for_function("document.querySelectorAll('.stage .slide').length === 1")
+        self.assertEqual(seen, {"full", "bust"})
 
     def test_motion_toggle_overrides_system_setting(self):
         # Windows peut demander aux sites de limiter les animations : le bouton passe outre.

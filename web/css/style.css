@@ -9336,3 +9336,62 @@ html[data-spoiler="1"] .cal-record:hover .cal-rec {
   color: inherit;
   background: none;
 }
+
+/* =====================================================================
+   2.3 Joueur du match en pied : photo officielle détourée (440 × 700).
+   Il se tient sur la ligne des onglets, entre l'encart du match et les
+   stats ; s'il n'a pas de photo en pied, son portrait reprend la place.
+   ===================================================================== */
+
+.stage .cut-layer.is-full {
+  aspect-ratio: 440 / 700;
+  height: calc(100% - 150px);
+  max-height: 940px;
+  bottom: 56px;
+}
+
+.cut-layer.is-full .stage-cutout {
+  object-position: bottom center;
+}
+
+/* Ombre au sol, sous les pieds. */
+.cut-layer.is-full::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -10px;
+  z-index: -1;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.45), transparent);
+}
+
+/* Le corps entier reste visible : pas de voile en bas de la scène. */
+.slide.has-full::after {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .stage .cut-layer.is-full {
+    height: 50%;
+    bottom: 118px;
+  }
+}
+
+/* L'ombre au sol apparaît et disparaît avec le joueur. */
+.cut-layer.is-full::after {
+  animation: fade-in 0.8s ease 0.35s both;
+}
+
+.slide.is-after .cut-layer.is-full::after {
+  animation-delay: 0.6s;
+}
+
+.slide.is-leaving .cut-layer::after {
+  animation: fade-only-out 0.24s ease both;
+}
+
+html[data-motion="reduce"] .cut-layer::after {
+  animation: none;
+}

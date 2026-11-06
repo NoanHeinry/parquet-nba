@@ -163,7 +163,7 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/spoiler.js` | Mode anti-spoiler : état global et mémoire de session des scores révélés |
 | `js/notifications.js` | Alertes de match (coup d'envoi, fin serrée selon la définition NBA, résultat), mémoire des alertes envoyées, détection des connexions non sécurisées |
 | `js/icons.js` | Icônes SVG |
-| `js/views/stage.js` | Scène d'ouverture de l'accueil : le joueur du match de chaque rencontre (portrait détouré, nom ajusté à la largeur, couleurs d'équipe, défilement automatique, onglets, glissement au doigt) |
+| `js/views/stage.js` | Scène d'ouverture de l'accueil : le joueur du match de chaque rencontre (photo en pied « silos » de NBA.com, portrait en secours, nom ajusté à la largeur, couleurs d'équipe, défilement automatique, onglets, glissement au doigt) |
 | `js/views/recap.js` | « La nuit en chiffres » sur l'accueil, avec les vidéos de la nuit |
 | `js/menu.js` | Site sans en-tête : logo et bouton flottants, menu plein écran qui reprend la recherche et les boutons de l'en-tête |
 | `js/poster.js` | En-tête « affiche » commun aux pages : titre ajusté à la largeur, visuel détouré ou logo, chiffre fantôme, statistiques, actions, mis à jour quand les données arrivent |

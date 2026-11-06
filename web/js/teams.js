@@ -26,6 +26,10 @@ export const logoUrl = (id, variant = "L") => `https://cdn.nba.com/logos/nba/${i
 export function isDarkTheme() {
   return getComputedStyle(document.documentElement).colorScheme.includes("dark");
 }
+// Photo officielle du joueur en pied, détourée (séance photo de début de saison, 440 × 700).
+// Elle n'existe pas pour tous les joueurs : prévoir le portrait en secours.
+export const silhouetteUrl = (id) => `https://ak-static.cms.nba.com/wp-content/uploads/silos/nba/latest/440x700/${id}.png`;
+
 export const headshotUrl = (id, size = "big") =>
   size === "small"
     ? `https://cdn.nba.com/headshots/nba/latest/260x190/${id}.png`
