@@ -18,6 +18,17 @@ const HOW = {
 
 const ICON = { mvp: "MVP", roy: "ROY", dpoy: "DPOY", smoy: "6MOY", mip: "MIP" };
 
+// Onglets communs aux deux pages des trophées.
+export function trophyTabs(active, season = "") {
+  return h(
+    "nav",
+    { class: "seg-links", "aria-label": "Trophées" },
+    h("a", { href: "#/trophees", "aria-current": active === "course" ? "page" : null }, season ? `Course ${season}` : "Course aux trophées"),
+    h("a", { href: "#/trophees/palmares", "aria-current": active === "palmares" ? "page" : null }, "Palmarès depuis 1947"),
+    h("a", { href: "#/records" }, "Records")
+  );
+}
+
 function statLine(key, p) {
   const n = (v, d = 1) => (v === null || v === undefined ? "–" : f.num(v, d));
   const items = [];
@@ -80,7 +91,7 @@ function awardBlock(a) {
 }
 
 export async function render(ctx) {
-  const top = poster(ctx, { kicker: "Saison régulière", title: "Trophées", size: "compact" });
+  const top = poster(ctx, { kicker: "Saison régulière", title: "Trophées", size: "compact", actions: trophyTabs("course") });
   const body = h("div", { class: "aw-page" }, loading("Calcul de la course aux trophées…"));
   ctx.outlet.append(top.el, body);
   let res;
@@ -106,7 +117,7 @@ export async function render(ctx) {
     visual: mvp ? headshot(mvp.id, { size: "big", alt: "" }) : null,
     visualKind: "cutout",
     meta: mvp ? h("span", null, "Favori pour le MVP : ", h("a", { href: `#/joueur/${mvp.id}` }, mvp.name), `, ${team(mvp.teamId)?.fullName || mvp.tri}`) : null,
-    actions: [h("a", { class: "btn", href: "#/leaders" }, "Leaders statistiques")],
+    actions: [trophyTabs("course", data.season), h("a", { class: "btn", href: "#/leaders" }, "Leaders statistiques")],
   });
   body.replaceChildren(
     ...[

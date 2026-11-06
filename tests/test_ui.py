@@ -248,6 +248,32 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Favori pour le MVP", self.page.text_content(".poster-meta"))
         self.assertIn("→", self.page.text_content("#trophee-mip .aw-row"))
 
+    def test_records_page(self):
+        self.open("#/records")
+        self.page.wait_for_selector(".rc-step")
+        self.assertEqual(self.page.locator(".rc-step").count(), 3)
+        self.assertEqual(self.page.locator(".rc-row").count(), 47)
+        self.page.click(".chip:has-text('Contres')")
+        self.page.wait_for_function("document.querySelector('.rc-step-val small')?.textContent.includes('contres')")
+        self.page.click(".segmented button:has-text('Playoffs')")
+        self.page.wait_for_function("document.querySelector('.poster-kicker')?.textContent.includes('playoffs')")
+        self.assertEqual(self.page.locator(".menu-link[href='#/records']").count(), 1)
+
+    def test_palmares_page(self):
+        self.open("#/trophees")
+        self.page.click(".seg-links a[href='#/trophees/palmares']")
+        self.page.wait_for_selector(".pl-season")
+        self.assertGreaterEqual(self.page.locator(".pl-season").count(), 80)
+        first = self.page.locator(".pl-season").first
+        self.assertIn("New York Knicks", first.text_content())
+        self.assertIn("Shai Gilgeous-Alexander", first.text_content())
+        self.page.click(".chip:has-text('Titres par franchise')")
+        self.page.wait_for_selector(".pl-title-row")
+        self.assertIn("18", self.page.locator(".pl-title-row").first.text_content())
+        self.page.click(".chip:text-is('MVP')")
+        self.page.wait_for_selector(".pl-card")
+        self.assertIn("6×", self.page.text_content(".pl-most-list"))
+
     # ------------------------------------------------------------ jeu « Qui est-ce ? »
 
     def quiz_photos(self, full=True):

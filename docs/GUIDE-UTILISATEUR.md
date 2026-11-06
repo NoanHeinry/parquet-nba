@@ -9,6 +9,8 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 - **Draft** : toutes les drafts depuis 1947, choix par choix (équipe, joueur, université ou club) et ce que chaque joueur est devenu. Tu peux filtrer par tour ou par provenance, chercher un nom, passer d'une année à l'autre ou afficher tous les choix d'une équipe (aussi depuis la fiche d'une équipe, bouton *Choix de draft*, ou en touchant la ligne « Draft » d'une fiche joueur).
 - **Course aux playoffs** (bouton sur la page Classement) : qui est déjà qualifié, qui peut encore y croire, le nombre magique de chaque équipe et la difficulté de son calendrier restant.
 - **Trophées** : les favoris de la saison pour le MVP, le rookie de l'année, le défenseur de l'année, le sixième homme et la meilleure progression (classement maison, calculé à partir des statistiques).
+- **Palmarès** (onglet de la page Trophées) : les champions et les lauréats des grands trophées depuis 1947, saison par saison ou trophée par trophée.
+- **Records** : les meilleurs de l'histoire en carrière dans chaque catégorie, et ce qu'il manque aux joueurs en activité pour grimper.
 - **Jeu** : « Qui est-ce ? », reconnaître un joueur à sa silhouette. Défi du jour à partager, parties, séries, contre-la-montre et un album des joueurs que tu as trouvés.
 - **Infos** : le rapport officiel des blessures de la NBA, traduit en français, et toutes les transactions (signatures, échanges, joueurs libérés).
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).

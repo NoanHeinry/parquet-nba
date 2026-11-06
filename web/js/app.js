@@ -20,6 +20,8 @@ import * as draft from "./views/draft.js";
 import * as quiz from "./views/quiz.js";
 import * as race from "./views/race.js";
 import * as awards from "./views/awards.js";
+import * as palmaresView from "./views/palmares.js";
+import * as records from "./views/records.js";
 import { initNotificationsUI } from "./notifications.js";
 import { enableImmersive } from "./menu.js";
 
@@ -202,6 +204,8 @@ route("/joueur/(\\d+)", player.render, "joueurs");
 route("/classement", standings.render, "classement");
 route("/classement/course", race.render, "classement");
 route("/trophees", awards.render, "trophees");
+route("/trophees/palmares", palmaresView.render, "trophees");
+route("/records", records.render, "records");
 route("/playoffs", playoffs.render, "playoffs");
 route("/playoffs/(\\d{4}-\\d{2})", playoffs.render, "playoffs");
 route("/leaders", leaders.render, "leaders");
@@ -226,7 +230,7 @@ initNotificationsUI();
 const outlet = document.getElementById("main");
 
 // Version de l'interface : elle doit correspondre à celle du serveur (parquet/__init__.py).
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "1.15.0";
 
 // Compare deux numéros de version (1.5.0 < 1.12.0).
 const versionCmp = (a, b) => {

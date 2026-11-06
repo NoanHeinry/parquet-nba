@@ -4,6 +4,7 @@ Les échantillons reprennent la structure réelle des flux de NBA.com.
 Lancer : python -m unittest discover -s tests
 """
 
+import re
 import tempfile
 import time
 import unittest
@@ -128,6 +129,41 @@ class RaceTests(unittest.TestCase):
         self.assertEqual([p["id"] for p in res["smoy"]], [5])  # 6 a surtout été titulaire
         self.assertEqual([p["id"] for p in res["mip"]][0], 2)
         self.assertEqual(res["mip"][0]["dPts"], 11.0)
+
+
+class PalmaresTests(unittest.TestCase):
+    def test_data_is_consistent(self):
+        from parquet import palmares
+
+        data = palmares.raw()
+        years = [f["year"] for f in data["finals"]]
+        self.assertEqual(years, list(range(years[0], 1946, -1)))  # une finale par an depuis 1947
+        for award in data["awards"]:
+            seasons = [w["season"] for w in award["winners"]]
+            self.assertTrue(all(re.fullmatch(r"\d{4}-\d{2}", s) for s in seasons), award["key"])
+            self.assertEqual(seasons, sorted(seasons, reverse=True), award["key"])
+            for s in seasons:  # deuxième année = première + 1
+                self.assertEqual((int(s[:4]) + 1) % 100, int(s[5:]), s)
+        mvp = [w for w in data["awards"][0]["winners"]]
+        self.assertEqual(sum(1 for w in mvp if w["name"] == "Kareem Abdul-Jabbar"), 6)
+        self.assertEqual(sum(1 for f in data["finals"] if f["champion"] == "Boston Celtics"), 18)
+
+    def test_franchise_names_and_player_matching(self):
+        from parquet import history, palmares
+
+        self.assertEqual(palmares.team_tri("Seattle SuperSonics", 1979), "OKC")
+        self.assertEqual(palmares.team_tri("Minneapolis Lakers", 1950), "LAL")
+        self.assertIsNone(palmares.team_tri("Baltimore Bullets", 1948))
+        self.assertEqual(palmares.team_tri("Baltimore Bullets", 1971), "WAS")
+        self.assertIsNone(palmares.team_tri("Chicago Stags", 1947))
+        self.assertEqual(palmares.norm("Nikola Jokić"), "nikola jokic")
+        self.assertEqual(palmares.norm("J.R. Smith"), "jr smith")
+        by_name = {"eddie johnson": [(1, 1977, 1986), (2, 1981, 1998)], "kareem abdul-jabbar": [(3, 1969, 1988)], "kevin johnson": [(4, 1987, 1999)]}
+        self.assertIsNone(history._player_id(by_name, "Eddie Johnson", 1984))  # deux possibles
+        self.assertEqual(history._player_id(by_name, "Eddie Johnson", 1990), 2)
+        self.assertEqual(history._player_id(by_name, "Lew Alcindor", 1969), 3)
+        self.assertEqual(history._player_id(by_name, "Kevin Johnson", 1988), 4)
+        self.assertIsNone(history._player_id(by_name, "Inconnu", 1990))
 
 
 class FormatTests(unittest.TestCase):
@@ -437,6 +473,22 @@ class DemoTests(unittest.TestCase):
         self.assertEqual([a["key"] for a in aw["awards"]], ["mvp", "roy", "dpoy", "smoy", "mip"])
         self.assertTrue(all(a["players"] for a in aw["awards"]))
         self.assertTrue(aw["advanced"])
+
+    def test_records_and_palmares_in_demo(self):
+        from parquet import history
+
+        rec, _ = history.records()
+        self.assertEqual([b["key"] for b in rec["boards"]], ["PTS", "REB", "AST", "STL", "BLK", "FG3M", "FTM", "GP"])
+        pts = rec["boards"][0]["leaders"]
+        self.assertEqual(len(pts), 50)
+        self.assertEqual([p["rank"] for p in pts], list(range(1, 51)))
+        chasing = [p for p in pts[1:] if p["active"]]
+        self.assertTrue(all(p["next"]["gap"] >= 0 for p in chasing))
+        po, _ = history.records("Playoffs")
+        self.assertEqual(po["seasonType"], "Playoffs")
+        pal, _ = history.palmares_data()
+        self.assertEqual(pal["titles"][0]["count"], 18)
+        self.assertEqual(pal["finals"][0]["championId"], 1610612752)
 
     def test_draft_by_year_and_by_team(self):
         data, _ = nba.draft(2015)

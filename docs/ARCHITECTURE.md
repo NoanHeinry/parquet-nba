@@ -68,6 +68,8 @@ Toutes les réponses de l'API ont la forme `{"data": …, "meta": {"fetchedAt": 
 | `GET /api/draft?year=AAAA` · `GET /api/draft?team={id}` | Une draft complète dans l'ordre (la plus récente par défaut) ou tous les choix d'une équipe, avec le devenir de chaque joueur (saisons, en activité, moyennes) et la liste des années disponibles | `drafthistory` (mis en cache 24 h), index des joueurs |
 | `GET /api/race` | Course aux playoffs : matchs restants, victoires au mieux, rythme, statut, nombres magiques et d'élimination, retard sur la 6e et la 10e place, difficulté du calendrier restant | classement, calendrier de la saison (`parquet/season.py`) |
 | `GET /api/awards/race?season=AAAA-AA` | Course aux trophées : favoris du MVP, rookie, défenseur, sixième homme et meilleure progression (indice pondéré expliqué) | `leaguedashplayerstats` (classiques, avancées, en sortie de banc, saison précédente), classement, index des joueurs |
+| `GET /api/records?type=playoffs` | Les 50 meilleurs de tous les temps dans huit catégories (saison régulière ou playoffs), écart des joueurs en activité avec le joueur devant eux et matchs nécessaires à leur rythme | `alltimeleadersgrids`, `leaguedashplayerstats` (`parquet/history.py`) |
+| `GET /api/palmares` | Champions et lauréats des grands trophées depuis 1947, plus titrés, titres par franchise | `parquet/palmares.py` (liste fixe tirée de NBA.com, mise à jour une fois par an), index des joueurs pour retrouver les identifiants |
 | `GET /api/settings` · `POST /api/settings/youtube` | État de la clé YouTube (jamais la clé elle-même) ; enregistrement après vérification | `data/settings.json` |
 | `GET /api/status` | Version, saison, journée NBA, mode démo | Parquet |
 | `GET /api/diagnostic` | Test de chaque source | toutes |
@@ -108,6 +110,10 @@ Le cache (`parquet/cache.py`) garde les entrées récentes en mémoire et toutes
 ## Saison en cours (`parquet/season.py`)
 
 Rien d'officiel : la NBA ne publie ni nombre magique ni favoris aux trophées. `race_rows` calcule, pour une conférence, les matchs restants, le nombre de victoires au mieux, le statut (qualifié si au plus 5 équipes peuvent encore l'égaler ou le dépasser, éliminé si au moins 10 équipes ont déjà plus de victoires qu'il ne peut en compter ; les égalités comptent contre l'équipe faute de départages), les nombres magiques et d'élimination (82 + 1 − victoires − défaites du poursuivant) et le retard sur la 6e et la 10e place. La difficulté du calendrier restant est le pourcentage de victoires moyen des adversaires encore à jouer. `build_awards` classe les candidats par une somme pondérée d'écarts à la moyenne (z-scores) ; les poids sont affichés dans l'interface.
+
+## Palmarès et records (`parquet/palmares.py`, `parquet/history.py`)
+
+La NBA ne publie aucune liste interrogeable des lauréats : `palmares.py` garde les champions (depuis 1947) et les grands trophées individuels, tels que publiés par NBA.com, à compléter chaque année après les trophées (mai) et les finales (juin). Les joueurs sont retrouvés dans l'index par leur nom (sans accents ni ponctuation, avec quelques noms d'usage comme Lew Alcindor) ; en cas d'homonymes, les années de carrière départagent, sinon le nom reste sans lien. Les anciens noms de franchises sont rattachés à la franchise d'aujourd'hui (Seattle SuperSonics → Thunder) ; les franchises disparues restent sans logo. Les records viennent d'`alltimeleadersgrids` (50 premiers par catégorie).
 
 ## Vidéos, blessures et transactions (`parquet/extras.py`)
 
@@ -179,6 +185,8 @@ Les trois formats de match de NBA.com (scoreboard live, calendrier, `scoreboardv
 | `js/views/quiz.js` | Pages du jeu : accueil (défi, modes, réglages, historique, album), partie (silhouette dessinée sur un canevas puis révélée), bilan, encart de l'accueil |
 | `js/views/race.js` | Page « Course aux playoffs » : statut, barre des victoires possibles, nombres magiques, calendrier restant |
 | `js/views/awards.js` | Page « Trophées » : course aux trophées de la saison |
+| `js/views/palmares.js` | Page « Palmarès » : saisons, trophées, titres par franchise |
+| `js/views/records.js` | Page « Records » : podium, joueurs en activité, top 50 |
 | `js/views/draft.js` | Page « Draft » : ordre de chaque draft par tour, ou tous les choix d'une équipe par année ; filtres, recherche, 1er choix en pied dans l'en-tête |
 | `js/views/infos.js` | Page « Infos » : rapport des blessures et transactions |
 | `js/media.js` | Lecteur YouTube léger (chargé au clic), extraits des moments décisifs, carte du résumé NBA.com |

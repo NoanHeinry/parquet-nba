@@ -780,6 +780,29 @@ def draft_history() -> dict:
     return wrap(rs("DraftHistory", hdr, rows))
 
 
+def all_time_leaders(season_type: str) -> dict:
+    """Meilleurs de tous les temps (50 par catégorie), anciens joueurs et joueurs en activité."""
+    idx = player_index()["resultSets"][0]
+    col = {k: i for i, k in enumerate(idx["headers"])}
+    people = [(row[col["PERSON_ID"]], f"{row[col['PLAYER_FIRST_NAME']]} {row[col['PLAYER_LAST_NAME']]}", row[col["ROSTER_STATUS"]] == 1) for row in idx["rowSet"]]
+    po = season_type == "Playoffs"
+    scale = {"PTS": 38000, "REB": 21000, "AST": 15000, "STL": 3200, "BLK": 3800, "FG3M": 4000, "FTM": 9500, "GP": 1600}
+    sets = []
+    for key, top in scale.items():
+        r = rng("records", key, season_type)
+        sample = r.sample(people, 260)
+        rows = []
+        for pid, name, active in sample:
+            v = top * (0.35 + 0.65 * r.random() ** 2.4) * (0.2 if po else 1)
+            rows.append([pid, name, round(v), 0, "Y" if active else "N"])
+        rows.sort(key=lambda x: -x[2])
+        rows = rows[:50]
+        for i, row in enumerate(rows, 1):
+            row[3] = i
+        sets.append(rs(f"{key}Leaders", ["PLAYER_ID", "PLAYER_NAME", key, f"{key}_RANK", "IS_ACTIVE_FLAG"], rows))
+    return wrap(*sets)
+
+
 # ---------------------------------------------------------------- Wikipédia
 
 def wiki(url: str, params: dict) -> dict:
@@ -840,6 +863,8 @@ def _handle_base(url: str, params: dict | None):
             return league_leaders(params["Season"])
         if ep == "playerindex":
             return player_index()
+        if ep == "alltimeleadersgrids":
+            return all_time_leaders(params.get("SeasonType", "Regular Season"))
         if ep == "drafthistory":
             return draft_history()
         if ep == "scoreboardv3":

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, extras, nba, net, season, settings, teams_meta
+from . import __version__, extras, history, nba, net, season, settings, teams_meta
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -204,6 +204,16 @@ def api_race(q):
 @route(r"/api/awards/race")
 def api_awards_race(q):
     return season.awards_race(q.get("season"))
+
+
+@route(r"/api/records")
+def api_records(q):
+    return history.records("Playoffs" if q.get("type") == "playoffs" else "Regular Season")
+
+
+@route(r"/api/palmares")
+def api_palmares(q):
+    return history.palmares_data()
 
 
 @route(r"/api/draft")

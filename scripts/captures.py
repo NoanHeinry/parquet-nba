@@ -182,6 +182,8 @@ def main() -> None:
             shot(page, "21-course-aux-playoffs.png", "#/classement/course", before=lambda p: p.wait_for_selector(".race-row"), scroll=460)
         finally:
             nba.standings = real_standings
+        shot(page, "22-palmares.png", "#/trophees/palmares", before=lambda p: p.wait_for_selector(".pl-season"), scroll=520)
+        shot(page, "23-records.png", "#/records", before=lambda p: p.wait_for_selector(".rc-step"), scroll=430)
         shot(page, "15-transactions.png", "#/infos/mouvements", before=lambda p: p.wait_for_selector(".move-row"))
         browser.close()
     server.shutdown()
