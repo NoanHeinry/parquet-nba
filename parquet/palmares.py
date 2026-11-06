@@ -471,13 +471,21 @@ TEAM_ALIASES = {
 }
 
 # Noms d'usage différents de ceux de l'index NBA.
-PLAYER_ALIASES = {"lew alcindor": "kareem abdul-jabbar", "ron artest": "metta world peace", "wood sauldsberry": "woody sauldsberry"}
+PLAYER_ALIASES = {
+    "lew alcindor": "kareem abdul-jabbar",
+    "ron artest": "metta world peace",
+    "wood sauldsberry": "woody sauldsberry",
+    "jo jo white": "jojo white",
+    "isaac austin": "ike austin",
+}
 
 
 def norm(name: str) -> str:
     text = unicodedata.normalize("NFD", name or "").encode("ascii", "ignore").decode().lower()
     text = re.sub(r"[.'’]", "", text)
-    return re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
+    # Suffixes absents de certaines listes : « Jimmy Butler » = « Jimmy Butler III ».
+    return re.sub(r" (jr|sr|ii|iii|iv)$", "", text)
 
 
 def _lines(block: str) -> list[list[str]]:

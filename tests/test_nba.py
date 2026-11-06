@@ -158,6 +158,8 @@ class PalmaresTests(unittest.TestCase):
         self.assertIsNone(palmares.team_tri("Chicago Stags", 1947))
         self.assertEqual(palmares.norm("Nikola Jokić"), "nikola jokic")
         self.assertEqual(palmares.norm("J.R. Smith"), "jr smith")
+        self.assertEqual(palmares.norm("Jimmy Butler III"), palmares.norm("Jimmy Butler"))
+        self.assertEqual(palmares.norm("Jaren Jackson Jr."), "jaren jackson")
         by_name = {"eddie johnson": [(1, 1977, 1986), (2, 1981, 1998)], "kareem abdul-jabbar": [(3, 1969, 1988)], "kevin johnson": [(4, 1987, 1999)]}
         self.assertIsNone(history._player_id(by_name, "Eddie Johnson", 1984))  # deux possibles
         self.assertEqual(history._player_id(by_name, "Eddie Johnson", 1990), 2)
