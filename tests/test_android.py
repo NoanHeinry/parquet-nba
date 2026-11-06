@@ -124,12 +124,50 @@ class TermuxCommandTests(unittest.TestCase):
             out, _ = server.communicate(timeout=15)
             self.assertIn(f"localhost:{self.port}/", out)
 
+    def test_server_mode_behind_access_code_and_boot_script(self):
+        env = {**self.env, "PARQUET_ACCES": "code-secret"}
+        server = subprocess.Popen(["bash", str(COMMAND), "serveur", "--demo"], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        try:
+            lines = []
+            for line in server.stdout:
+                lines.append(line)
+                if "est lancé" in line:
+                    break
+            again = self.parquet("serveur")
+            # Protégé par un code, Parquet répond 401 : la commande doit quand même le voir tourner.
+            self.assertIn("tourne déjà", again.stdout)
+            self.assertIn("termux-wake-lock", self.log.read_text())
+            self.assertNotIn("termux-open-url", self.log.read_text())
+            self.parquet("stop")
+            out, _ = server.communicate(timeout=15)
+        finally:
+            if server.poll() is None:
+                server.kill()
+        self.assertIn("Protégé par un code d'accès", "".join(lines) + out)
+        boot = Path(self.env["HOME"]) / ".termux" / "boot" / "parquet-serveur"
+        self.assertIn("démarrera", self.parquet("demarrage", "oui").stdout)
+        self.assertIn("exec parquet serveur", boot.read_text())
+        self.assertIn("activé", self.parquet("demarrage").stdout)
+        self.parquet("demarrage", "non")
+        self.assertFalse(boot.exists())
+
+    def test_access_code_is_stored_privately(self):
+        self.assertEqual(self.parquet("code", "court").returncode, 2)
+        self.assertIn("enregistré", self.parquet("code", "code-secret").stdout)
+        stored = Path(self.env["HOME"]) / ".parquet-acces"
+        self.assertEqual(stored.read_text(), "code-secret")
+        self.assertEqual(stored.stat().st_mode & 0o777, 0o600)
+        self.assertIn("activé", self.parquet("code").stdout)
+        self.parquet("code", "aucun")
+        self.assertFalse(stored.exists())
+
     def test_help_and_unknown_command(self):
         self.assertIn("parquet maj", self.parquet("aide").stdout)
+        self.assertIn("parquet demarrage", self.parquet("aide").stdout)
         self.assertEqual(self.parquet("nimporte").returncode, 2)
 
     def test_scripts_are_valid_bash(self):
-        for script in (COMMAND, INSTALLER):
+        for script in (COMMAND, INSTALLER, ROOT / "installer-serveur.sh", ROOT / "serveur" / "parquet-serveur"):
             self.assertEqual(subprocess.run(["bash", "-n", str(script)]).returncode, 0, script.name)
 
     def test_installer_refuses_outside_termux(self):

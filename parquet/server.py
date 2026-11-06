@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, extras, history, nba, net, player_season, season, settings, teams_meta, teamstats, verify
+from . import __version__, access, extras, history, nba, net, player_season, season, settings, teams_meta, teamstats, verify
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -315,8 +315,59 @@ class Handler(BaseHTTPRequestHandler):
             return True
         return urlsplit(origin).netloc == (self.headers.get("Host") or "")
 
+    # -- Code d'accès (facultatif, voir access.py) ----------------------------------------
+
+    def _https(self) -> bool:
+        return (self.headers.get("X-Forwarded-Proto") or "").lower() == "https"
+
+    def _gate(self, path: str) -> bool:
+        """Vrai si la requête peut continuer ; sinon la réponse « code requis » est déjà envoyée."""
+        if access.allowed(path, self.headers.get("Cookie")):
+            return True
+        if path.startswith("/api/"):
+            self._json(401, {"error": "Code d'accès requis : recharge la page pour le taper.", "access": True})
+        elif path in ("", "/") or path.endswith(".html") or "." not in path.rsplit("/", 1)[-1]:
+            self._send(401, access.login_page(access.safe_next(self.path)), "text/html; charset=utf-8")
+        else:
+            self._send(401, "Code d'accès requis".encode("utf-8"), "text/plain; charset=utf-8")
+        return False
+
+    def _redirect(self, location: str, cookie: str | None = None) -> None:
+        extra = {"Location": location}
+        if cookie:
+            extra["Set-Cookie"] = cookie
+        self._send(303, b"", "text/plain; charset=utf-8", extra)
+
+    def _login(self) -> None:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            form = parse_qs(self.rfile.read(min(length, 4096)).decode("utf-8", "replace")) if 0 < length <= 4096 else {}
+        except ValueError:
+            form = {}
+        code = (form.get("code") or [""])[0]
+        target = access.safe_next((form.get("next") or ["/"])[0])
+        if not access.enabled():
+            self._redirect(target)
+            return
+        if not self._same_origin():
+            self._send(403, "Requête refusée".encode("utf-8"), "text/plain; charset=utf-8")
+            return
+        if access.locked():
+            self._send(429, access.login_page(target, "Trop d'essais ratés. Réessaie dans un quart d'heure."), "text/html; charset=utf-8")
+            return
+        if not access.check(code):
+            error = "Trop d'essais ratés. Réessaie dans un quart d'heure." if access.locked() else "Ce n'est pas le bon code."
+            self._send(401, access.login_page(target, error), "text/html; charset=utf-8")
+            return
+        self._redirect(target, access.set_cookie(self._https()))
+
     def do_POST(self) -> None:
         path = urlsplit(self.path).path
+        if path == "/acces":
+            self._login()
+            return
+        if not self._gate(path):
+            return
         if path != "/api/settings/youtube":
             self._json(404, {"error": "Adresse d'API inconnue"})
             return
@@ -351,6 +402,18 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parts = urlsplit(self.path)
         path = parts.path
+        if path == "/acces/sortie":
+            self._redirect("/", access.clear_cookie())
+            return
+        if path == "/acces":
+            if access.allowed(path, self.headers.get("Cookie")):
+                self._redirect("/")
+            else:
+                target = access.safe_next(parse_qs(parts.query).get("next", ["/"])[0])
+                self._send(401, access.login_page(target), "text/html; charset=utf-8")
+            return
+        if not self._gate(path):
+            return
         if path.startswith("/api/"):
             self._api(path, {k: v[0] for k, v in parse_qs(parts.query).items()})
         else:

@@ -1,0 +1,148 @@
+#!/bin/bash
+# Commande « parquet-serveur » : Parquet hébergé en permanence sur un Raspberry Pi ou un
+# ordinateur Linux (Debian, Ubuntu, Raspberry Pi OS…). Installée par installer-serveur.sh.
+#
+#   parquet-serveur etat           Parquet tourne-t-il ? Adresses où l'ouvrir
+#   parquet-serveur journal        les derniers messages de Parquet (Ctrl+C pour sortir)
+#   parquet-serveur maj            met Parquet à jour maintenant (c'est aussi fait chaque nuit)
+#   parquet-serveur redemarrer     relance Parquet
+#   parquet-serveur arreter        arrête Parquet (il ne redémarrera qu'avec « redemarrer »)
+#   parquet-serveur code CODE      protège Parquet par un code d'accès (« code aucun » pour l'enlever)
+#   parquet-serveur tailscale      rend Parquet accessible partout, en privé, avec Tailscale
+#   parquet-serveur verifier       vérifie en détail chaque source de données
+
+set -u
+CONF=/etc/parquet/serveur.conf
+ENVF=/etc/parquet/parquet.env
+if [ ! -r "$CONF" ]; then
+  echo "Parquet n'est pas installé en serveur sur cette machine (fichier $CONF absent)."
+  echo "Installation : voir docs/GUIDE-UTILISATEUR.md, section « Héberger Parquet »."
+  exit 1
+fi
+# shellcheck disable=SC1090
+. "$CONF"   # PARQUET_USER, PARQUET_DIR, PARQUET_PORT
+
+as_root() {
+  if [ "$(id -u)" -eq 0 ]; then "$@"; else sudo "$@"; fi
+}
+as_user() {
+  # HOME de l'utilisateur : git refuse de tourner s'il ne peut pas lire la configuration de /root.
+  if [ "$(id -un)" = "$PARQUET_USER" ]; then "$@"
+  else as_root runuser -u "$PARQUET_USER" -- env HOME="$(getent passwd "$PARQUET_USER" | cut -d: -f6)" "$@"; fi
+}
+
+addresses() {
+  echo "  Sur cette machine     : http://localhost:$PARQUET_PORT/"
+  for ip in $(hostname -I 2>/dev/null); do
+    case "$ip" in
+      *:*|100.*) ;;  # IPv6 et adresses Tailscale : affichées à part
+      *) echo "  Depuis le Wi-Fi       : http://$ip:$PARQUET_PORT/" ;;
+    esac
+  done
+  if command -v tailscale >/dev/null 2>&1; then
+    url=$(tailscale serve status 2>/dev/null | grep -o 'https://[^ ]*' | head -1)
+    [ -n "$url" ] && echo "  Partout (Tailscale)   : $url"
+  fi
+}
+
+update() {
+  before=$(as_user git -C "$PARQUET_DIR" rev-parse HEAD)
+  as_user git -C "$PARQUET_DIR" pull --ff-only -q || { echo "Mise à jour impossible (git pull)."; return 1; }
+  after=$(as_user git -C "$PARQUET_DIR" rev-parse HEAD)
+  if [ "$before" = "$after" ]; then
+    echo "Parquet est déjà à jour."
+    return 0
+  fi
+  as_user "$PARQUET_DIR/.venv/bin/python" -m pip install --disable-pip-version-check -q -r "$PARQUET_DIR/requirements.txt"
+  # La commande elle-même peut avoir changé (remplacement par renommage, sans toucher au fichier en cours).
+  as_root install -m 755 "$PARQUET_DIR/serveur/parquet-serveur" /usr/local/bin/.parquet-serveur.new
+  as_root mv -f /usr/local/bin/.parquet-serveur.new /usr/local/bin/parquet-serveur
+  as_root systemctl restart parquet
+  echo "Parquet est à jour : $(as_user git -C "$PARQUET_DIR" log -1 --format=%s)"
+}
+
+set_code() {
+  code="${1:-}"
+  if [ -z "$code" ]; then
+    echo "Indique le code : parquet-serveur code MonCodeSecret   (ou « parquet-serveur code aucun »)"
+    exit 2
+  fi
+  as_root mkdir -p /etc/parquet
+  tmp=$(mktemp)
+  as_root test -f "$ENVF" && as_root grep -v '^PARQUET_ACCES=' "$ENVF" > "$tmp" || true
+  if [ "$code" != "aucun" ]; then
+    case "$code" in
+      *\"*|*\\*|*\$*|*\`*) echo "Le code ne doit contenir ni guillemet, ni barre oblique inverse, ni \$, ni \`."; rm -f "$tmp"; exit 2 ;;
+    esac
+    if [ "${#code}" -lt 6 ]; then
+      echo "Le code doit faire au moins 6 caractères."; rm -f "$tmp"; exit 2
+    fi
+    printf 'PARQUET_ACCES="%s"\n' "$code" >> "$tmp"
+  fi
+  as_root install -m 600 -o root -g root "$tmp" "$ENVF"
+  rm -f "$tmp"
+  as_root systemctl restart parquet
+  if [ "$code" = "aucun" ]; then
+    echo "Code d'accès retiré : Parquet est ouvert à tous les appareils qui peuvent le joindre."
+  else
+    echo "Code d'accès enregistré. Chaque appareil le tapera une fois (changer le code déconnecte tout le monde)."
+  fi
+}
+
+tailscale_setup() {
+  if ! command -v tailscale >/dev/null 2>&1; then
+    echo "Installation de Tailscale (réseau privé gratuit entre tes appareils)…"
+    curl -fsSL https://tailscale.com/install.sh | as_root sh || exit 1
+  fi
+  echo
+  echo "Connexion de cette machine à ton compte Tailscale : ouvre le lien affiché si on te le demande."
+  as_root tailscale up || exit 1
+  # HTTPS automatique, visible seulement de tes appareils connectés à Tailscale.
+  as_root tailscale serve --bg "$PARQUET_PORT" || {
+    echo "« tailscale serve » a échoué : active HTTPS dans la console Tailscale (DNS > HTTPS Certificates), puis relance."
+    exit 1
+  }
+  echo
+  echo "C'est prêt. Installe l'application Tailscale sur ton téléphone, connecte-toi au même compte, puis ouvre :"
+  addresses | grep Tailscale || as_root tailscale serve status
+}
+
+case "${1:-etat}" in
+  etat|état|status)
+    if systemctl is-active --quiet parquet; then
+      echo "Parquet tourne."
+      addresses
+    else
+      echo "Parquet est arrêté. Pour le relancer : parquet-serveur redemarrer"
+      systemctl --no-pager status parquet | tail -n 5
+    fi
+    ;;
+  journal|logs)
+    journalctl -u parquet -n 60 -f
+    ;;
+  maj|update)
+    update
+    ;;
+  redemarrer|redémarrer|restart)
+    as_root systemctl restart parquet && echo "Parquet est relancé."
+    ;;
+  arreter|arrêter|stop)
+    as_root systemctl stop parquet && echo "Parquet est arrêté."
+    ;;
+  code)
+    set_code "${2:-}"
+    ;;
+  tailscale)
+    tailscale_setup
+    ;;
+  verifier|vérifier)
+    cd "$PARQUET_DIR" && as_user "$PARQUET_DIR/.venv/bin/python" run.py --verifier
+    ;;
+  -h|--help|aide)
+    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    echo "Commande inconnue : $1 (tape « parquet-serveur aide »)"
+    exit 2
+    ;;
+esac

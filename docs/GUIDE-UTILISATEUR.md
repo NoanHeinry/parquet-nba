@@ -19,7 +19,7 @@ Ton tableau de bord et ton encyclopédie NBA personnels, en français.
 - **Classement**, **leaders** et **Playoffs** : classement par conférence, leaders statistiques et l'arbre complet des playoffs NBA (séries 1er tour, demi-finales, finales de conférence, Finales NBA et détail de chaque rencontre).
 - Logos et photos officiels, thème sombre ou clair, équipes favorites mises en avant.
 
-L'application tourne sur ton ordinateur, ou directement sur ton téléphone Android (voir [Sans ordinateur](#sans-ordinateur-sur-un-téléphone-android)), et va chercher les données publiques de NBA.com et de Wikipédia. Rien n'est hébergé ailleurs, aucun compte n'est nécessaire.
+L'application tourne sur ton ordinateur, directement sur ton téléphone Android (voir [Sans ordinateur](#sans-ordinateur-sur-un-téléphone-android)), ou en permanence sur un Raspberry Pi ou un vieux téléphone (voir [Héberger Parquet](#héberger-parquet-en-permanence)), et va chercher les données publiques de NBA.com et de Wikipédia. Rien n'est hébergé ailleurs, aucun compte n'est nécessaire.
 
 ## Installation
 
@@ -154,6 +154,63 @@ Parquet peut tourner entièrement sur un téléphone Android, grâce à **Termux
 - **Hors Wi-Fi**, Parquet utilise tes données mobiles pour ce que tu consultes, comme n'importe quelle application de sport.
 
 Ce mode n'existe pas sur **iPhone** : iOS ne laisse pas un programme de ce type tourner en arrière-plan. Sur iPhone, il faut passer par l'ordinateur, comme décrit dans la section précédente.
+
+## Héberger Parquet en permanence
+
+Par défaut, Parquet tourne quand tu le lances, sur l'appareil où tu le lances. Pour l'avoir tout le temps, sur tous tes appareils, sans rien lancer, il suffit de le confier à une petite machine qui reste allumée **chez toi** : un Raspberry Pi, un vieil ordinateur ou un vieux téléphone Android.
+
+Pourquoi chez toi et pas chez un hébergeur ? NBA.com bloque la plupart des serveurs des hébergeurs (centres de données), mais accepte les connexions d'une box Internet de particulier. Un hébergement web classique (celui des fichiers `.htaccess`) ne convient pas non plus : il sert des pages, mais ne fait pas tourner un programme comme Parquet. Et les données de la NBA sont réservées à un usage personnel : un Parquet privé, pour toi et tes proches, reste dans les clous.
+
+### Sur un Raspberry Pi (ou n'importe quel ordinateur sous Linux)
+
+Un Raspberry Pi 3, 4, 5 ou Zero 2 W suffit largement ; il consomme moins qu'une ampoule.
+
+1. Avec **Raspberry Pi Imager** (sur ton ordinateur), installe **Raspberry Pi OS Lite** sur la carte microSD. Dans les réglages de l'Imager, choisis un nom d'utilisateur, ton Wi-Fi et active **SSH**.
+2. Branche le Raspberry Pi, attends une minute, puis connecte-toi depuis ton ordinateur : `ssh tonnom@raspberrypi.local` (dans le Terminal sur Mac et Linux, dans PowerShell sous Windows).
+3. Colle cette ligne et valide :
+
+   ```
+   curl -fsSL https://raw.githubusercontent.com/NoanHeinry/parquet-nba/main/installer-serveur.sh | bash
+   ```
+
+   Le script installe Parquet comme un service : il démarre avec la machine, redémarre tout seul en cas de problème et **se met à jour chaque nuit**. À la fin, il affiche les adresses où ouvrir Parquet, par exemple `http://192.168.1.20:8765`.
+
+La commande `parquet-serveur` sert ensuite à tout :
+
+| Commande | Effet |
+|---|---|
+| `parquet-serveur etat` | Parquet tourne-t-il ? Adresses où l'ouvrir |
+| `parquet-serveur tailscale` | l'ouvrir de partout, en privé (voir plus bas) |
+| `parquet-serveur code MonCodeSecret` | protéger Parquet par un code d'accès (`code aucun` pour l'enlever) |
+| `parquet-serveur maj` | mise à jour immédiate (sinon, chaque nuit) |
+| `parquet-serveur journal` | voir ce que fait Parquet (Ctrl+C pour sortir) |
+| `parquet-serveur redemarrer`, `arreter` | relancer ou arrêter |
+| `parquet-serveur verifier` | vérifier chaque source de données en détail |
+
+### Sur un vieux téléphone Android
+
+1. Installe Parquet comme indiqué dans la section [Sans ordinateur](#sans-ordinateur-sur-un-téléphone-android).
+2. Dans F-Droid, installe aussi **Termux:Boot** et ouvre-le une fois.
+3. Dans Termux, tape `parquet demarrage oui` : Parquet démarrera tout seul, en mode serveur, à chaque allumage du téléphone. Pour le lancer tout de suite : `parquet serveur`.
+4. Dans les paramètres d'Android, *Applications*, *Termux*, *Batterie* : choisis *Non restreinte*. Laisse le téléphone branché sur le secteur, sur le Wi-Fi.
+
+`parquet serveur` affiche l'adresse à ouvrir depuis tes autres appareils (`http://192.168.1.x:8765`). `parquet code MonCodeSecret` ajoute un code d'accès, `parquet demarrage non` retire le démarrage automatique.
+
+### L'ouvrir de partout (4G, travail, vacances)
+
+**La solution conseillée : Tailscale.** C'est un réseau privé gratuit entre tes appareils : Parquet reste invisible du reste d'Internet, mais s'ouvre depuis ton téléphone où que tu sois, en HTTPS (l'application s'installe et les notifications fonctionnent).
+
+- Sur un Raspberry Pi : tape `parquet-serveur tailscale`, ouvre le lien de connexion affiché et connecte-toi (compte Google, Microsoft ou GitHub). Si on te le demande, active *HTTPS Certificates* dans la console Tailscale (*DNS*). L'adresse finale ressemble à `https://raspberrypi.tailnet-1234.ts.net`.
+- Sur un téléphone serveur : installe l'application Tailscale sur ce téléphone et connecte-la au même compte. L'adresse est alors `http://100.x.y.z:8765` (indiquée dans l'application Tailscale).
+- Sur chaque appareil qui doit ouvrir Parquet : installe Tailscale et connecte-le au même compte.
+
+**Une adresse publique (Cloudflare Tunnel).** Pour partager Parquet avec quelqu'un sans lui faire installer Tailscale, un tunnel Cloudflare donne une adresse HTTPS publique sans ouvrir de port sur ta box. Mets **d'abord** un code d'accès (`parquet-serveur code …`), puis installe `cloudflared` (voir la documentation de Cloudflare) et lance `cloudflared tunnel --url http://localhost:8765`. Pour une adresse fixe, il faut un nom de domaine relié à Cloudflare (tunnel nommé).
+
+### Le code d'accès
+
+Avec un code, chaque nouvel appareil voit d'abord une page qui le demande ; une fois tapé, l'appareil s'en souvient pendant un an. Changer le code déconnecte tous les appareils. Après dix essais ratés, la page se bloque un quart d'heure. Le code n'est jamais enregistré dans le navigateur : celui-ci reçoit seulement une signature. Pour se déconnecter d'un appareil : ouvre `/acces/sortie` (par exemple `https://…/acces/sortie`).
+
+Sans tunnel public, le code est facultatif : sur le Wi-Fi de la maison ou derrière Tailscale, seuls tes appareils peuvent joindre Parquet.
 
 ## Si quelque chose ne s'affiche pas
 

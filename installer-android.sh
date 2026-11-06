@@ -71,4 +71,5 @@ cat <<'TXT'
     parquet maj          mettre Parquet à jour
     parquet demo         mode démonstration (données fictives)
     parquet diagnostic   tester l'accès à NBA.com
+    parquet serveur      faire de ce téléphone le serveur de tes autres appareils
 TXT

@@ -21,6 +21,8 @@ export async function api(path, { signal } = {}) {
   } catch {
     throw new ApiError(`Réponse illisible du serveur local (code ${res.status}).`, res.status);
   }
+  // Parquet protégé par un code d'accès (hébergement) : le rechargement affiche la page du code.
+  if (res.status === 401 && body?.access) location.reload();
   if (!res.ok) throw new ApiError(body?.error || `Erreur ${res.status}`, res.status);
   return body; // { data, meta }
 }

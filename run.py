@@ -5,6 +5,7 @@ Options :
   --lan              rend l'application accessible depuis les autres appareils du Wi-Fi (téléphone…)
   --demo             lance l'application sur des données de démonstration, sans connexion à NBA.com
   --no-browser       ne pas ouvrir le navigateur automatiquement
+  --code-acces CODE  demande ce code à chaque nouvel appareil (hébergement ; ou variable PARQUET_ACCES)
   --diagnostic       teste les sources de données puis s'arrête
   --vider-cache      efface les données mises en cache puis démarre
 """
@@ -36,7 +37,7 @@ except ImportError:
         "ou tape : python -m pip install -r requirements.txt"
     )
 
-from parquet import __version__, nba, settings
+from parquet import __version__, access, nba, settings
 from parquet.cache import Cache
 from parquet.server import make_server
 
@@ -107,7 +108,15 @@ def main() -> int:
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--verifier", action="store_true", help="vérifier en détail chaque source de données (vraies données)")
     parser.add_argument("--vider-cache", action="store_true")
+    parser.add_argument("--code-acces", default=None, help="code demandé aux appareils (hébergement accessible depuis Internet)")
     args = parser.parse_args()
+
+    code = args.code_acces if args.code_acces is not None else os.environ.get(access.ENV, "")
+    try:
+        access.init(code, APP_DIR / "data" / "acces.key")
+    except ValueError as exc:
+        print(exc)
+        return 2
 
     if args.demo:
         # Données fictives générées localement : utile pour découvrir l'application hors ligne.
@@ -157,7 +166,10 @@ def main() -> int:
         ip = lan_address()
         if ip:
             print(f"  Sur ton téléphone (même Wi-Fi) : http://{ip}:{port}/")
-        print("  Parquet est visible des autres appareils de ce réseau : à éviter sur un Wi-Fi public.")
+        if not access.enabled():
+            print("  Parquet est visible des autres appareils de ce réseau : à éviter sur un Wi-Fi public.")
+    if access.enabled():
+        print("  Protégé par un code d'accès : chaque nouvel appareil devra le taper une fois.")
     if on_termux():
         print("  Tu peux passer au navigateur : Termux garde Parquet allumé en arrière-plan.")
         print("  Pour arrêter : tape « parquet stop », ou touche « Exit » dans la notification de Termux.\n")

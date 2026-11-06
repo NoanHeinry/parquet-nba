@@ -9,11 +9,12 @@ import tempfile
 import threading
 import unittest
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from unittest import mock
 
-from parquet import demo, extras, nba, net, settings
+from parquet import access, demo, extras, nba, net, settings
 from parquet.cache import Cache
 from parquet.server import make_server
 
@@ -201,6 +202,111 @@ class SettingsTests(unittest.TestCase):
         settings.save({"youtubeKey": ""})
         with mock.patch.dict(os.environ, {settings.ENV_YOUTUBE: ""}):
             self.assertFalse(settings.youtube_status()["configured"])
+
+
+class AccessCodeTests(unittest.TestCase):
+    """Code d'accès facultatif (hébergement) : tout est fermé tant que le code n'a pas été tapé."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.saved_get = net._get
+        demo.install()
+        nba.init(Cache(Path(cls.tmp.name) / "c.sqlite3"))
+        settings.init(Path(cls.tmp.name) / "settings.json")
+        cls.key = Path(cls.tmp.name) / "acces.key"
+        access.init("code-secret", cls.key)
+        cls.server = make_server("127.0.0.1", 0)
+        cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
+        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
+
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *args, **kwargs):
+                return None
+
+        cls.opener = urllib.request.build_opener(NoRedirect)
+
+    @classmethod
+    def tearDownClass(cls):
+        access.init(None, None)
+        cls.server.shutdown()
+        cls.server.server_close()
+        net._get = cls.saved_get
+        net.DEMO = False
+        settings.init(None)
+        nba.CACHE._db.close()
+        cls.tmp.cleanup()
+
+    def setUp(self):
+        access._failures.clear()
+
+    def request(self, path, data=None, cookie=None, headers=None):
+        req = urllib.request.Request(self.base + path, data=data, headers=headers or {})
+        if cookie:
+            req.add_header("Cookie", cookie)
+        try:
+            with self.opener.open(req) as r:
+                return r.status, dict(r.headers), r.read()
+        except urllib.error.HTTPError as exc:
+            return exc.code, dict(exc.headers), exc.read()
+
+    def login(self, code, next_path="/joueurs"):
+        body = urllib.parse.urlencode({"code": code, "next": next_path}).encode()
+        return self.request("/acces", data=body, headers={"Content-Type": "application/x-www-form-urlencoded"})
+
+    def test_everything_is_closed_without_the_code(self):
+        status, _, body = self.request("/")
+        self.assertEqual(status, 401)
+        self.assertIn("Code d'accès", body.decode())
+        self.assertIn('value="/"', body.decode())
+        status, _, body = self.request("/equipe/1610612738?onglet=profil")
+        self.assertIn('value="/equipe/1610612738?onglet=profil"', body.decode())
+        status, _, body = self.request("/api/status")
+        self.assertEqual(status, 401)
+        self.assertTrue(json.loads(body)["access"])
+        self.assertEqual(self.request("/js/app.js")[0], 401)
+        self.assertEqual(self.request("/img/icon.svg")[0], 200)  # icône de l'onglet
+
+    def test_right_code_gives_a_signed_cookie(self):
+        status, headers, _ = self.login("code-secret")
+        self.assertEqual(status, 303)
+        self.assertEqual(headers["Location"], "/joueurs")
+        cookie = headers["Set-Cookie"].split(";")[0]
+        self.assertNotIn("code-secret", headers["Set-Cookie"])
+        self.assertIn("HttpOnly", headers["Set-Cookie"])
+        self.assertEqual(self.request("/api/status", cookie=cookie)[0], 200)
+        self.assertEqual(self.request("/js/app.js", cookie=cookie)[0], 200)
+        self.assertEqual(self.request("/api/status", cookie="parquet_acces=faux")[0], 401)
+        # La clé est gardée : le même cookie reste valable après un redémarrage.
+        access.init("code-secret", self.key)
+        self.assertEqual(self.request("/api/status", cookie=cookie)[0], 200)
+        # Changer le code déconnecte tout le monde.
+        access.init("autre-code", self.key)
+        self.assertEqual(self.request("/api/status", cookie=cookie)[0], 401)
+        access.init("code-secret", self.key)
+
+    def test_wrong_code_redirect_safety_and_lockout(self):
+        status, _, body = self.login("mauvais")
+        self.assertEqual(status, 401)
+        self.assertIn("pas le bon code", body.decode())
+        self.assertEqual(self.login("code-secret", "//exemple.com")[1]["Location"], "/")
+        self.assertEqual(self.login("code-secret", "https://exemple.com")[1]["Location"], "/")
+        self.assertEqual(self.login("code-secret", "/\r\nSet-Cookie: x=1")[1]["Location"], "/")
+        self.assertEqual(self.login("code-secret", "/#/equipe/1610612738")[1]["Location"], "/#/equipe/1610612738")
+        with mock.patch("parquet.access.time.sleep"):
+            for _ in range(access.MAX_FAILURES):
+                self.login("mauvais")
+        status, _, body = self.login("code-secret")
+        self.assertEqual(status, 429)
+        self.assertIn("Trop d'essais", body.decode())
+
+    def test_logout_and_short_codes(self):
+        status, headers, _ = self.request("/acces/sortie")
+        self.assertEqual(status, 303)
+        self.assertIn("Max-Age=0", headers["Set-Cookie"])
+        with self.assertRaises(ValueError):
+            access.init("court", None)
+        access.init("code-secret", self.key)
 
 
 class ServerTests(unittest.TestCase):

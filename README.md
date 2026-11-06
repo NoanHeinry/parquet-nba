@@ -141,7 +141,7 @@ Le navigateur ne parle qu'au serveur local, qui interroge les sources, normalise
 
 **Calendrier et notifications.** Le calendrier d'une équipe est exporté au format iCalendar (RFC 5545 : lignes repliées à 75 octets, échappement, horaires en UTC convertis par l'agenda). Les notifications tiennent compte des contraintes des navigateurs : elles ne sont autorisées que sur une connexion sécurisée, ce que l'interface détecte pour expliquer la marche à suivre.
 
-**Sécurité et accessibilité.** Les textes issus des sources sont toujours insérés comme du texte (jamais via `innerHTML`). Le serveur n'écoute que sur la machine locale par défaut (l'accès depuis le téléphone est une option explicite) et refuse toute sortie du dossier `web/`. Navigation au clavier, focus visible, mouvements réduits respectés.
+**Sécurité et accessibilité.** Les textes issus des sources sont toujours insérés comme du texte (jamais via `innerHTML`). Le serveur n'écoute que sur la machine locale par défaut (l'accès depuis le téléphone est une option explicite) et refuse toute sortie du dossier `web/`. Hébergé, il peut exiger un code d'accès : cookie `HttpOnly` signé par HMAC (le code n'y figure pas), comparaisons à temps constant, essais limités, redirection après connexion limitée aux adresses de Parquet. Navigation au clavier, focus visible, mouvements réduits respectés.
 
 ## Lancer le projet
 
@@ -154,7 +154,9 @@ python run.py
 
 L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les lanceurs `lancer.bat` et `lancer.command` créent l'environnement Python et démarrent tout en un double-clic ; `lancer-telephone.bat` et `lancer-telephone.command` font de même en rendant Parquet accessible depuis le téléphone. Sur Android, sans ordinateur, `installer-android.sh` installe Parquet dans Termux et ajoute la commande `parquet` (lancer, arrêter, mettre à jour) et un widget d'écran d'accueil. Le [guide d'utilisation](docs/GUIDE-UTILISATEUR.md) détaille l'installation, l'accès depuis un téléphone et le dépannage.
 
-Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--diagnostic` (teste les sources puis s'arrête), `--verifier` (vérifie chaque source en détail, format compris, puis s'arrête), `--vider-cache`.
+Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--code-acces` (code demandé à chaque nouvel appareil, aussi par la variable `PARQUET_ACCES`), `--diagnostic` (teste les sources puis s'arrête), `--verifier` (vérifie chaque source en détail, format compris, puis s'arrête), `--vider-cache`.
+
+**Hébergement permanent.** `installer-serveur.sh` fait d'un Raspberry Pi ou d'un ordinateur Linux un serveur Parquet : service systemd (démarrage avec la machine, relance en cas d'erreur), mise à jour chaque nuit par un timer, commande `parquet-serveur` (état, journal, code d'accès, Tailscale). Sur un vieux téléphone Android, `parquet serveur` et `parquet demarrage oui` (Termux:Boot) font la même chose. Le guide explique l'accès de partout avec Tailscale (privé, HTTPS) ou un tunnel Cloudflare (public, avec code d'accès).
 
 ## Tests
 
@@ -177,7 +179,9 @@ GitHub Actions lance les tests unitaires sur Python 3.9, 3.11 et 3.13, et les te
 parquet-nba/
 ├── run.py                  point d'entrée (serveur, ouverture du navigateur, diagnostic)
 ├── installer-android.sh    installation sur téléphone Android (Termux), sans ordinateur
-├── android/parquet         commande « parquet » pour Termux (lancer, arrêter, mettre à jour)
+├── android/parquet         commande « parquet » pour Termux (lancer, arrêter, mettre à jour, mode serveur)
+├── installer-serveur.sh    installation en service permanent (Raspberry Pi, Linux)
+├── serveur/parquet-serveur commande d'administration du service (état, mise à jour, code, Tailscale)
 ├── parquet/                serveur Python
 │   ├── server.py           serveur HTTP, routes /api, fichiers statiques
 │   ├── nba.py              récupération et normalisation des données NBA
@@ -186,6 +190,7 @@ parquet-nba/
 │   ├── wiki.py             biographies via Wikidata et Wikipédia
 │   ├── extras.py           vidéos et clés d'un match, YouTube, rapport des blessures, transactions
 │   ├── settings.py         réglages locaux (clé YouTube) dans data/settings.json
+│   ├── access.py           code d'accès facultatif (hébergement) : page du code, cookie signé
 │   ├── demo.py             données de démonstration (mode --demo, tests, captures)
 │   └── teams_meta.py       les 30 franchises (couleurs, conférences, articles)
 ├── web/                    interface
@@ -200,13 +205,13 @@ parquet-nba/
 
 - **Code** : licence [MIT](LICENSE).
 - **Polices** : Anton (grands noms de l'accueil), Oswald (titres) et Barlow (texte), incluses sous licence SIL Open Font License (fichiers dans `web/fonts/`).
-- **Données, logos et photos NBA** : ils ne sont pas inclus dans ce dépôt. L'application les télécharge au moment de l'utilisation, depuis les sources publiques de NBA.com, et ils restent la propriété de la NBA et de leurs ayants droit. Les conditions d'utilisation de NBA.com réservent ces contenus à un usage personnel : Parquet est conçu pour être lancé par chacun sur son propre ordinateur, pas pour être hébergé publiquement.
+- **Données, logos et photos NBA** : ils ne sont pas inclus dans ce dépôt. L'application les télécharge au moment de l'utilisation, depuis les sources publiques de NBA.com, et ils restent la propriété de la NBA et de leurs ayants droit. Les conditions d'utilisation de NBA.com réservent ces contenus à un usage personnel : Parquet est conçu pour être lancé par chacun sur sa propre machine (ordinateur, téléphone ou Raspberry Pi à la maison), pour soi et ses proches, pas pour être hébergé publiquement.
 - **Textes Wikipédia** : affichés avec un lien vers l'article et la mention de la licence CC BY-SA.
 
 Parquet est un projet personnel indépendant, sans lien avec la NBA ni ses équipes.
 
 ## Pistes d'amélioration
 
-- Notifications même quand Parquet est fermé (notifications push, qui demandent un serveur en ligne).
+- Notifications même quand l'application est fermée (notifications push, désormais possibles avec un Parquet hébergé en permanence).
 - Mode multilingue (anglais, espagnol) pour les statistiques et les récompenses.
-- Statistiques d'équipe avancées (Net Rating, Pace) et cartes de tirs comparées entre deux joueurs.
+- Cartes de tirs comparées entre deux joueurs.
