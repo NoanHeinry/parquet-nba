@@ -313,7 +313,9 @@ class Handler(BaseHTTPRequestHandler):
         origin = self.headers.get("Origin")
         if not origin:
             return True
-        return urlsplit(origin).netloc == (self.headers.get("Host") or "")
+        # Derrière un tunnel (Cloudflare, Tailscale), l'adresse publique peut arriver dans X-Forwarded-Host.
+        hosts = {self.headers.get("Host") or "", self.headers.get("X-Forwarded-Host") or ""} - {""}
+        return urlsplit(origin).netloc in hosts
 
     # -- Code d'accès (facultatif, voir access.py) ----------------------------------------
 

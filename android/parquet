@@ -10,6 +10,7 @@
 #   parquet serveur        transforme ce téléphone en serveur pour tes autres appareils (même Wi-Fi)
 #   parquet demarrage oui  relance « parquet serveur » à chaque démarrage du téléphone (Termux:Boot)
 #   parquet code XXXXXX    demande ce code aux autres appareils (« parquet code aucun » pour l'enlever)
+#   parquet tunnel JETON   publie Parquet à ton adresse Cloudflare avec le serveur (« parquet tunnel aucun »)
 #
 # Installée par installer-android.sh dans $PREFIX/bin.
 
@@ -19,6 +20,7 @@ PORT="${PARQUET_PORT:-8765}"
 URL="http://localhost:$PORT/"
 PY="${PARQUET_PYTHON:-$APP/.venv/bin/python}"
 ACCES_FILE="$HOME/.parquet-acces"
+TUNNEL_FILE="$HOME/.parquet-tunnel"
 if [ -z "${PARQUET_ACCES:-}" ] && [ -f "$ACCES_FILE" ]; then
   PARQUET_ACCES="$(cat "$ACCES_FILE")"
   export PARQUET_ACCES
@@ -85,7 +87,60 @@ serve() {
   command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock
   cd "$APP" || exit 1
   echo "Mode serveur : laisse le téléphone branché sur le secteur, Termux ouvert en arrière-plan."
-  exec "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan "$@"
+  tunnel_pid=""
+  if [ -f "$TUNNEL_FILE" ]; then
+    if [ -z "${PARQUET_ACCES:-}" ]; then
+      echo "Tunnel Cloudflare non lancé : mets d'abord un code d'accès (parquet code MonCodeSecret)."
+    elif ! command -v cloudflared >/dev/null 2>&1; then
+      echo "Tunnel Cloudflare non lancé : cloudflared manque (pkg install cloudflared)."
+    else
+      # Le jeton passe par l'environnement, pas par la ligne de commande (visible des autres programmes).
+      TUNNEL_TOKEN="$(cat "$TUNNEL_FILE")" cloudflared tunnel --no-autoupdate run > "$HOME/parquet-tunnel.log" 2>&1 &
+      tunnel_pid=$!
+      echo "Tunnel Cloudflare lancé : Parquet est aussi à ton adresse Cloudflare (journal : ~/parquet-tunnel.log)."
+    fi
+  fi
+  if [ -z "$tunnel_pid" ]; then
+    exec "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan "$@"
+  fi
+  trap 'kill "$tunnel_pid" 2>/dev/null' EXIT
+  "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan "$@"
+}
+
+tunnel() {
+  case "${1:-}" in
+    "")
+      if [ -f "$TUNNEL_FILE" ]; then echo "Tunnel Cloudflare : configuré (« parquet tunnel aucun » pour l'enlever)."
+      else echo "Tunnel Cloudflare : aucun. Pour en mettre un : parquet tunnel JETON (voir le guide, « Une adresse à toi »)."; fi
+      ;;
+    aucun|non|off)
+      rm -f "$TUNNEL_FILE"
+      echo "Tunnel retiré. Relance Parquet (parquet stop, puis parquet serveur)."
+      ;;
+    *)
+      if [ -z "${PARQUET_ACCES:-}" ]; then
+        echo "Avec une adresse publique, n'importe qui pourrait ouvrir ton Parquet."
+        echo "Mets d'abord un code d'accès : parquet code MonCodeSecret"
+        exit 2
+      fi
+      # Cloudflare affiche une commande entière : on accepte de la recoller telle quelle et on garde le jeton.
+      token=""
+      for word in "$@"; do
+        case "$word" in eyJ*) token="$word" ;; esac
+      done
+      if [ -z "$token" ]; then
+        echo "Je ne trouve pas le jeton : c'est le long texte qui commence par « eyJ » dans la commande donnée par Cloudflare."
+        exit 2
+      fi
+      if ! command -v cloudflared >/dev/null 2>&1; then
+        echo "Installation de cloudflared…"
+        pkg install -y cloudflared </dev/null || { echo "Installation impossible : tape « pkg install cloudflared », puis recommence."; exit 1; }
+      fi
+      (umask 077 && printf '%s' "$token" > "$TUNNEL_FILE")
+      echo "Jeton enregistré. Relance Parquet (parquet stop, puis parquet serveur) : le tunnel démarrera avec lui,"
+      echo "y compris au démarrage du téléphone si « parquet demarrage oui » est activé."
+      ;;
+  esac
 }
 
 BOOT="$HOME/.termux/boot/parquet-serveur"
@@ -126,6 +181,7 @@ case "${1:-}" in
     start --demo "$@"
     ;;
   stop|arreter|arrêter)
+    pkill -TERM -f "cloudflared tunnel --no-autoupdate run" 2>/dev/null
     if pkill -TERM -f "run.py --no-browser --port $PORT" 2>/dev/null; then
       echo "Parquet est arrêté."
     else
@@ -148,6 +204,10 @@ case "${1:-}" in
     ;;
   demarrage|démarrage|boot)
     boot "${2:-}"
+    ;;
+  tunnel)
+    shift
+    tunnel "$@"
     ;;
   code)
     if [ -z "${2:-}" ]; then
@@ -173,7 +233,7 @@ case "${1:-}" in
     cd "$APP" && "$PY" run.py --verifier
     ;;
   -h|--help|aide)
-    sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
     ;;
   *)
     echo "Commande inconnue : $1 (tape « parquet aide »)"

@@ -300,6 +300,16 @@ class AccessCodeTests(unittest.TestCase):
         self.assertEqual(status, 429)
         self.assertIn("Trop d'essais", body.decode())
 
+    def test_login_behind_a_tunnel_checks_the_public_origin(self):
+        body = urllib.parse.urlencode({"code": "code-secret", "next": "/"}).encode()
+        form = {"Content-Type": "application/x-www-form-urlencoded"}
+        tunnel = {**form, "Origin": "https://parquet.exemple.fr", "X-Forwarded-Host": "parquet.exemple.fr", "X-Forwarded-Proto": "https"}
+        status, headers, _ = self.request("/acces", data=body, headers=tunnel)
+        self.assertEqual(status, 303)
+        self.assertIn("Secure", headers["Set-Cookie"])
+        status, _, _ = self.request("/acces", data=body, headers={**form, "Origin": "https://autre-site.fr"})
+        self.assertEqual(status, 403)
+
     def test_logout_and_short_codes(self):
         status, headers, _ = self.request("/acces/sortie")
         self.assertEqual(status, 303)

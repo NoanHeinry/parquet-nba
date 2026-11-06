@@ -204,7 +204,29 @@ La commande `parquet-serveur` sert ensuite à tout :
 - Sur un téléphone serveur : installe l'application Tailscale sur ce téléphone et connecte-la au même compte. L'adresse est alors `http://100.x.y.z:8765` (indiquée dans l'application Tailscale).
 - Sur chaque appareil qui doit ouvrir Parquet : installe Tailscale et connecte-le au même compte.
 
-**Une adresse publique (Cloudflare Tunnel).** Pour partager Parquet avec quelqu'un sans lui faire installer Tailscale, un tunnel Cloudflare donne une adresse HTTPS publique sans ouvrir de port sur ta box. Mets **d'abord** un code d'accès (`parquet-serveur code …`), puis installe `cloudflared` (voir la documentation de Cloudflare) et lance `cloudflared tunnel --url http://localhost:8765`. Pour une adresse fixe, il faut un nom de domaine relié à Cloudflare (tunnel nommé).
+**Une adresse à toi (Cloudflare Tunnel).** Avec un nom de domaine (environ 10 € par an), Parquet s'ouvre de partout à une adresse comme `https://parquet.tondomaine.fr`, sans application à installer, en HTTPS (application installable et notifications), sans ouvrir de port sur ta box et sans dévoiler ton adresse IP. Voir la section suivante.
+
+### Une adresse à toi avec Cloudflare
+
+1. **Achète un nom de domaine** chez le vendeur de ton choix (OVH, Gandi, Cloudflare…).
+2. **Crée un compte gratuit sur [cloudflare.com](https://dash.cloudflare.com/sign-up)**, puis *Add a domain* (ou *Ajouter un site*) avec ton domaine et l'offre **Free**. Cloudflare affiche deux serveurs de noms (du genre `anna.ns.cloudflare.com`) : chez le vendeur du domaine, remplace les serveurs DNS par ces deux-là. La prise en compte prend de quelques minutes à quelques heures ; Cloudflare t'envoie un e-mail quand c'est actif.
+3. **Crée le tunnel** : dans Cloudflare, *Zero Trust* (le premier accès demande de choisir un nom d'équipe et l'offre gratuite), puis *Networks*, *Tunnels*, *Create a tunnel*, type **Cloudflared**, nom `parquet`. Sur l'écran suivant, Cloudflare affiche une commande d'installation contenant un long jeton qui commence par `eyJ` : copie la commande entière.
+4. **Relie l'adresse à Parquet** : à l'étape *Public Hostname* (ou *Route traffic*), sous-domaine `parquet`, ton domaine, type **HTTP**, URL **`localhost:8765`**, puis enregistre.
+5. **Sur le téléphone serveur**, dans Termux :
+
+   ```
+   parquet code MonCodeSecret
+   parquet tunnel <colle ici la commande donnée par Cloudflare>
+   parquet stop
+   parquet serveur
+   ```
+
+   `parquet tunnel` refuse de s'activer sans code d'accès : avec une adresse publique, n'importe qui pourrait sinon ouvrir ton Parquet. Le tunnel démarre ensuite avec `parquet serveur`, y compris au démarrage du téléphone si `parquet demarrage oui` est activé. Dans Cloudflare, le tunnel passe à *Healthy* (ou *Connecté*).
+6. **Ouvre `https://parquet.tondomaine.fr`** depuis n'importe où, tape le code une fois par appareil, et installe l'application depuis le menu du navigateur.
+
+Pour aller plus loin, **Cloudflare Access** (gratuit, *Zero Trust*, *Access*, *Applications*) ajoute une connexion par e-mail devant Parquet : seules les adresses que tu autorises reçoivent un code de connexion. `parquet tunnel aucun` retire le tunnel ; le journal est dans `~/parquet-tunnel.log`.
+
+Sur un Raspberry Pi, l'étape 5 se fait avec la commande d'installation donnée par Cloudflare pour Debian (elle installe `cloudflared` comme service), après `parquet-serveur code MonCodeSecret`.
 
 ### Le code d'accès
 

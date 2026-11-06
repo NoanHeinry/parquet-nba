@@ -159,6 +159,37 @@ class TermuxCommandTests(unittest.TestCase):
         self.parquet("demarrage", "non")
         self.assertFalse(boot.exists())
 
+    def test_cloudflare_tunnel_needs_code_and_starts_with_server(self):
+        stub = Path(self.env["PREFIX"]) / "bin" / "cloudflared"
+        stub.write_text(f'#!/bin/bash\necho "cloudflared $* token=$TUNNEL_TOKEN" >> "{self.log}"\nexec sleep 60\n')
+        stub.chmod(0o755)
+        token = "eyJhIjoiZmFrZSJ9"
+        refused = self.parquet("tunnel", token)
+        self.assertEqual(refused.returncode, 2)
+        self.assertIn("code d'accès", refused.stdout)
+        self.parquet("code", "code-secret")
+        # La commande entière donnée par Cloudflare peut être recollée telle quelle.
+        self.assertIn("enregistré", self.parquet("tunnel", "cloudflared", "service", "install", token).stdout)
+        stored = Path(self.env["HOME"]) / ".parquet-tunnel"
+        self.assertEqual(stored.read_text(), token)
+        self.assertEqual(stored.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.parquet("tunnel", "pas-un-jeton").returncode, 2)
+        server = subprocess.Popen(["bash", str(COMMAND), "serveur", "--demo"], env=self.env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        try:
+            self.assertTrue(self.wait_for(f"token={token}"), "le tunnel n'a pas démarré")
+            self.assertIn("cloudflared tunnel --no-autoupdate run", self.log.read_text())
+            self.assertNotIn(token, self.log.read_text().split("token=")[0])  # jamais sur la ligne de commande
+            time.sleep(1)
+            self.parquet("stop")
+            out, _ = server.communicate(timeout=15)
+        finally:
+            if server.poll() is None:
+                server.kill()
+        self.assertIn("Tunnel Cloudflare lancé", out)
+        self.assertEqual(subprocess.run(["pgrep", "-f", "cloudflared tunnel --no-autoupdate run"], capture_output=True).returncode, 1)
+        self.parquet("tunnel", "aucun")
+        self.assertFalse(stored.exists())
+
     def test_access_code_is_stored_privately(self):
         self.assertEqual(self.parquet("code", "court").returncode, 2)
         self.assertIn("enregistré", self.parquet("code", "code-secret").stdout)
@@ -172,6 +203,7 @@ class TermuxCommandTests(unittest.TestCase):
     def test_help_and_unknown_command(self):
         self.assertIn("parquet maj", self.parquet("aide").stdout)
         self.assertIn("parquet demarrage", self.parquet("aide").stdout)
+        self.assertIn("parquet tunnel", self.parquet("aide").stdout)
         self.assertEqual(self.parquet("nimporte").returncode, 2)
 
     def test_scripts_are_valid_bash(self):
