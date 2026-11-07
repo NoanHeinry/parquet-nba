@@ -4,7 +4,7 @@
 #
 #   parquet-serveur etat           Parquet tourne-t-il ? Adresses où l'ouvrir
 #   parquet-serveur journal        les derniers messages de Parquet (Ctrl+C pour sortir)
-#   parquet-serveur maj            met Parquet à jour maintenant (c'est aussi fait chaque nuit)
+#   parquet-serveur maj            met Parquet à jour maintenant (sinon : automatique, après les tests GitHub)
 #   parquet-serveur redemarrer     relance Parquet
 #   parquet-serveur arreter        arrête Parquet (il ne redémarrera qu'avec « redemarrer »)
 #   parquet-serveur code CODE      protège Parquet par un code d'accès (« code aucun » pour l'enlever)

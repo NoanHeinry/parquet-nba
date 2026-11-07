@@ -29,7 +29,7 @@ WINDOW = 15 * 60
 COOKIE_AGE = 365 * 24 * 3600
 
 # Fichiers visibles sans code : polices et icônes de la page du code, de l'onglet et de l'écran d'accueil.
-PUBLIC = {"/fonts/oswald.woff", "/fonts/barlow-400.woff", "/fonts/barlow-600.woff", "/img/icon.svg", "/img/logo.svg", "/img/logo-complet.svg", "/img/icon-maskable-512.png", "/img/icon-192.png", "/img/icon-512.png", "/img/apple-touch-icon.png", "/manifest.webmanifest"}
+PUBLIC = {"/api/sante", "/fonts/oswald.woff", "/fonts/barlow-400.woff", "/fonts/barlow-600.woff", "/img/icon.svg", "/img/logo.svg", "/img/logo-complet.svg", "/img/icon-maskable-512.png", "/img/icon-192.png", "/img/icon-512.png", "/img/apple-touch-icon.png", "/manifest.webmanifest"}
 
 _code: str | None = None
 _key: bytes = b""

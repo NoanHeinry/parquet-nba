@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installe Parquet comme un service permanent sur un Raspberry Pi ou un ordinateur Linux
 # (Raspberry Pi OS, Debian, Ubuntu…). Parquet démarre avec la machine, redémarre tout seul en
-# cas de problème et se met à jour chaque nuit.
+# cas de problème et se met à jour tout seul dès qu'une version a passé les tests de GitHub.
 #
 # Dans un terminal de la machine (connecté avec ton utilisateur habituel, pas root) :
 #   curl -fsSL https://raw.githubusercontent.com/NoanHeinry/parquet-nba/main/installer-serveur.sh | bash
@@ -46,7 +46,7 @@ say "Installation des bibliothèques Python"
 [ -x "$APP/.venv/bin/python" ] || python3 -m venv "$APP/.venv" </dev/null
 "$APP/.venv/bin/python" -m pip install --disable-pip-version-check -q -r "$APP/requirements.txt" </dev/null
 
-say "Création du service (démarrage automatique et mise à jour chaque nuit)"
+say "Création du service (démarrage automatique, relance et mises à jour automatiques)"
 sudo mkdir -p /etc/parquet
 printf 'PARQUET_USER=%s\nPARQUET_DIR=%s\nPARQUET_PORT=%s\n' "$USER_NAME" "$APP" "$PORT" | sudo tee /etc/parquet/serveur.conf >/dev/null
 sudo touch /etc/parquet/parquet.env
@@ -63,7 +63,7 @@ Wants=network-online.target
 User=$USER_NAME
 WorkingDirectory=$APP
 EnvironmentFile=-/etc/parquet/parquet.env
-ExecStart=$APP/.venv/bin/python run.py --lan --no-browser --port-fixe --port $PORT
+ExecStart=$APP/.venv/bin/python run.py --no-browser --port $PORT --port-fixe --lan --auto-maj
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=yes
@@ -74,32 +74,12 @@ ProtectSystem=full
 WantedBy=multi-user.target
 UNIT
 
-sudo tee /etc/systemd/system/parquet-maj.service >/dev/null <<'UNIT'
-[Unit]
-Description=Mise à jour de Parquet
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/parquet-serveur maj
-UNIT
-
-sudo tee /etc/systemd/system/parquet-maj.timer >/dev/null <<'UNIT'
-[Unit]
-Description=Mise à jour de Parquet chaque nuit
-
-[Timer]
-OnCalendar=*-*-* 04:40
-RandomizedDelaySec=30m
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-UNIT
+# Les mises à jour se font désormais en continu (--auto-maj, après les tests GitHub) :
+# l'ancien minuteur nocturne des versions précédentes est retiré s'il existe.
+sudo systemctl disable --now parquet-maj.timer >/dev/null 2>&1 || true
+sudo rm -f /etc/systemd/system/parquet-maj.timer /etc/systemd/system/parquet-maj.service
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now parquet-maj.timer >/dev/null
 sudo systemctl enable parquet >/dev/null
 
 if [ -n "$CODE" ]; then
@@ -122,6 +102,6 @@ cat <<'TXT'
     parquet-serveur etat         adresses où ouvrir Parquet
     parquet-serveur tailscale    l'ouvrir de partout (4G, travail…), en privé et en HTTPS
     parquet-serveur code XXXXX   protéger Parquet par un code d'accès
-    parquet-serveur maj          mise à jour immédiate (sinon : chaque nuit, toute seule)
+    parquet-serveur maj          mise à jour immédiate (sinon : automatique, après les tests GitHub)
     parquet-serveur journal      voir ce que fait Parquet
 TXT

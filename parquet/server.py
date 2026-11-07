@@ -68,6 +68,19 @@ def api_status(q):
     )
 
 
+@route(r"/api/sante")
+def api_sante(q):
+    # Contrôle de santé du déploiement automatique : accessible sans code d'accès, ne dit que la version.
+    return _no_meta({"ok": True, "version": __version__})
+
+
+@route(r"/api/deploiement")
+def api_deploiement(q):
+    from . import autodeploy
+
+    return _no_meta(autodeploy.public_state())
+
+
 @route(r"/api/diagnostic")
 def api_diagnostic(q):
     return _no_meta(nba.diagnostic())

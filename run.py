@@ -6,6 +6,7 @@ Options :
   --demo             lance l'application sur des données de démonstration, sans connexion à NBA.com
   --no-browser       ne pas ouvrir le navigateur automatiquement
   --code-acces CODE  demande ce code à chaque nouvel appareil (hébergement ; ou variable PARQUET_ACCES)
+  --auto-maj         serveur permanent : relance automatique et mises à jour après les tests GitHub
   --diagnostic       teste les sources de données puis s'arrête
   --vider-cache      efface les données mises en cache puis démarre
 """
@@ -109,7 +110,14 @@ def main() -> int:
     parser.add_argument("--verifier", action="store_true", help="vérifier en détail chaque source de données (vraies données)")
     parser.add_argument("--vider-cache", action="store_true")
     parser.add_argument("--code-acces", default=None, help="code demandé aux appareils (hébergement accessible depuis Internet)")
+    parser.add_argument("--auto-maj", action="store_true", help="serveur permanent : relance en cas d'arrêt et mises à jour automatiques après les tests GitHub")
     args = parser.parse_args()
+
+    if args.auto_maj:
+        # Ce processus devient le superviseur : le vrai serveur tourne dans un processus enfant.
+        from parquet import autodeploy
+
+        return autodeploy.supervise([a for a in sys.argv[1:] if a != "--auto-maj"], args.port)
 
     code = args.code_acces if args.code_acces is not None else os.environ.get(access.ENV, "")
     try:

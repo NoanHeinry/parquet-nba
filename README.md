@@ -158,7 +158,9 @@ L'application s'ouvre sur `http://localhost:8765/`. Sous Windows et macOS, les l
 
 Options de `run.py` : `--port`, `--lan` (accès depuis le Wi-Fi de la maison), `--demo` (données fictives, sans connexion), `--no-browser`, `--code-acces` (code demandé à chaque nouvel appareil, aussi par la variable `PARQUET_ACCES`), `--diagnostic` (teste les sources puis s'arrête), `--verifier` (vérifie chaque source en détail, format compris, puis s'arrête), `--vider-cache`.
 
-**Hébergement permanent.** `installer-serveur.sh` fait d'un Raspberry Pi ou d'un ordinateur Linux un serveur Parquet : service systemd (démarrage avec la machine, relance en cas d'erreur), mise à jour chaque nuit par un timer, commande `parquet-serveur` (état, journal, code d'accès, Tailscale). Sur un vieux téléphone Android, `parquet serveur` et `parquet demarrage oui` (Termux:Boot) font la même chose. Le guide explique l'accès de partout avec Tailscale (privé, HTTPS) ou un tunnel Cloudflare (public, avec code d'accès).
+**Hébergement permanent.** `installer-serveur.sh` fait d'un Raspberry Pi ou d'un ordinateur Linux un serveur Parquet : service systemd (démarrage avec la machine, relance en cas d'erreur), déploiement automatique, commande `parquet-serveur` (état, journal, code d'accès, Tailscale). Sur un vieux téléphone Android, `parquet serveur` et `parquet demarrage oui` (Termux:Boot) font la même chose. Le guide explique l'accès de partout avec Tailscale (privé, HTTPS) ou un tunnel Cloudflare (public, avec code d'accès).
+
+**Pipeline et déploiement automatique.** Chaque envoi sur GitHub lance la pipeline (`.github/workflows/tests.yml`) : vérifications rapides (`scripts/verifier-code.sh` : syntaxe JavaScript, scripts shell, Python), tests unitaires sous Python 3.9, 3.11 et 3.13, tests d'interface dans Chromium. Un serveur lancé avec `--auto-maj` (`parquet/autodeploy.py`) n'installe une nouvelle version que si toute la pipeline est verte pour ce commit, contrôle ensuite qu'elle démarre (`/api/sante`) et revient sinon à la version précédente.
 
 ## Tests
 
@@ -193,6 +195,7 @@ parquet-nba/
 │   ├── extras.py           vidéos et clés d'un match, YouTube, rapport des blessures, transactions
 │   ├── settings.py         réglages locaux (clé YouTube) dans data/settings.json
 │   ├── access.py           code d'accès facultatif (hébergement) : page du code, cookie signé
+│   ├── autodeploy.py       déploiement automatique : superviseur, tests GitHub, contrôle de santé, retour arrière
 │   ├── demo.py             données de démonstration (mode --demo, tests, captures)
 │   └── teams_meta.py       les 30 franchises (couleurs, conférences, articles)
 ├── web/                    interface
@@ -200,6 +203,7 @@ parquet-nba/
 │   └── js/                 routeur, composants, graphiques SVG, anti-spoiler, alertes, une vue par page
 ├── tests/                  tests unitaires et tests d'interface (Playwright)
 ├── scripts/captures.py     régénère les captures de la documentation
+├── scripts/verifier-code.sh vérifications rapides (JavaScript en module, scripts shell, Python)
 ├── scripts/logo.py         vectorise le logo (design/logo/) et génère les icônes de web/img/
 ├── design/logo/            images sources du logo (mot, icône, favicon, version monochrome)
 └── docs/                   guide d'utilisation, architecture, captures

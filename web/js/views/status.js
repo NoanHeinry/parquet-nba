@@ -221,12 +221,77 @@ function browserCard() {
   );
 }
 
+// Mises à jour automatiques du serveur (run.py --auto-maj) : version, dernière vérification, journal.
+function ago(iso) {
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (!Number.isFinite(min)) return "";
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const hours = Math.round(min / 60);
+  if (hours < 48) return `il y a ${hours} h`;
+  return `il y a ${Math.round(hours / 24)} jours`;
+}
+
+const DEPLOY_KIND = {
+  deployed: ["ok", "✓"],
+  rollback: ["warn", "↺"],
+  "ci-failed": ["warn", "✕"],
+  blocked: ["warn", "!"],
+  crash: ["warn", "!"],
+  error: ["warn", "!"],
+};
+
+function deployCard(ctx) {
+  const box = h("section", { class: "settings-card", id: "mises-a-jour" });
+  box.append(h("h2", { class: "section-title" }, "Mises à jour automatiques"), loading("Lecture…"));
+  api("/deploiement", { signal: ctx.signal })
+    .then(({ data }) => {
+      const events = data.events || [];
+      const lines = data.active
+        ? [
+            h("p", null, `Activées : Parquet vérifie toutes les ${data.interval || 10} minutes s'il existe une nouvelle version, l'installe seulement si les tests GitHub sont tous passés, puis contrôle qu'elle démarre (sinon, retour automatique à la version précédente).`),
+            h(
+              "p",
+              { class: "note" },
+              `Version installée : ${data.version}${data.commit ? ` (${data.commit})` : ""}.`,
+              data.checkedAt ? ` Dernière vérification ${ago(data.checkedAt)} : ${data.message || ""}` : " Première vérification une minute après le démarrage."
+            ),
+          ]
+        : [h("p", null, "Désactivées sur ce serveur. Elles s'activent quand Parquet est lancé en serveur permanent : « parquet serveur » sur un téléphone, ou le service installé sur un Raspberry Pi.")];
+      box.replaceChildren(
+        ...[
+        h("h2", { class: "section-title" }, "Mises à jour automatiques"),
+        ...lines,
+        events.length
+          ? h(
+              "div",
+              { class: "verify-list" },
+              events.slice(0, 6).map((e) => {
+                const [level, icon] = DEPLOY_KIND[e.kind] || ["info", "·"];
+                return h(
+                  "div",
+                  { class: `verify-row is-${level}` },
+                  h("span", { class: `verify-icon ${level === "ok" ? "ok" : "warn"}` }, icon),
+                  h("div", null, h("b", null, e.message), h("span", { class: "verify-msg" }, ago(e.at)))
+                );
+              })
+            )
+          : null
+      ].filter(Boolean));
+    })
+    .catch((err) => {
+      if (err.name !== "AbortError") box.replaceChildren(h("h2", { class: "section-title" }, "Mises à jour automatiques"), h("p", { class: "note" }, "Information indisponible."));
+    });
+  return box;
+}
+
 export async function render(ctx) {
   const box = h("div");
   ctx.outlet.append(
     poster(ctx, { kicker: "Diagnostic", lines: ["État des", "sources"], size: "slim" }).el,
     box,
     deepCheck(ctx),
+    deployCard(ctx),
     browserCard(),
     youtubeSettings(ctx)
   );

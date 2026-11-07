@@ -7,7 +7,7 @@
 #   parquet maj            met Parquet à jour
 #   parquet diagnostic     teste l'accès à NBA.com et à Wikipédia
 #   parquet verifier       vérifie en détail chaque source (format des données compris)
-#   parquet serveur        transforme ce téléphone en serveur pour tes autres appareils (même Wi-Fi)
+#   parquet serveur        serveur permanent : Wi-Fi, relance et mises à jour automatiques après les tests
 #   parquet demarrage oui  relance « parquet serveur » à chaque démarrage du téléphone (Termux:Boot)
 #   parquet code XXXXXX    demande ce code aux autres appareils (« parquet code aucun » pour l'enlever)
 #   parquet tunnel JETON   publie Parquet à ton adresse Cloudflare avec le serveur (« parquet tunnel aucun »)
@@ -100,11 +100,14 @@ serve() {
       echo "Tunnel Cloudflare lancé : Parquet est aussi à ton adresse Cloudflare (journal : ~/parquet-tunnel.log)."
     fi
   fi
+  # Mises à jour automatiques (après les tests GitHub) et relance en cas d'arrêt, sauf PARQUET_AUTO_MAJ=0.
+  auto="--auto-maj"
+  [ "${PARQUET_AUTO_MAJ:-1}" = "0" ] && auto=""
   if [ -z "$tunnel_pid" ]; then
-    exec "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan "$@"
+    exec "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan $auto "$@"
   fi
   trap 'kill "$tunnel_pid" 2>/dev/null' EXIT
-  "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan "$@"
+  "$PY" run.py --no-browser --port "$PORT" --port-fixe --lan $auto "$@"
 }
 
 tunnel() {

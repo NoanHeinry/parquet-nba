@@ -173,7 +173,7 @@ Un Raspberry Pi 3, 4, 5 ou Zero 2 W suffit largement ; il consomme moins qu'une 
    curl -fsSL https://raw.githubusercontent.com/NoanHeinry/parquet-nba/main/installer-serveur.sh | bash
    ```
 
-   Le script installe Parquet comme un service : il démarre avec la machine, redémarre tout seul en cas de problème et **se met à jour chaque nuit**. À la fin, il affiche les adresses où ouvrir Parquet, par exemple `http://192.168.1.20:8765`.
+   Le script installe Parquet comme un service : il démarre avec la machine, redémarre tout seul en cas de problème et **se met à jour tout seul** (voir [Mises à jour automatiques](#mises-à-jour-automatiques)). À la fin, il affiche les adresses où ouvrir Parquet, par exemple `http://192.168.1.20:8765`.
 
 La commande `parquet-serveur` sert ensuite à tout :
 
@@ -182,7 +182,7 @@ La commande `parquet-serveur` sert ensuite à tout :
 | `parquet-serveur etat` | Parquet tourne-t-il ? Adresses où l'ouvrir |
 | `parquet-serveur tailscale` | l'ouvrir de partout, en privé (voir plus bas) |
 | `parquet-serveur code MonCodeSecret` | protéger Parquet par un code d'accès (`code aucun` pour l'enlever) |
-| `parquet-serveur maj` | mise à jour immédiate (sinon, chaque nuit) |
+| `parquet-serveur maj` | mise à jour immédiate (sinon, automatique) |
 | `parquet-serveur journal` | voir ce que fait Parquet (Ctrl+C pour sortir) |
 | `parquet-serveur redemarrer`, `arreter` | relancer ou arrêter |
 | `parquet-serveur verifier` | vérifier chaque source de données en détail |
@@ -195,6 +195,22 @@ La commande `parquet-serveur` sert ensuite à tout :
 4. Dans les paramètres d'Android, *Applications*, *Termux*, *Batterie* : choisis *Non restreinte*. Laisse le téléphone branché sur le secteur, sur le Wi-Fi.
 
 `parquet serveur` affiche l'adresse à ouvrir depuis tes autres appareils (`http://192.168.1.x:8765`). `parquet code MonCodeSecret` ajoute un code d'accès, `parquet demarrage non` retire le démarrage automatique.
+
+### Mises à jour automatiques
+
+Un Parquet lancé en serveur permanent (`parquet serveur` sur un téléphone, le service d'un Raspberry Pi) se met à jour **tout seul**, sans toucher à l'appareil :
+
+1. toutes les 10 minutes, il regarde s'il existe une nouvelle version sur GitHub ;
+2. il ne l'installe que si **tous les tests automatiques de GitHub** sont passés pour cette version (onglet *Actions* du dépôt) ;
+3. il redémarre, puis vérifie que la nouvelle version répond dans la minute ;
+4. sinon, il **revient tout seul à la version précédente** et n'essaie plus celle-là.
+
+Il relance aussi le serveur s'il s'arrête par erreur. Pour suivre ce qu'il fait : page **État des sources**, carte *Mises à jour automatiques* (version installée, dernière vérification, journal).
+
+- Changer la fréquence : variable `PARQUET_MAJ_MINUTES` (par exemple `PARQUET_MAJ_MINUTES=30 parquet serveur`).
+- Les désactiver sur un téléphone : `PARQUET_AUTO_MAJ=0 parquet serveur`.
+- Un fichier modifié à la main sur l'appareil bloque la mise à jour (rien n'est écrasé) : la carte l'indique.
+- Un Raspberry Pi installé avant cette version : relance simplement le script d'installation pour passer au nouveau fonctionnement.
 
 ### L'ouvrir de partout (4G, travail, vacances)
 

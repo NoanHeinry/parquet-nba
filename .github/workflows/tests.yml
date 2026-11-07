@@ -4,7 +4,19 @@ on:
   push:
   pull_request:
 
+# Pipeline de Parquet. Un serveur lancé avec « --auto-maj » (téléphone, Raspberry Pi) n'installe
+# une nouvelle version que si TOUS ces contrôles sont passés pour son commit.
 jobs:
+  verifications:
+    name: Vérifications rapides (JavaScript, scripts, Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: bash scripts/verifier-code.sh
+
   unitaires:
     name: Tests unitaires (Python ${{ matrix.python-version }})
     # Ubuntu 24.04 : la plus récente à fournir encore Python 3.9, la version minimale de Parquet.
