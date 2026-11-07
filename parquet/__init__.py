@@ -1,3 +1,3 @@
 """Parquet : tableau de bord et encyclopédie NBA personnels."""
 
-__version__ = "1.20.0"
+__version__ = "1.21.0"

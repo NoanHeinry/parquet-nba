@@ -21,8 +21,8 @@ function burger() {
 }
 
 function brandMark() {
-  // Même écusson que l'en-tête (web/img/logo.svg, généré par scripts/logo.py).
-  return h("img", { class: "brand-mark", src: "img/logo.svg", alt: "", width: 32, height: 32 });
+  // Même logo que l'en-tête : web/img/logo.svg, vectorisé par scripts/logo.py depuis design/logo/.
+  return s("svg", { class: "brand-logo", viewBox: "0 0 1000 525", "aria-hidden": "true" }, s("use", { href: "img/logo.svg#parquet-logo" }));
 }
 
 // Le menu, rangé par thème. Chaque lien a une courte description. Une page de la barre
@@ -129,7 +129,7 @@ function build() {
     { class: "menu-fab", type: "button", "aria-expanded": "false", "aria-controls": "menu-panel", "aria-label": "Ouvrir le menu" },
     burger()
   );
-  const brand = h("a", { class: "float-brand", href: "#/", "aria-label": "Parquet, retour aux matchs" }, brandMark(), h("span", null, "Parquet"));
+  const brand = h("a", { class: "float-brand", href: "#/", "aria-label": "Parquet, retour aux matchs" }, brandMark());
 
   fab.addEventListener("click", () => (isOpen ? close() : open()));
   panel.addEventListener("click", (e) => {

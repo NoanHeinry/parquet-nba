@@ -156,7 +156,7 @@ export async function sendNotification({ icon = "basketball", title, body, gameI
       reg.showNotification(title, {
         body,
         icon: "img/icon-192.png",
-        badge: "img/icon-192.png",
+        badge: "img/badge-96.png",
         data: { url },
       });
       return;

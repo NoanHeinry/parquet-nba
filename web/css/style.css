@@ -249,11 +249,15 @@ h3 {
   flex: none;
 }
 
-.brand .brand-mark {
-  width: 30px;
-  height: 30px;
+/* Logo (web/img/logo.svg) : lettres à la couleur du texte, étoile et élan à l'orange du thème. */
+.brand-logo {
+  display: block;
   flex: none;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  height: 52px;
+  width: auto;
+  aspect-ratio: 1000 / 525;
+  color: var(--text);
+  overflow: visible;
 }
 
 .mainnav {
@@ -5305,11 +5309,8 @@ body.menu-open {
   transition: color 0.6s ease;
 }
 
-.float-brand .brand-mark {
-  width: 32px;
-  height: 32px;
-  flex: none;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+.float-brand .brand-logo {
+  height: 50px;
 }
 
 .menu-fab {
@@ -6582,6 +6583,10 @@ html[data-motion="reduce"] .cut-layer {
     top: calc(var(--banner-h, 0px) + 20px);
     left: 16px;
     font-size: 19px;
+  }
+
+  .float-brand .brand-logo {
+    height: 42px;
   }
 
   .menu-fab {

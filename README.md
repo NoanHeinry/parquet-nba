@@ -1,3 +1,5 @@
+<p align="center"><img src="web/img/logo-complet.svg" alt="Parquet" width="420"></p>
+
 # Parquet
 
 **Un tableau de bord NBA en direct doublé d'une encyclopédie, en français, qui tourne sur ton ordinateur.**
@@ -198,7 +200,8 @@ parquet-nba/
 │   └── js/                 routeur, composants, graphiques SVG, anti-spoiler, alertes, une vue par page
 ├── tests/                  tests unitaires et tests d'interface (Playwright)
 ├── scripts/captures.py     régénère les captures de la documentation
-├── scripts/logo.py         génère le logo (écusson) et les icônes de web/img/
+├── scripts/logo.py         vectorise le logo (design/logo/) et génère les icônes de web/img/
+├── design/logo/            images sources du logo (mot, icône, favicon, version monochrome)
 └── docs/                   guide d'utilisation, architecture, captures
 ```
 
