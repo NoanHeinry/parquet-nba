@@ -29,7 +29,7 @@ WINDOW = 15 * 60
 COOKIE_AGE = 365 * 24 * 3600
 
 # Fichiers visibles sans code : polices et icônes de la page du code, de l'onglet et de l'écran d'accueil.
-PUBLIC = {"/fonts/oswald.woff", "/fonts/barlow-400.woff", "/fonts/barlow-600.woff", "/img/icon.svg", "/img/icon-192.png", "/img/icon-512.png", "/img/apple-touch-icon.png", "/manifest.webmanifest"}
+PUBLIC = {"/fonts/oswald.woff", "/fonts/barlow-400.woff", "/fonts/barlow-600.woff", "/img/icon.svg", "/img/logo.svg", "/img/icon-maskable-512.png", "/img/icon-192.png", "/img/icon-512.png", "/img/apple-touch-icon.png", "/manifest.webmanifest"}
 
 _code: str | None = None
 _key: bytes = b""
@@ -153,7 +153,7 @@ def login_page(next_path: str, error: str | None = None) -> bytes:
          font: 17px/1.5 "Barlow", system-ui, sans-serif; }}
   main {{ width: min(360px, 100%); }}
   .brand {{ display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }}
-  .brand img {{ width: 36px; height: 36px; }}
+  .brand img {{ width: 44px; height: 44px; }}
   h1 {{ margin: 0; font: 700 26px/1 "Oswald", "Arial Narrow", sans-serif; letter-spacing: .04em; text-transform: uppercase; }}
   p {{ margin: 0 0 18px; color: var(--mute); }}
   label {{ display: block; font: 500 12px/1.4 "Oswald", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin-bottom: 6px; }}
@@ -168,7 +168,7 @@ def login_page(next_path: str, error: str | None = None) -> bytes:
 </head>
 <body>
 <main>
-  <div class="brand"><img src="/img/icon.svg" alt=""><h1>Parquet</h1></div>
+  <div class="brand"><img src="/img/logo.svg" alt=""><h1>Parquet</h1></div>
   <p>Ce Parquet est protégé. Tape le code d'accès choisi lors de l'installation : cet appareil s'en souviendra.</p>
   <form method="post" action="/acces">
     <input type="hidden" name="next" value="{html.escape(next_path)}">

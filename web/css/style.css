@@ -249,10 +249,11 @@ h3 {
   flex: none;
 }
 
-.brand svg {
-  width: 26px;
-  height: 26px;
-  color: var(--accent);
+.brand .brand-mark {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .mainnav {
@@ -5304,10 +5305,11 @@ body.menu-open {
   transition: color 0.6s ease;
 }
 
-.float-brand svg {
-  width: 28px;
-  height: 28px;
-  color: var(--accent);
+.float-brand .brand-mark {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
 .menu-fab {

@@ -198,6 +198,7 @@ parquet-nba/
 │   └── js/                 routeur, composants, graphiques SVG, anti-spoiler, alertes, une vue par page
 ├── tests/                  tests unitaires et tests d'interface (Playwright)
 ├── scripts/captures.py     régénère les captures de la documentation
+├── scripts/logo.py         génère le logo (écusson) et les icônes de web/img/
 └── docs/                   guide d'utilisation, architecture, captures
 ```
 

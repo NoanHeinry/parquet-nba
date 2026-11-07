@@ -4,7 +4,7 @@
 // toujours essayé en premier, et le cache ne sert que de secours quand le serveur est arrêté.
 // Ainsi, une mise à jour du code est visible dès le lancement suivant, sans mélange de versions.
 
-const VERSION = "1.19.3";
+const VERSION = "1.20.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;
@@ -19,6 +19,8 @@ const STATIC_ASSETS = [
   "./fonts/barlow-600.woff",
   "./fonts/barlow-700.woff",
   "./img/icon.svg",
+  "./img/logo.svg",
+  "./img/icon-maskable-512.png",
   "./img/icon-192.png",
   "./img/icon-512.png",
   "./img/apple-touch-icon.png",

@@ -21,18 +21,8 @@ function burger() {
 }
 
 function brandMark() {
-  // Même ballon que le logo de l'en-tête.
-  return s(
-    "svg",
-    { viewBox: "0 0 32 32", "aria-hidden": "true" },
-    s("circle", { cx: 16, cy: 16, r: 13, fill: "none", stroke: "currentColor", "stroke-width": 2.4 }),
-    s("path", {
-      d: "M3 16h26M16 3v26M7.2 6.6c3.6 2.6 5.6 5.9 5.6 9.4s-2 6.8-5.6 9.4M24.8 6.6c-3.6 2.6-5.6 5.9-5.6 9.4s2 6.8 5.6 9.4",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-    })
-  );
+  // Même écusson que l'en-tête (web/img/logo.svg, généré par scripts/logo.py).
+  return h("img", { class: "brand-mark", src: "img/logo.svg", alt: "", width: 32, height: 32 });
 }
 
 // Le menu, rangé par thème. Chaque lien a une courte description. Une page de la barre
