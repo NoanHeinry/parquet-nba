@@ -154,6 +154,27 @@ function build() {
     if (e.key === "Escape" && isOpen && !document.querySelector(".notif-panel")) close();
   });
   window.addEventListener("hashchange", () => close(false));
+
+  // Téléphone : le bouton s'efface en descendant, revient en remontant ou en haut de page.
+  let lastY = window.scrollY;
+  let ticking = false;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const root = document.documentElement;
+        if (y < 120 || y < lastY - 8) root.classList.remove("fab-away");
+        else if (y > lastY + 8) root.classList.add("fab-away");
+        if (Math.abs(y - lastY) > 8 || y < 120) lastY = y;
+        ticking = false;
+      });
+    },
+    { passive: true }
+  );
+  window.addEventListener("hashchange", () => document.documentElement.classList.remove("fab-away"));
   built = { panel, fab, brand, tools };
   return built;
 }

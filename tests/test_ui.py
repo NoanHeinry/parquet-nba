@@ -168,6 +168,32 @@ class InterfaceTests(unittest.TestCase):
             push.STORE = None
             service.close()
 
+    def test_phone_layout_of_home_tiles_match_header_and_titles(self):
+        """Téléphone (390 px) : tuiles à venir sur une ligne, en-tête de match sans chevauchement,
+        titre d'affiche sur une seule ligne, bouton du menu qui s'efface en descendant."""
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.open("#/")
+        tops = self.page.evaluate("""() => { const t = document.querySelector('.home-games .game-tile.is-upcoming');
+            return ['.tile-team.away', '.tile-time', '.tile-team.home'].map((s) => Math.round(t.querySelector(s).getBoundingClientRect().top)); }""")
+        self.assertLess(max(tops) - min(tops), 30, f"tuile à venir en désordre : {tops}")
+        self.page.evaluate("window.scrollTo(0, 1500)")
+        self.page.wait_for_timeout(500)
+        self.assertTrue(self.page.evaluate("document.documentElement.classList.contains('fab-away')"))
+        self.page.evaluate("window.scrollTo(0, 1000)")
+        self.page.wait_for_timeout(500)
+        self.assertFalse(self.page.evaluate("document.documentElement.classList.contains('fab-away')"))
+
+        self.open("#/match/0012600051")
+        overlap = self.page.evaluate("""() => { const a = document.querySelector('.sb-team.away .nick').getBoundingClientRect();
+            const s = document.querySelector('.sb-scores').getBoundingClientRect();
+            return !(a.bottom <= s.top || a.top >= s.bottom || a.right <= s.left || a.left >= s.right); }""")
+        self.assertFalse(overlap, "le nom de l'équipe chevauche le score")
+
+        self.open("#/jeu")
+        self.page.wait_for_timeout(600)
+        lines = self.page.evaluate("""() => { const t = document.querySelector('.poster-title .sn-in'); return t.getClientRects().length; }""")
+        self.assertEqual(lines, 1, "« Qui est-ce ? » passe à la ligne")
+
     def test_game_page_tabs_and_flow_chart(self):
         self.open("#/match/0012600050")
         self.page.wait_for_selector(".flow-chart")

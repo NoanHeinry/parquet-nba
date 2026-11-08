@@ -13056,3 +13056,176 @@ input[type="search"].select {
   margin: 10px 0 0;
   font-size: 12px;
 }
+
+
+/* ==========================================================================
+   3.6 Corrections mobiles
+   ========================================================================== */
+
+/* Tuiles de match : chaque élément à sa place. L'heure du coup d'envoi occupe deux lignes sur grand
+   écran ; sur téléphone, sans placement explicite, elle tombait sous la salle et l'équipe à domicile
+   avec elle (tuiles « à venir » en désordre). */
+@media (max-width: 1080px) {
+  .game-tile > .tile-team.away {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .game-tile > .tile-time,
+  .game-tile > .tile-status {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .game-tile > .tile-team.home {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  /* Lignes de stats des joueurs : sur deux lignes plutôt que coupées par « … ». */
+  .home-games .tl-player small,
+  .game-tile .tl-player small {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.25;
+  }
+
+  /* Avant le match : salle et chaîne à gauche, type de match à droite, sur une seule ligne. */
+  .home-games .game-tile.is-upcoming .tile-leaders,
+  .game-tile.is-upcoming .tile-leaders {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    padding-bottom: 12px;
+    font-size: 12px;
+  }
+
+  .home-games .game-tile.is-upcoming .tile-foot-right,
+  .game-tile.is-upcoming .tile-foot-right {
+    grid-column: 3;
+    grid-row: 2;
+    align-self: start;
+    justify-content: flex-end;
+    padding-bottom: 12px;
+  }
+
+  .game-tile.is-upcoming .tile-label {
+    white-space: normal;
+    text-align: right;
+  }
+}
+
+/* Bouton du menu : la couleur de survol ne doit pas rester après un toucher (téléphone). */
+@media (hover: none) {
+  .menu-fab:hover {
+    background: var(--text);
+    color: var(--bg);
+  }
+}
+
+/* Sur téléphone, le bouton du menu s'efface quand on descend dans la page (il cachait le contenu)
+   et revient dès qu'on remonte. */
+@media (max-width: 700px) {
+  .menu-fab {
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  html.fab-away .menu-fab:not([aria-expanded="true"]) {
+    transform: translateY(calc(-100% - var(--banner-h, 0px) - 40px));
+    box-shadow: none;
+  }
+}
+
+/* Chiffres d'un joueur : « 21 pts », « 13 reb »… ne se coupent jamais au milieu. */
+.stat-tok {
+  white-space: nowrap;
+}
+
+/* Titres d'affiche : une ligne de titre ne se coupe jamais (la taille est calculée pour tenir). */
+.poster-title .sn-in {
+  white-space: nowrap;
+}
+
+/* Page d'un match sur téléphone : les deux équipes côte à côte, le score en dessous sur toute la
+   largeur (en trois colonnes, « NUGGETS » et « SUNS » chevauchaient le score). */
+@media (max-width: 560px) {
+  .game-page .sb-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "away home" "center center";
+    row-gap: 10px;
+  }
+
+  .game-page .sb-grid > .sb-team.away {
+    grid-area: away;
+  }
+
+  .game-page .sb-grid > .sb-team.home {
+    grid-area: home;
+  }
+
+  .game-page .sb-grid > :not(.sb-team) {
+    grid-area: center;
+  }
+
+  .game-page .sb-team .nick {
+    font-size: 26px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .game-page .sb-scores {
+    font-size: 78px;
+  }
+
+}
+
+/* Classement sur téléphone : le tableau défile de côté ; le rang et l'équipe restent épinglés à gauche. */
+@media (max-width: 560px) {
+  .standings-table th:nth-child(-n + 2),
+  .standings-table td:nth-child(-n + 2) {
+    position: sticky;
+    z-index: 1;
+    background: var(--bg);
+  }
+
+  .standings-table th:first-child,
+  .standings-table td:first-child {
+    left: 0;
+    min-width: 30px;
+  }
+
+  .standings-table th:nth-child(2),
+  .standings-table td:nth-child(2) {
+    left: 30px;
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-shadow: 8px 0 10px -8px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Onglets et sélecteurs qui défilent : un fondu sur le bord indique qu'il y en a d'autres. */
+.tabs.can-scroll-right,
+.segmented.can-scroll-right {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent);
+}
+
+.tabs.can-scroll-left.can-scroll-right,
+.segmented.can-scroll-left.can-scroll-right {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+}
+
+.tabs.can-scroll-left:not(.can-scroll-right),
+.segmented.can-scroll-left:not(.can-scroll-right) {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px);
+  mask-image: linear-gradient(90deg, transparent, #000 36px);
+}

@@ -8,6 +8,7 @@ import re
 import tempfile
 import time
 import unittest
+import json
 from pathlib import Path
 
 from parquet import nba, net, teams_meta
@@ -67,6 +68,55 @@ class VersionTests(unittest.TestCase):
         sw = re.search(r'VERSION = "([^"]+)"', (web / "sw.js").read_text(encoding="utf-8")).group(1)
         self.assertEqual(app, parquet.__version__)
         self.assertEqual(sw, parquet.__version__)
+
+
+class EncodingTests(unittest.TestCase):
+    """Noms accentués : le CDN n'indique pas toujours d'encodage, requests supposait alors du Latin-1."""
+
+    def test_json_is_read_as_utf8_whatever_the_announced_encoding(self):
+        import requests
+
+        from parquet import net
+
+        response = requests.Response()
+        response.status_code = 200
+        response._content = json.dumps({"name": "Nikola Jokić", "team": "Dončić"}, ensure_ascii=False).encode("utf-8")
+        response.headers["Content-Type"] = "text/plain"
+        response.encoding = "ISO-8859-1"
+
+        class Session:
+            def get(self, *a, **k):
+                return response
+
+        saved = net._session
+        net._session = lambda: Session()
+        try:
+            data = net._get("https://cdn.nba.com/x.json", None, {}, (1, 1), "cdn.nba.com")
+        finally:
+            net._session = saved
+        self.assertEqual(data["name"], "Nikola Jokić")
+        self.assertEqual(data["team"], "Dončić")
+
+    def test_old_cache_is_emptied_once(self):
+        import sqlite3
+
+        from parquet import cache as cache_mod
+
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "c.sqlite3"
+            db = sqlite3.connect(str(path))
+            db.execute("CREATE TABLE cache (key TEXT PRIMARY KEY, fetched_at REAL, payload TEXT)")
+            db.execute("INSERT INTO cache VALUES ('live:scoreboard', 1, '{\"n\": \"JokiÄ\"}')")
+            db.commit()
+            db.close()
+            c = cache_mod.Cache(path)
+            self.assertIsNone(c._read("live:scoreboard"))
+            c._db.execute("INSERT INTO cache VALUES ('k', 1, '1')")
+            c._db.commit()
+            c._db.close()
+            again = cache_mod.Cache(path)  # déjà à jour : rien n'est effacé
+            self.assertIsNotNone(again._read("k"))
+            again._db.close()
 
 
 class RaceTests(unittest.TestCase):

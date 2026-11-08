@@ -8,6 +8,7 @@ on limite la cadence des appels et on prévoit un second jeu d'en-têtes en seco
 from __future__ import annotations
 
 import threading
+import json
 import time
 from typing import Any
 
@@ -160,7 +161,10 @@ def _get(url: str, params: dict | None, headers: dict, timeout: tuple[float, flo
             response.encoding = "utf-8"
         return response.text
     try:
-        return response.json()
+        # Toujours depuis les octets : json.loads reconnaît l'UTF-8 lui-même. response.json() suit
+        # l'encodage annoncé par l'en-tête, et quand le CDN n'en indique pas, requests suppose du
+        # Latin-1 : « Jokić » devenait « JokiÄ ».
+        return json.loads(response.content)
     except ValueError as exc:
         raise SourceError(f"{source} a renvoyé une réponse illisible", source=source) from exc
 

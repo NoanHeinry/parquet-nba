@@ -16,6 +16,11 @@ from pathlib import Path
 from typing import Any, Callable
 
 
+# Version du contenu du cache. À augmenter quand une correction change la lecture des sources :
+# 2 = noms accentués décodés correctement (avant : « JokiÄ » pour « Jokić »).
+FORMAT = 2
+
+
 class Cache:
     def __init__(self, path: Path, memory_items: int = 400):
         self.path = path
@@ -27,6 +32,10 @@ class Cache:
             self._db.execute(
                 "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, fetched_at REAL, payload TEXT)"
             )
+            # Données mises en cache par une version qui les lisait mal : on repart de zéro, une fois.
+            if self._db.execute("PRAGMA user_version").fetchone()[0] < FORMAT:
+                self._db.execute("DELETE FROM cache")
+                self._db.execute(f"PRAGMA user_version = {FORMAT}")
             self._db.commit()
         self._mem: OrderedDict[str, tuple[float, Any]] = OrderedDict()
         self._mem_lock = threading.Lock()

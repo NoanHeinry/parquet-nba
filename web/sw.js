@@ -4,7 +4,7 @@
 // toujours essayé en premier, et le cache ne sert que de secours quand le serveur est arrêté.
 // Ainsi, une mise à jour du code est visible dès le lancement suivant, sans mélange de versions.
 
-const VERSION = "1.23.0";
+const VERSION = "1.24.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;
@@ -69,6 +69,7 @@ const STATIC_ASSETS = [
   "./js/views/h2h.js",
   "./js/quiz.js",
   "./js/share-card.js",
+  "./js/scrollfade.js",
 ];
 
 self.addEventListener("install", (event) => {

@@ -30,7 +30,9 @@ function fitTitle(el) {
   const size = el.dataset.size;
   const phone = window.innerWidth < 700;
   const cap = size === "slim" ? (phone ? 64 : 104) : size === "compact" ? (phone ? 92 : 168) : phone ? 104 : 210;
-  title.style.fontSize = `${Math.floor(Math.max(36, Math.min(cap, (w / widest) * 100)))}px`;
+  // 4 % de marge : l'espacement des lettres et l'arrondi faisaient dépasser d'une fraction de pixel,
+  // et le titre passait à la ligne (« QUI EST- / CE ? » sur téléphone).
+  title.style.fontSize = `${Math.floor(Math.max(36, Math.min(cap, (w / widest) * 96)))}px`;
 }
 
 function statsRow(stats = []) {

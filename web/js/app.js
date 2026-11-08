@@ -25,6 +25,7 @@ import * as records from "./views/records.js";
 import * as h2h from "./views/h2h.js";
 import { initNotificationsUI } from "./notifications.js";
 import { enableImmersive } from "./menu.js";
+import { initScrollFade } from "./scrollfade.js";
 
 // Les couleurs d'équipe et les versions de logos dépendent du thème : on redessine la page.
 function redraw() {
@@ -231,10 +232,11 @@ initSpoilerMode();
 initMotion();
 initPwa();
 initNotificationsUI();
+initScrollFade();
 const outlet = document.getElementById("main");
 
 // Version de l'interface : elle doit correspondre à celle du serveur (parquet/__init__.py).
-const APP_VERSION = "1.23.0";
+const APP_VERSION = "1.24.0";
 document.documentElement.dataset.version = APP_VERSION;
 
 // Compare deux numéros de version (1.5.0 < 1.12.0).

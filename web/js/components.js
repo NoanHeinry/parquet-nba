@@ -286,7 +286,7 @@ export function gameTile(game, { favs = favorites(), previous } = {}) {
           "span",
           { class: "tl-player" },
           headshot(l.id, { alt: "" }),
-          h("span", null, h("b", null, l.name), h("small", { class: "num" }, `${l.pts ?? 0} pts ${l.reb ?? 0} reb ${l.ast ?? 0} pd`))
+          h("span", null, h("b", null, l.name), h("small", { class: "num" }, [`${l.pts ?? 0} pts`, `${l.reb ?? 0} reb`, `${l.ast ?? 0} pd`].flatMap((t, i) => [i ? " " : null, h("span", { class: "stat-tok" }, t)]).filter(Boolean)))
         )
       );
     }
