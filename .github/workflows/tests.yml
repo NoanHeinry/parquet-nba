@@ -30,8 +30,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m pip install -r requirements.txt
+      # cryptography : seulement pour les tests, qui vérifient les notifications push indépendamment
+      # du code de Parquet (lequel s'en passe : Python pur, comme sur un téléphone Android).
+      - run: python -m pip install -r requirements.txt cryptography
       - run: python -m unittest discover -s tests -t . -v
+      - name: Notifications push en Python pur (comme sur un téléphone)
+        run: python -m unittest tests.test_push -v
+        env:
+          PARQUET_PUSH_PUR: "1"
 
   interface:
     name: Tests d'interface (Chromium, mode démo)
@@ -41,6 +47,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install -r requirements.txt playwright
+      - run: python -m pip install -r requirements.txt playwright cryptography
       - run: python -m playwright install --with-deps chromium
       - run: python -m unittest tests.test_ui -v

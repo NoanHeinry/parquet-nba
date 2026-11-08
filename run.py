@@ -185,6 +185,14 @@ def main() -> int:
         print("  Laisse cette fenêtre ouverte pendant que tu utilises l'application.")
         print("  Pour arrêter : ferme la fenêtre ou appuie sur Ctrl+C.\n")
 
+    # Notifications push (alertes même appli fermée) : surveillance des matchs en arrière-plan.
+    from parquet import push
+
+    try:
+        push.start(APP_DIR / "data" / ("demo" if args.demo else ""))
+    except OSError as exc:
+        print(f"  Notifications push indisponibles : {exc}")
+
     if not args.no_browser:
         threading.Timer(0.8, open_browser, args=(url,)).start()
 

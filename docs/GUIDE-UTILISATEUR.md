@@ -54,7 +54,8 @@ Pour découvrir l'application sans connexion, ou si NBA.com ne répond pas chez 
 - Ajoute tes équipes favorites (bouton en haut de leur page) : leurs matchs passent en premier.
 - Il n'y a pas de barre en haut : sur toutes les pages, le bouton rond en haut à droite ouvre le menu : la recherche et les réglages en haut, puis toutes les pages rangées par thème (la saison, équipes et joueurs, histoire, et aussi), visibles d'un coup d'œil sans faire défiler. Le sommaire numéroté à droite de l'écran (01. 02. 03. 04.) mène directement aux matchs, aux chiffres de la nuit ou au classement.
 - En haut de l'accueil, le joueur du match de chaque rencontre de la nuit : clique sur un nom en bas de l'écran, utilise les flèches (ou celles du clavier), ou glisse le doigt sur téléphone. « Sa fiche » ouvre sa page, l'encart du match ouvre la rencontre.
-- Clique sur la cloche dans le menu pour activer les alertes : coup d'envoi et résultat de tes favoris, fins de match serrées (5 dernières minutes avec 5 points d'écart ou moins). Les alertes fonctionnent **tant qu'un onglet Parquet est ouvert**, même en arrière-plan ; une alerte n'est jamais envoyée deux fois.
+- Clique sur la cloche dans le menu pour activer les alertes : coup d'envoi et résultat de tes favoris, fins de match serrées (5 dernières minutes avec 5 points d'écart ou moins), grosses performances (40 points ou triple-double). Sur une connexion sécurisée (HTTPS, comme un Parquet hébergé avec une adresse à toi), elles arrivent **même quand Parquet est fermé** : c'est le serveur qui les envoie (voir [Notifications appli fermée](#notifications-appli-fermée)). Sinon, elles fonctionnent tant qu'un onglet Parquet est ouvert. Une alerte n'est jamais envoyée deux fois.
+- Sur la page d'un match terminé, « Partager le résultat » crée une image au format Instagram (1080 × 1350) aux couleurs de Parquet : score, quart-temps, meilleurs marqueurs. Sur téléphone, « Partager » l'envoie directement à Instagram, WhatsApp… ; sinon, « Télécharger ». Elle ne contient ni logo d'équipe ni photo (droits de la NBA et des photographes) et porte la mention « Source : NBA.com », que demandent les conditions de NBA.com pour publier leurs statistiques.
 - Le bouton en forme d'œil, dans le menu, active le mode anti-spoiler, pour regarder un match en différé : les scores, le box score, le fil des actions, le résumé de la nuit, le champion des playoffs et le contenu des alertes restent masqués jusqu'à ce que tu cliques sur « Révéler ». Ce que tu as révélé le reste jusqu'à la fermeture de l'onglet.
 - Quand des matchs sont en cours, le bouton « Mode multi-matchs » de la page d'accueil les affiche côte à côte.
 - Dans l'onglet *Calendrier* d'une équipe, passe d'un mois à l'autre avec les flèches ou les mois de la saison ; clique sur un match pour l'ouvrir. Les boutons « À venir » et « Résultats » affichent la même chose sous forme de liste. « Ajouter à mon agenda » télécharge un fichier `.ics` à importer dans Google Agenda, Apple Calendrier ou Outlook. Les horaires s'affichent à l'heure de ton agenda ; les scores n'y figurent pas.
@@ -243,6 +244,26 @@ Il relance aussi le serveur s'il s'arrête par erreur. Pour suivre ce qu'il fait
 Pour aller plus loin, **Cloudflare Access** (gratuit, *Zero Trust*, *Access*, *Applications*) ajoute une connexion par e-mail devant Parquet : seules les adresses que tu autorises reçoivent un code de connexion. `parquet tunnel aucun` retire le tunnel ; le journal est dans `~/parquet-tunnel.log`.
 
 Sur un Raspberry Pi, l'étape 5 se fait avec la commande d'installation donnée par Cloudflare pour Debian (elle installe `cloudflared` comme service), après `parquet-serveur code MonCodeSecret`.
+
+### Notifications appli fermée
+
+Un Parquet hébergé en HTTPS (adresse Cloudflare, Tailscale) envoie lui-même les alertes, même quand l'application est fermée sur ton téléphone :
+
+1. ouvre Parquet à son adresse HTTPS, puis la cloche du menu, et coche *Activer les alertes* (le navigateur demande l'autorisation) ;
+2. choisis tes alertes ; elles suivent tes équipes favorites et le mode anti-spoiler (en mode anti-spoiler, pas de score dans les notifications, ni de grosses performances) ;
+3. « Envoyer une notification test » passe par le serveur : si elle arrive, tout fonctionne.
+
+Chaque appareil s'abonne séparément, avec ses propres réglages. Sur iPhone (iOS 16.4 ou plus récent), il faut d'abord ajouter Parquet à l'écran d'accueil (Partager, *Sur l'écran d'accueil*), puis activer les alertes depuis l'application installée. L'option *Alertes du serveur* prévient aussi quand une mise à jour automatique échoue ou est annulée, ou quand le serveur redémarre après un arrêt.
+
+### Être prévenu si le site tombe
+
+Si le téléphone serveur s'éteint ou perd le Wi-Fi, Parquet ne peut plus rien envoyer lui-même. Un service gratuit qui visite ton site régulièrement s'en charge, par exemple [UptimeRobot](https://uptimerobot.com) :
+
+1. crée un compte gratuit, puis *New monitor* ;
+2. type **HTTP(s) - Keyword**, adresse `https://parquet-nba.fr/api/sante` (cette adresse répond sans code d'accès et ne donne que la version), mot-clé `"ok": true`, vérification toutes les 5 minutes ;
+3. choisis comment être prévenu : e-mail (par défaut), ou l'application UptimeRobot pour une notification sur ton téléphone.
+
+Tu reçois un message quand le site ne répond plus, et un autre quand il revient. Une page de statut publique est aussi proposée, si tu veux la partager.
 
 ### Le code d'accès
 

@@ -9,6 +9,7 @@ import { team, teamPair } from "../teams.js";
 import { gameKey, isHidden, isRevealed as isRevealedKey, setRevealed } from "../spoiler.js";
 import { momentCard, nbaRecapCard, youtubeBlock } from "../media.js";
 import { injuryRow } from "../news.js";
+import { openShareDialog } from "../share-card.js";
 
 const TAB_DEFS = [
   { id: "resume", label: "Résumé" },
@@ -662,12 +663,21 @@ export async function render(ctx) {
       return;
     }
     body.replaceChildren(
+      ...[
+      box.game.status === 3
+        ? h(
+            "div",
+            { class: "game-actions" },
+            h("button", { class: "btn", type: "button", onclick: () => openShareDialog(box) }, "Partager le résultat")
+          )
+        : null,
       tabs(TAB_DEFS, tab, (t) => {
         tab = t;
         swapIn(panel);
         drawPanel();
       }),
-      panel
+      panel,
+      ].filter(Boolean)
     );
     drawPanel();
   };

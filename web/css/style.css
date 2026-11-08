@@ -12988,3 +12988,71 @@ input[type="search"].select {
     display: none;
   }
 }
+
+
+/* ==========================================================================
+   3.5 Partage du résultat (visuel Instagram)
+   ========================================================================== */
+
+.game-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 14px;
+}
+
+.share-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(5, 6, 8, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.share-dialog {
+  width: min(460px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.share-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.share-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.share-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.share-actions .btn {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+.share-msg {
+  margin: 10px 0 0;
+  font-size: 12px;
+}

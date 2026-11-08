@@ -4,7 +4,7 @@
 // toujours essayé en premier, et le cache ne sert que de secours quand le serveur est arrêté.
 // Ainsi, une mise à jour du code est visible dès le lancement suivant, sans mélange de versions.
 
-const VERSION = "1.22.0";
+const VERSION = "1.23.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;
@@ -68,6 +68,7 @@ const STATIC_ASSETS = [
   "./js/views/player-season.js",
   "./js/views/h2h.js",
   "./js/quiz.js",
+  "./js/share-card.js",
 ];
 
 self.addEventListener("install", (event) => {
@@ -140,6 +141,26 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     networkFirst(req, STATIC_CACHE, {
       offlineFallback: () => (req.mode === "navigate" ? caches.match("./index.html") : Response.error()),
+    })
+  );
+});
+
+// Notification envoyée par le serveur (push), même quand Parquet est fermé.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "Parquet", body: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Parquet", {
+      body: data.body || "",
+      icon: "img/icon-192.png",
+      badge: "img/badge-96.png",
+      tag: data.tag || undefined,
+      renotify: Boolean(data.tag),
+      data: { url: data.url || "./" },
     })
   );
 });

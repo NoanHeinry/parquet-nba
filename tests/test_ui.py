@@ -7,10 +7,12 @@ Les tests sont ignorés si Playwright n'est pas installé.
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 import threading
 import unittest
+import urllib.request
 from pathlib import Path
 
 try:
@@ -94,6 +96,77 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Jolivet", self.page.text_content(".stage-name"))
         self.assertTrue(self.page.locator(".demo-banner").is_visible())
         self.assertTrue(self.page.locator("a[href='#/multi']").is_visible())
+
+    def test_share_result_card_and_push_options(self):
+        self.open("#/match/0012600050")
+        self.page.click("text=Partager le résultat")
+        self.page.wait_for_selector(".share-preview", timeout=15000)
+        size = self.page.evaluate("new Promise(r => { const i = document.querySelector('.share-preview'); const go = () => r([i.naturalWidth, i.naturalHeight]); i.complete ? go() : i.onload = go; })")
+        self.assertEqual(size, [1080, 1350])
+        self.assertTrue(self.page.locator(".share-actions a[download]").get_attribute("download").startswith("parquet-MIA-BKN-"))
+        self.page.keyboard.press("Escape")
+        self.assertEqual(self.page.locator(".share-overlay").count(), 0)
+        # Le panneau des alertes (dans le menu) propose les nouvelles alertes (performances, serveur).
+        self.page.click(".menu-fab")
+        self.page.click("#notif-toggle")
+        panel = self.page.text_content(".notif-panel")
+        self.assertIn("Grosses performances", panel)
+        with urllib.request.urlopen(self.base + "api/push/cle") as r:
+            self.assertIn("available", json.load(r)["data"])
+
+    def test_push_subscription_flow_end_to_end(self):
+        """App → serveur → service de notification : l'abonnement et l'envoi de test, de bout en bout.
+        Le navigateur de test n'a pas de vrai service de notification : son abonnement est simulé avec
+        les clés d'un faux appareil, et le message reçu est déchiffré avec la clé privée de cet appareil."""
+        from parquet import push
+        from tests.test_push import Device, FakePushService
+
+        service = FakePushService()
+        push.STORE = push.Store(Path(self.tmp.name) / "push-ui")
+        try:
+            device = Device(f"{service.base}/navigateur")
+            self.page.add_init_script(
+                """
+                (() => {
+                  const sub = SUB;
+                  let current = null;
+                  Object.defineProperty(Notification, "permission", { get: () => "granted" });
+                  Notification.requestPermission = async () => "granted";
+                  const pushManager = {
+                    getSubscription: async () => current,
+                    subscribe: async (opts) => (current = {
+                      endpoint: sub.endpoint,
+                      options: opts,
+                      toJSON: () => sub,
+                      unsubscribe: async () => { current = null; return true; },
+                    }),
+                  };
+                  Object.defineProperty(navigator, "serviceWorker", { value: { ready: Promise.resolve({ pushManager, showNotification: async () => {} }), register: async () => ({}), controller: null, addEventListener() {} } });
+                  window.PushManager = window.PushManager || function () {};
+                  localStorage.setItem("parquet-favorites", JSON.stringify([1610612748]));
+                })();
+                """.replace("SUB", json.dumps(device.subscription))
+            )
+            self.open("#/classement")
+            self.page.click(".menu-fab")
+            self.page.click("#notif-toggle")
+            self.page.click(".notif-panel .main-opt input")
+            self.page.wait_for_function("document.querySelector('.notif-panel [role=status]')?.textContent.includes('même quand Parquet est fermé')", timeout=15000)
+            subs = list(push.STORE.subs.values())
+            self.assertEqual(len(subs), 1)
+            self.assertEqual(subs[0]["prefs"]["teams"], [1610612748])
+            self.page.click("text=Envoyer une notification test")
+            self.page.wait_for_function("document.querySelector('.notif-panel [role=status]')?.textContent.includes('Envoyée par le serveur')", timeout=15000)
+            _path, _headers, body = service.received[-1]
+            self.assertEqual(device.decrypt(body)["title"], "Parquet : notifications activées")
+            # Désactiver les alertes désabonne l'appareil côté serveur.
+            self.page.click(".notif-panel .main-opt input")
+            self.page.wait_for_function("document.querySelector('.notif-panel .main-opt input').checked === false")
+            self.page.wait_for_timeout(500)
+            self.assertEqual(push.STORE.subs, {})
+        finally:
+            push.STORE = None
+            service.close()
 
     def test_game_page_tabs_and_flow_chart(self):
         self.open("#/match/0012600050")

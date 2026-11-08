@@ -196,6 +196,8 @@ parquet-nba/
 │   ├── settings.py         réglages locaux (clé YouTube) dans data/settings.json
 │   ├── access.py           code d'accès facultatif (hébergement) : page du code, cookie signé
 │   ├── autodeploy.py       déploiement automatique : superviseur, tests GitHub, contrôle de santé, retour arrière
+│   ├── push.py             notifications push : abonnements, surveillance des matchs, alertes du serveur
+│   ├── webpush.py          Web Push (RFC 8291, VAPID) : cryptography si présent, sinon Python pur
 │   ├── demo.py             données de démonstration (mode --demo, tests, captures)
 │   └── teams_meta.py       les 30 franchises (couleurs, conférences, articles)
 ├── web/                    interface

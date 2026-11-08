@@ -74,6 +74,15 @@ def api_sante(q):
     return _no_meta({"ok": True, "version": __version__})
 
 
+@route(r"/api/push/cle")
+def api_push_key(q):
+    from . import push
+
+    if push.STORE is None:
+        return _no_meta({"available": False})
+    return _no_meta({"available": True, "publicKey": push.STORE.vapid.public_b64, "subscribers": len(push.STORE.subs)})
+
+
 @route(r"/api/deploiement")
 def api_deploiement(q):
     from . import autodeploy
@@ -383,6 +392,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if not self._gate(path):
             return
+        if path.startswith("/api/push/"):
+            self._push(path)
+            return
         if path != "/api/settings/youtube":
             self._json(404, {"error": "Adresse d'API inconnue"})
             return
@@ -410,6 +422,45 @@ class Handler(BaseHTTPRequestHandler):
             self._json(500, {"error": f"Impossible d'enregistrer la clé ({exc.__class__.__name__})"})
             return
         self._json(200, {"data": {"youtube": settings.youtube_status()}, "meta": {}})
+
+    def _push(self, path: str) -> None:
+        """Abonnement aux notifications push (voir push.py)."""
+        from . import push
+
+        if not self._same_origin():
+            self._json(403, {"error": "Requête refusée"})
+            return
+        if push.STORE is None:
+            self._json(503, {"error": "Notifications indisponibles sur ce serveur."})
+            return
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            payload = json.loads(self.rfile.read(min(length, 8192)) or b"{}") if 0 < length <= 8192 else {}
+            if not isinstance(payload, dict):
+                raise ValueError
+        except ValueError:
+            self._json(400, {"error": "Requête illisible"})
+            return
+        sub = payload.get("subscription") or {}
+        endpoint = str(sub.get("endpoint") or payload.get("endpoint") or "")
+        try:
+            if path == "/api/push/abonnement":
+                origin = self.headers.get("Origin") or ""
+                sid = push.STORE.subscribe(sub, payload.get("prefs") or {}, origin)
+                self._json(200, {"data": {"id": sid, "prefs": push.STORE.subs[sid]["prefs"]}, "meta": {}})
+            elif path == "/api/push/desabonnement":
+                self._json(200, {"data": {"removed": push.STORE.unsubscribe(endpoint)}, "meta": {}})
+            elif path == "/api/push/test":
+                sid = push._sub_id(endpoint)
+                if sid not in push.STORE.subs:
+                    self._json(404, {"error": "Cet appareil n'est pas abonné."})
+                    return
+                ok = push.STORE.deliver(sid, push.test_message(), ttl=600)
+                self._json(200 if ok else 502, {"data": {"sent": ok}, "meta": {}} if ok else {"error": "Le service de notification de ton navigateur a refusé l'envoi."})
+            else:
+                self._json(404, {"error": "Adresse d'API inconnue"})
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
 
     def do_HEAD(self) -> None:
         self.do_GET()

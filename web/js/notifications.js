@@ -21,6 +21,9 @@ const DEFAULT_SETTINGS = {
   onClutch: true,
   onEnd: true,
   clutchOnlyFavs: false,
+  onPerf: true,
+  onServer: false,
+  push: false, // abonné aux notifications push (le serveur envoie, même appli fermée)
 };
 
 let currentSettings = { ...DEFAULT_SETTINGS };
@@ -143,8 +146,9 @@ export async function sendNotification({ icon = "basketball", title, body, gameI
   // 1. Toujours afficher le toast dans l'application
   showToast({ icon, title, body, gameId });
 
-  // 2. Si le navigateur autorise les notifications et que l'utilisateur les a activées
-  if (!currentSettings.enabled || !systemNotificationsPossible() || Notification.permission !== "granted") {
+  // 2. Si le navigateur autorise les notifications et que l'utilisateur les a activées.
+  //    Abonné au push : c'est le serveur qui envoie la notification système (pas de doublon).
+  if (!currentSettings.enabled || currentSettings.push || !systemNotificationsPossible() || Notification.permission !== "granted") {
     return;
   }
 
@@ -178,6 +182,102 @@ export async function sendNotification({ icon = "basketball", title, body, gameI
     /* notification système non délivrée */
   }
 }
+
+// ------------------------------------------------------------ notifications push (serveur)
+
+export function pushPossible() {
+  return window.isSecureContext && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+}
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function isStandalone() {
+  return window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+
+function keyBytes(b64) {
+  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+async function postJSON(path, body) {
+  const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
+  return data.data;
+}
+
+function pushPrefs() {
+  return {
+    start: currentSettings.onStart,
+    final: currentSettings.onEnd,
+    clutch: currentSettings.onClutch,
+    clutchAll: !currentSettings.clutchOnlyFavs,
+    perf: currentSettings.onPerf,
+    server: currentSettings.onServer,
+    spoiler: isSpoilerFree(),
+    teams: [...favorites()],
+  };
+}
+
+// Abonne cet appareil (ou met à jour ses préférences sur le serveur). Renvoie vrai si c'est fait.
+export async function pushSubscribe() {
+  if (!pushPossible()) return false;
+  const info = (await api("/push/cle")).data;
+  if (!info.available) return false;
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  const key = keyBytes(info.publicKey);
+  if (sub && sub.options?.applicationServerKey) {
+    // Clé du serveur changée (réinstallation) : l'ancien abonnement ne marche plus.
+    const old = new Uint8Array(sub.options.applicationServerKey);
+    if (old.length !== key.length || old.some((b, i) => b !== key[i])) {
+      await sub.unsubscribe().catch(() => {});
+      sub = null;
+    }
+  }
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+  await postJSON("/api/push/abonnement", { subscription: sub.toJSON(), prefs: pushPrefs() });
+  currentSettings.push = true;
+  saveSettings();
+  return true;
+}
+
+async function pushUnsubscribe() {
+  currentSettings.push = false;
+  saveSettings();
+  if (!pushPossible()) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      await postJSON("/api/push/desabonnement", { endpoint: sub.endpoint }).catch(() => {});
+      await sub.unsubscribe();
+    }
+  } catch {
+    /* désabonnement local seulement */
+  }
+}
+
+async function pushTest() {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) throw new Error("Cet appareil n'est pas abonné.");
+  await postJSON("/api/push/test", { endpoint: sub.endpoint });
+}
+
+// Préférences modifiées (alertes, favoris, mode sans spoiler) : le serveur est prévenu, une fois.
+let syncTimer = null;
+export function syncPush() {
+  if (!currentSettings.enabled || !currentSettings.push) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => pushSubscribe().catch(() => {}), 600);
+}
+window.addEventListener("parquet:favoris", syncPush);
+new MutationObserver(syncPush).observe(document.documentElement, { attributes: true, attributeFilter: ["data-spoiler"] });
 
 export function checkScoreboard(games) {
   // L'interrupteur « Activer les alertes » coupe tout, y compris les alertes dans la page.
@@ -304,6 +404,14 @@ export function initNotificationsUI() {
     const chkClutch = h("input", { type: "checkbox", checked: currentSettings.onClutch || null });
     const chkEnd = h("input", { type: "checkbox", checked: currentSettings.onEnd || null });
     const chkClutchFavs = h("input", { type: "checkbox", checked: currentSettings.clutchOnlyFavs || null });
+    const chkPerf = h("input", { type: "checkbox", checked: currentSettings.onPerf || null });
+    const chkServer = h("input", { type: "checkbox", checked: currentSettings.onServer || null });
+    const canPush = pushPossible();
+    const iosHint =
+      isIOS() && !isStandalone()
+        ? h("p", { class: "note note-info", style: { margin: "0 0 10px" } }, "Sur iPhone, les notifications appli fermée demandent d'abord d'ajouter Parquet à l'écran d'accueil (Partager, puis « Sur l'écran d'accueil »), puis d'activer les alertes depuis l'appli installée.")
+        : null;
+    const pushMsg = h("p", { class: "note", role: "status", style: { margin: "8px 0 0", fontSize: "11px" } }, "");
 
     const insecureNotice =
       perm === "insecure"
@@ -336,7 +444,19 @@ export function initNotificationsUI() {
       "Envoyer une notification test"
     );
 
-    testBtn.addEventListener("click", () => {
+    testBtn.addEventListener("click", async () => {
+      if (currentSettings.enabled && currentSettings.push) {
+        testBtn.disabled = true;
+        pushMsg.textContent = "Envoi par le serveur…";
+        try {
+          await pushTest();
+          pushMsg.textContent = "Envoyée par le serveur : elle doit arriver dans quelques secondes, même appli fermée.";
+        } catch (err) {
+          pushMsg.textContent = err.message;
+        }
+        testBtn.disabled = false;
+        return;
+      }
       sendNotification({
         icon: "basketball",
         title: "Alerte de test Parquet",
@@ -359,23 +479,48 @@ export function initNotificationsUI() {
       saveSettings();
       syncBtn();
       if (currentSettings.enabled) startBackgroundCheck();
+      if (currentSettings.enabled && canPush && Notification.permission === "granted") {
+        pushMsg.textContent = "Abonnement de cet appareil…";
+        try {
+          pushMsg.textContent = (await pushSubscribe()) ? "Notifications actives même quand Parquet est fermé." : "Notifications seulement quand Parquet est ouvert sur ce serveur.";
+        } catch (err) {
+          pushMsg.textContent = `Notifications appli fermée impossibles : ${err.message}`;
+        }
+      } else if (!currentSettings.enabled && currentSettings.push) {
+        await pushUnsubscribe();
+        pushMsg.textContent = "";
+      }
     });
 
     chkStart.addEventListener("change", () => {
       currentSettings.onStart = chkStart.checked;
       saveSettings();
+      syncPush();
     });
     chkClutch.addEventListener("change", () => {
       currentSettings.onClutch = chkClutch.checked;
       saveSettings();
+      syncPush();
     });
     chkEnd.addEventListener("change", () => {
       currentSettings.onEnd = chkEnd.checked;
       saveSettings();
+      syncPush();
+    });
+    chkPerf.addEventListener("change", () => {
+      currentSettings.onPerf = chkPerf.checked;
+      saveSettings();
+      syncPush();
+    });
+    chkServer.addEventListener("change", () => {
+      currentSettings.onServer = chkServer.checked;
+      saveSettings();
+      syncPush();
     });
     chkClutchFavs.addEventListener("change", () => {
       currentSettings.clutchOnlyFavs = chkClutchFavs.checked;
       saveSettings();
+      syncPush();
     });
 
     panel = h(
@@ -383,19 +528,23 @@ export function initNotificationsUI() {
       { class: "notif-panel", role: "dialog", "aria-label": "Réglages des alertes" },
       h("div", { class: "notif-panel-head" }, h("strong", null, "Alertes & Notifications"), h("button", { class: "toast-close", type: "button", "aria-label": "Fermer" }, "✕")),
       insecureNotice || permNotice || "",
+      iosHint || "",
       h(
         "label",
         { class: "notif-opt main-opt" },
         chkEnabled,
-        h("span", null, h("strong", null, "Activer les alertes"), h("small", null, "Tant qu'un onglet Parquet reste ouvert"))
+        h("span", null, h("strong", null, "Activer les alertes"), h("small", null, canPush ? "Même quand Parquet est fermé" : "Tant qu'un onglet Parquet reste ouvert"))
       ),
       h("hr", { class: "notif-sep" }),
       h("label", { class: "notif-opt" }, chkStart, h("span", null, "Coup d'envoi des équipes favorites")),
       h("label", { class: "notif-opt" }, chkClutch, h("span", null, "Fin de match serrée (5 dernières minutes, 5 pts d'écart ou moins)")),
       h("label", { class: "notif-opt" }, chkClutchFavs, h("span", null, "Fins de match serrées : uniquement mes favoris")),
       h("label", { class: "notif-opt" }, chkEnd, h("span", null, "Résultat final des équipes favorites")),
+      h("label", { class: "notif-opt" }, chkPerf, h("span", null, "Grosses performances (40 points ou triple-double), tous les matchs")),
+      canPush ? h("label", { class: "notif-opt" }, chkServer, h("span", null, "Alertes du serveur : mise à jour ratée ou annulée, redémarrage")) : "",
       h("p", { class: "note", style: { margin: "8px 0 0", fontSize: "11px" } }, "Conseil : marque tes équipes préférées sur leur page pour recevoir leurs alertes."),
-      testBtn
+      testBtn,
+      pushMsg
     );
 
     panel.querySelector(".toast-close").addEventListener("click", closePanel);
@@ -420,5 +569,6 @@ export function initNotificationsUI() {
 
   if (currentSettings.enabled) {
     startBackgroundCheck();
+    if (currentSettings.push && pushPossible() && Notification.permission === "granted") pushSubscribe().catch(() => {});
   }
 }

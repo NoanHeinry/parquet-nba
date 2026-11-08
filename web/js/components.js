@@ -184,6 +184,7 @@ export function toggleFavorite(teamId) {
   } catch {
     /* stockage indisponible : le favori ne sera pas mémorisé */
   }
+  window.dispatchEvent(new CustomEvent("parquet:favoris"));
   return set.has(teamId);
 }
 
