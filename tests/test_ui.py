@@ -184,8 +184,11 @@ class InterfaceTests(unittest.TestCase):
         self.assertFalse(self.page.evaluate("document.documentElement.classList.contains('fab-away')"))
 
         self.open("#/match/0012600051")
+        # Score ou heure du coup d'envoi selon l'heure du jour (démo) : on vérifie le bloc central présent.
+        self.page.wait_for_selector(".sb-team.away .nick")
+        self.page.wait_for_selector(".sb-scores, .sb-time")
         overlap = self.page.evaluate("""() => { const a = document.querySelector('.sb-team.away .nick').getBoundingClientRect();
-            const s = document.querySelector('.sb-scores').getBoundingClientRect();
+            const s = document.querySelector('.sb-scores, .sb-time').getBoundingClientRect();
             return !(a.bottom <= s.top || a.top >= s.bottom || a.right <= s.left || a.left >= s.right); }""")
         self.assertFalse(overlap, "le nom de l'équipe chevauche le score")
 
