@@ -197,6 +197,29 @@ class InterfaceTests(unittest.TestCase):
         lines = self.page.evaluate("""() => { const t = document.querySelector('.poster-title .sn-in'); return t.getClientRects().length; }""")
         self.assertEqual(lines, 1, "« Qui est-ce ? » passe à la ligne")
 
+    def test_phone_box_score_cards_team_switch_and_table(self):
+        """Téléphone : box score en lignes lisibles, une équipe à la fois, tableau complet au choix."""
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.open("#/match/0012600050")
+        self.page.click('[role="tab"][data-tab="box"]')
+        self.page.wait_for_selector(".box-side[data-side='away'] .bc-row")
+        visible = lambda sel: self.page.locator(sel).first.is_visible()  # noqa: E731
+        self.assertGreaterEqual(self.page.locator(".box-side[data-side='away'] .bc-row").count(), 5)
+        self.assertFalse(visible(".box-side[data-side='home']"))
+        self.assertFalse(visible(".box-side[data-side='away'] .stat-table"))
+        # Rien ne déborde de l'écran en largeur.
+        width = self.page.evaluate("document.documentElement.scrollWidth")
+        self.assertLessEqual(width, 390)
+        # Autre équipe.
+        self.page.locator(".box-switch .segmented").nth(0).locator("button").nth(1).click()
+        self.assertTrue(visible(".box-side[data-side='home'] .bc-row"))
+        self.assertFalse(visible(".box-side[data-side='away']"))
+        # Vue tableau, retenue pour la prochaine fois.
+        self.page.locator(".box-switch .segmented").nth(1).locator("button").nth(1).click()
+        self.assertTrue(visible(".box-side[data-side='home'] .stat-table"))
+        self.assertFalse(visible(".box-side[data-side='home'] .box-cards"))
+        self.assertEqual(self.page.evaluate("localStorage.getItem('parquet-box-vue')"), "tableau")
+
     def test_game_page_tabs_and_flow_chart(self):
         self.open("#/match/0012600050")
         self.page.wait_for_selector(".flow-chart")

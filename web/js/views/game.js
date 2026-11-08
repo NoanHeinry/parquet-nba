@@ -255,9 +255,10 @@ function boxTable(box, key) {
 
   const wrap = h(
     "div",
-    { class: "section" },
+    { class: "section box-side", dataset: { side: key } },
     h("h2", { class: "section-title", style: { display: "flex", alignItems: "center", gap: "10px" } }, teamLogo(side?.id, 30), sideName(side).name),
-    statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : ""), caption: `Box score ${sideName(side).name}` })
+    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : ""), caption: `Box score ${sideName(side).name}` })),
+    boxCards(rows, live)
   );
   if (out.length) {
     wrap.append(
@@ -270,6 +271,130 @@ function boxTable(box, key) {
     );
   }
   return wrap;
+}
+
+// Box score sur téléphone : une ligne par joueur, lisible sans faire défiler de côté. Les points en
+// grand à droite, les autres chiffres en dessous du nom, les meilleurs de l'équipe en orange.
+function boxCards(rows, live) {
+  const players = rows.filter((r) => !r.__group && !r.__total);
+  const best = {};
+  for (const k of ["pts", "reb", "ast", "stl", "blk"]) best[k] = Math.max(1, ...players.map((p) => p[k] || 0));
+  const stat = (p, k, label, always = true) =>
+    always || p[k] ? h("span", { class: `bc-stat${(p[k] || 0) === best[k] ? " is-best" : ""}` }, h("b", { class: "num" }, String(p[k] ?? 0)), ` ${label}`) : null;
+  const shooting = (m, a, label) => (a ? `${label} ${m}/${a}` : null);
+
+  return h(
+    "div",
+    { class: "box-cards" },
+    rows.map((r) => {
+      if (r.__group) return h("div", { class: "bc-group" }, r.__group);
+      if (r.__total) {
+        return h(
+          "div",
+          { class: "bc-row bc-total" },
+          h(
+            "div",
+            { class: "bc-main" },
+            h("div", { class: "bc-name" }, h("b", null, "Équipe")),
+            h("div", { class: "bc-stats" }, stat(r, "reb", "reb"), stat(r, "ast", "pd"), stat(r, "stl", "int"), stat(r, "blk", "ctr"), stat(r, "tov", "bp")),
+            h(
+              "div",
+              { class: "bc-more num" },
+              [
+                shooting(r.fgm, r.fga, "Tirs") && `${shooting(r.fgm, r.fga, "Tirs")} (${f.pct(r.fga ? r.fgm / r.fga : null)} %)`,
+                shooting(r.tpm, r.tpa, "3 pts") && `${shooting(r.tpm, r.tpa, "3 pts")} (${f.pct(r.tpa ? r.tpm / r.tpa : null)} %)`,
+                shooting(r.ftm, r.fta, "LF"),
+              ]
+                .filter(Boolean)
+                .join("  ·  ")
+            )
+          ),
+          h("div", { class: "bc-pts" }, h("b", { class: "num" }, String(r.pts ?? 0)), h("small", null, "pts"))
+        );
+      }
+      const p = r;
+      const more = [
+        p.min ? `${p.min} min` : null,
+        shooting(p.fgm, p.fga, "Tirs"),
+        shooting(p.tpm, p.tpa, "3 pts"),
+        shooting(p.ftm, p.fta, "LF"),
+        p.pm !== null && p.pm !== undefined ? `${f.signed(p.pm)}` : null,
+        p.pf >= 5 ? `${p.pf} fautes` : null,
+      ].filter(Boolean);
+      return h(
+        "a",
+        { class: "bc-row", href: `#/joueur/${p.id}` },
+        h("span", { class: "bc-photo" }, headshot(p.id, { alt: "" })),
+        h(
+          "div",
+          { class: "bc-main" },
+          h(
+            "div",
+            { class: "bc-name" },
+            live && p.oncourt ? h("span", { class: "oncourt", title: "Sur le terrain" }) : null,
+            h("b", null, p.name),
+            h("small", null, [p.jersey ? `n° ${p.jersey}` : "", f.position(p.pos)].filter(Boolean).join(" · "))
+          ),
+          h("div", { class: "bc-stats" }, stat(p, "reb", "reb"), stat(p, "ast", "pd"), stat(p, "stl", "int", false), stat(p, "blk", "ctr", false), stat(p, "tov", "bp", false)),
+          h("div", { class: "bc-more num" }, more.join("  ·  "))
+        ),
+        h("div", { class: `bc-pts${(p.pts || 0) === best.pts ? " is-best" : ""}` }, h("b", { class: "num" }, String(p.pts ?? 0)), h("small", null, "pts"))
+      );
+    })
+  );
+}
+
+// Choix d'équipe et de présentation du box score (téléphone seulement, masqué sur grand écran).
+const BOX_VIEW_KEY = "parquet-box-vue";
+function boxPanel(box, panel) {
+  let view = "lignes";
+  try {
+    view = localStorage.getItem(BOX_VIEW_KEY) || "lignes";
+  } catch {
+    /* préférence non mémorisée */
+  }
+  const apply = (side, v) => {
+    panel.classList.toggle("bx-home", side === "home");
+    panel.classList.toggle("bx-table", v === "tableau");
+  };
+  let side = "away";
+  const a = box.game.away || {};
+  const hm = box.game.home || {};
+  const bar = h(
+    "div",
+    { class: "box-switch" },
+    segmented(
+      [
+        { value: "away", label: a.tri || "Extérieur" },
+        { value: "home", label: hm.tri || "Domicile" },
+      ],
+      side,
+      (v) => {
+        side = v;
+        apply(side, view);
+      },
+      "Équipe"
+    ),
+    segmented(
+      [
+        { value: "lignes", label: "Joueurs" },
+        { value: "tableau", label: "Tableau" },
+      ],
+      view,
+      (v) => {
+        view = v;
+        try {
+          localStorage.setItem(BOX_VIEW_KEY, v);
+        } catch {
+          /* préférence non mémorisée */
+        }
+        apply(side, view);
+      },
+      "Présentation"
+    )
+  );
+  apply(side, view);
+  return [bar, boxTable(box, "away"), boxTable(box, "home")];
 }
 
 // ------------------------------------------------------------ faits marquants et clés du match
@@ -629,7 +754,7 @@ export async function render(ctx) {
     } else if (tab === "videos") {
       videosView(panel, box.game, ctx, loadExtras);
     }
-    else if (tab === "box") panel.replaceChildren(boxTable(box, "away"), boxTable(box, "home"));
+    else if (tab === "box") panel.replaceChildren(...boxPanel(box, panel));
     else {
       if (!pbp) panel.replaceChildren(loading("Chargement des actions…"));
       try {
