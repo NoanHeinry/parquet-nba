@@ -1,6 +1,6 @@
 import { route, start } from "./router.js";
 import { loadTeams } from "./teams.js";
-import { appStatus } from "./api.js";
+import { api, appStatus } from "./api.js";
 import { initGlobalSearch } from "./search.js";
 import { errorState, refreshLogos } from "./components.js";
 import * as home from "./views/home.js";
@@ -236,7 +236,7 @@ initScrollFade();
 const outlet = document.getElementById("main");
 
 // Version de l'interface : elle doit correspondre à celle du serveur (parquet/__init__.py).
-const APP_VERSION = "1.25.0";
+const APP_VERSION = "1.26.0";
 document.documentElement.dataset.version = APP_VERSION;
 
 // Compare deux numéros de version (1.5.0 < 1.12.0).
@@ -254,8 +254,10 @@ function topBanner(text) {
   document.querySelector(".topbar").after(banner);
 }
 
-// Avertissement de version : un encart fixé en bas de l'écran, qu'on peut fermer.
-function updateNotice(text) {
+// Avertissement de version : un encart fixé en bas de l'écran, qu'on peut fermer, avec
+// éventuellement un bouton d'action.
+function updateNotice(text, action) {
+  document.querySelector(".update-notice")?.remove();
   const box = document.createElement("div");
   box.className = "update-notice";
   box.setAttribute("role", "alert");
@@ -267,8 +269,79 @@ function updateNotice(text) {
   close.setAttribute("aria-label", "Fermer");
   close.textContent = "×";
   close.addEventListener("click", () => box.remove());
-  box.append(msg, close);
+  box.append(msg);
+  if (action) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "update-action";
+    btn.textContent = action.label;
+    btn.addEventListener("click", () => action.run(btn));
+    box.append(btn);
+  }
+  box.append(close);
   document.body.append(box);
+}
+
+const UPDATE_KEY = "parquet-maj-tentee";
+
+// Installe la nouvelle version sans Ctrl+F5 (impossible sur téléphone) : nouveau service worker,
+// copies hors ligne de l'ancienne version effacées, puis rechargement.
+async function applyUpdate(btn, target) {
+  btn.disabled = true;
+  btn.textContent = "Mise à jour…";
+  try {
+    sessionStorage.setItem(UPDATE_KEY, target);
+  } catch {
+    /* rien à retenir */
+  }
+  try {
+    const sw = navigator.serviceWorker;
+    const reg = sw && (await sw.getRegistration());
+    if (reg) {
+      const taken = new Promise((resolve) => {
+        sw.addEventListener("controllerchange", resolve, { once: true });
+        setTimeout(resolve, 5000);
+      });
+      await reg.update().catch(() => {});
+      if (reg.installing || reg.waiting) await taken;
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k.startsWith("parquet-static-") && !k.endsWith(target)).map((k) => caches.delete(k)));
+    }
+  } catch {
+    /* on recharge quand même */
+  }
+  location.reload();
+}
+
+// Compare la version de la page à celle du serveur ; propose la mise à jour si besoin.
+function checkVersion(st) {
+  const diff = st.version ? versionCmp(st.version, APP_VERSION) : 0;
+  let tried = null;
+  try {
+    tried = sessionStorage.getItem(UPDATE_KEY);
+    if (diff <= 0) sessionStorage.removeItem(UPDATE_KEY);
+  } catch {
+    /* rien */
+  }
+  if (diff < 0) {
+    updateNotice(
+      `Parquet a été mis à jour (${APP_VERSION}), mais le programme lancé sur l'ordinateur est encore l'ancienne version (${st.version}). Ferme la fenêtre de Parquet puis relance-le : certaines pages restent vides en attendant.`
+    );
+  } else if (diff > 0 && tried === st.version) {
+    // Déjà essayé dans cet onglet sans succès : seule une fermeture complète débloque la situation.
+    updateNotice(
+      `La version ${st.version} n'a pas pu se charger. Ferme complètement Parquet (sur téléphone : glisse-la hors des applications récentes, ou ferme l'onglet), puis rouvre-la.`,
+      { label: "Réessayer", run: (btn) => applyUpdate(btn, st.version) }
+    );
+  } else if (diff > 0) {
+    updateNotice(`Une nouvelle version de Parquet (${st.version}) est disponible.`, {
+      label: "Mettre à jour",
+      run: (btn) => applyUpdate(btn, st.version),
+    });
+  }
+  return diff;
 }
 
 // Mode démonstration (python run.py --demo) : un bandeau rappelle que les données sont fictives.
@@ -276,19 +349,24 @@ function updateNotice(text) {
 // refermée), les nouvelles pages n'ont pas de données : un bandeau dit quoi faire.
 appStatus()
   .then((st) => {
-    const diff = st.version ? versionCmp(st.version, APP_VERSION) : 0;
-    if (diff < 0) {
-      updateNotice(
-        `Parquet a été mis à jour (${APP_VERSION}), mais le programme lancé sur l'ordinateur est encore l'ancienne version (${st.version}). Ferme la fenêtre de Parquet puis relance-le : certaines pages restent vides en attendant.`
-      );
-    } else if (diff > 0) {
-      updateNotice(`Une nouvelle version de Parquet (${st.version}) est prête : recharge la page (Ctrl+F5 sur ordinateur) pour l'afficher.`);
-    }
+    checkVersion(st);
     if (!st.demo) return;
     document.documentElement.dataset.demo = "1";
     topBanner("Mode démonstration : joueurs, scores et statistiques fictifs, sans connexion à NBA.com.");
   })
   .catch(() => {});
+
+// Application laissée ouverte (téléphone, onglet en arrière-plan) : au retour, on revérifie la
+// version, au plus une fois toutes les 5 minutes.
+let lastVersionCheck = Date.now();
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || Date.now() - lastVersionCheck < 5 * 60 * 1000) return;
+  if (document.querySelector(".update-notice")) return;
+  lastVersionCheck = Date.now();
+  api("/sante")
+    .then(({ data }) => data?.version && checkVersion({ version: data.version }))
+    .catch(() => {});
+});
 
 loadTeams()
   .then(() => {

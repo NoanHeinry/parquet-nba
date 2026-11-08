@@ -2,9 +2,11 @@
 //
 // Le serveur Parquet tourne sur la même machine ou le même réseau : le réseau est donc
 // toujours essayé en premier, et le cache ne sert que de secours quand le serveur est arrêté.
-// Ainsi, une mise à jour du code est visible dès le lancement suivant, sans mélange de versions.
+// Chaque fichier est revérifié auprès du serveur (jamais pris tel quel dans le cache du
+// navigateur, ni dans celui d'un intermédiaire comme Cloudflare) : une mise à jour du code est
+// donc visible dès le rechargement suivant, sans mélange de versions.
 
-const VERSION = "1.25.0";
+const VERSION = "1.26.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;
@@ -76,7 +78,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) => cache.addAll(STATIC_ASSETS.map((url) => new Request(url, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -99,7 +101,8 @@ async function trimApiCache() {
 
 async function networkFirst(req, cacheName, { trim = false, offlineFallback } = {}) {
   try {
-    const res = await fetch(req);
+    // « no-cache » : le navigateur redemande toujours au serveur (réponse « 304 » si rien n'a changé).
+    const res = await fetch(req, { cache: "no-cache" });
     if (res.ok) {
       const cache = await caches.open(cacheName);
       await cache.put(req, res.clone());

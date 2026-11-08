@@ -357,6 +357,22 @@ class ServerTests(unittest.TestCase):
         except urllib.error.HTTPError as exc:
             return exc.code, json.load(exc)
 
+    def test_static_files_revalidate_with_etag_and_skip_cdn_cache(self):
+        # Une mise à jour doit se voir au rechargement, même sur téléphone et derrière Cloudflare.
+        with urllib.request.urlopen(self.base + "/js/app.js") as r:
+            etag = r.headers["ETag"]
+            self.assertEqual(r.headers["Cache-Control"], "no-cache")
+            self.assertEqual(r.headers["Cloudflare-CDN-Cache-Control"], "no-store")
+            self.assertTrue(r.read())
+        self.assertTrue(etag.startswith('W/"'))
+        req = urllib.request.Request(self.base + "/js/app.js", headers={"If-None-Match": etag})
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(req)
+        self.assertEqual(ctx.exception.code, 304)
+        req = urllib.request.Request(self.base + "/js/app.js", headers={"If-None-Match": 'W/"ancienne"'})
+        with urllib.request.urlopen(req) as r:
+            self.assertEqual(r.status, 200)
+
     def test_game_extras_and_events(self):
         data = self.get("/api/game/0012600050/extras")
         self.assertTrue(data["page"]["recap"]["title"].startswith("Game Recap"))

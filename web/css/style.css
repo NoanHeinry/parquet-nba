@@ -8869,6 +8869,30 @@ a.dr-name:hover {
   line-height: 1.45;
 }
 
+.update-notice p {
+  flex: 1;
+}
+
+.update-action {
+  flex: none;
+  align-self: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  background: var(--accent-ink);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.update-action:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
 .update-close {
   flex: none;
   width: 30px;

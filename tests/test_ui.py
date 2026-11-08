@@ -661,6 +661,23 @@ class InterfaceTests(unittest.TestCase):
         self.page.click(".update-close")
         self.assertEqual(self.page.locator(".update-notice").count(), 0)
 
+    def test_newer_server_offers_one_tap_update(self):
+        # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
+        # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.
+        def new_status(route):
+            route.fulfill(status=200, content_type="application/json", body='{"data":{"version":"99.0.0","demo":true},"meta":{}}')
+
+        self.page.route("**/api/status", new_status)
+        self.open("#/draft")
+        notice = self.page.wait_for_selector(".update-notice")
+        self.assertIn("99.0.0", notice.text_content())
+        self.assertNotIn("Ctrl", notice.text_content())
+        with self.page.expect_navigation():
+            self.page.click(".update-action")
+        notice = self.page.wait_for_selector(".update-notice")
+        self.assertIn("Ferme complètement", notice.text_content())
+        self.assertEqual(self.page.locator(".update-action").text_content(), "Réessayer")
+
     def test_current_server_shows_no_notice(self):
         self.open("#/")
         self.page.wait_for_timeout(400)

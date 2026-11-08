@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
 import os
 import re
@@ -319,12 +320,19 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store" if content_type.startswith("application/json") else "no-cache")
+        self._send_cdn_headers()
         self.send_header("X-Content-Type-Options", "nosniff")
         for key, value in (extra or {}).items():
             self.send_header(key, value)
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(body)
+
+    def _send_cdn_headers(self) -> None:
+        # Derrière Cloudflare (tunnel) : rien n'est gardé dans le cache du CDN, sinon une mise à jour
+        # du code pourrait rester invisible sur les téléphones.
+        self.send_header("CDN-Cache-Control", "no-store")
+        self.send_header("Cloudflare-CDN-Cache-Control", "no-store")
 
     def _json(self, status: int, payload: Any) -> None:
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -516,7 +524,19 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, "Page introuvable".encode("utf-8"), "text/plain; charset=utf-8")
             return
         content_type = MIME.get(target.suffix.lower(), "application/octet-stream")
-        self._send(200, target.read_bytes(), content_type)
+        body = target.read_bytes()
+        # Étiquette du contenu : le navigateur revérifie chaque fichier à chaque ouverture ; s'il n'a pas
+        # changé, le serveur répond « 304 » sans le renvoyer (rapide), sinon il envoie la nouvelle version.
+        etag = 'W/"' + hashlib.sha1(body).hexdigest()[:20] + '"'
+        asked = [t.strip() for t in (self.headers.get("If-None-Match") or "").split(",")]
+        if etag in asked or etag[2:] in asked:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "no-cache")
+            self._send_cdn_headers()
+            self.end_headers()
+            return
+        self._send(200, body, content_type, {"ETag": etag})
 
 
 class Server(ThreadingHTTPServer):

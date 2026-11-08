@@ -91,8 +91,7 @@ export function teamColor(id, against = surfaceColor()) {
 }
 
 // Deux couleurs d'équipe qu'on peut distinguer côte à côte.
-export function teamPair(awayId, homeId) {
-  const surface = surfaceColor();
+export function teamPair(awayId, homeId, surface = surfaceColor()) {
   const away = teamColor(awayId, surface);
   let home = teamColor(homeId, surface);
   if (colorDistance(away, home) < 0.12) {
