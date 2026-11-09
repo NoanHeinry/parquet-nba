@@ -13445,3 +13445,20 @@ input[type="search"].select {
     padding-bottom: 9px;
   }
 }
+
+/* ================================================================ 3.8 Recherche au premier plan */
+
+/* La liste des suggestions passe au-dessus de tout le reste du menu (boutons, liens des pages,
+   animés et donc dessinés sur leur propre calque) comme de la barre du haut. */
+.search {
+  z-index: 30;
+}
+
+.search-results {
+  z-index: 40;
+}
+
+.menu-side {
+  position: relative;
+  z-index: 20;
+}

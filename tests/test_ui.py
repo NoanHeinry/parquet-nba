@@ -661,6 +661,32 @@ class InterfaceTests(unittest.TestCase):
         self.page.click(".update-close")
         self.assertEqual(self.page.locator(".update-notice").count(), 0)
 
+    def test_menu_search_suggestions_are_drawn_above_everything(self):
+        # Les suggestions de la recherche du menu ne doivent pas passer sous les liens et boutons.
+        for size in ({"width": 390, "height": 844}, {"width": 1366, "height": 800}):
+            self.page.set_viewport_size(size)
+            self.open("#/")
+            self.page.click(".menu-fab")
+            self.page.wait_for_timeout(800)
+            self.page.fill("#global-search", "jo")
+            self.page.wait_for_selector("#search-results .search-item")
+            hidden = self.page.evaluate(
+                """() => {
+                  const r = document.querySelector('#search-results').getBoundingClientRect();
+                  const out = [];
+                  for (let y = r.top + 20; y < r.bottom - 5; y += 40)
+                    for (const x of [r.left + 30, r.left + r.width / 2, r.right - 20]) {
+                      const el = document.elementFromPoint(x, y);
+                      if (el && !el.closest('#search-results')) out.push(el.className || el.tagName);
+                    }
+                  return out;
+                }"""
+            )
+            self.assertEqual(hidden, [], size)
+            self.page.fill("#global-search", "")
+            self.page.click(".menu-fab")  # referme le menu avant la taille suivante
+            self.page.wait_for_timeout(600)
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.
