@@ -38,7 +38,7 @@ except ImportError:
         "ou tape : python -m pip install -r requirements.txt"
     )
 
-from parquet import __version__, access, nba, settings
+from parquet import __version__, access, nba, photos, settings
 from parquet.cache import Cache
 from parquet.server import make_server
 
@@ -140,6 +140,7 @@ def main() -> int:
         print("Cache vidé.")
     nba.init(cache)
     settings.init(APP_DIR / "data" / "settings.json")
+    photos.init(APP_DIR / "data" / ("demo-photos" if args.demo else "photos"))
 
     if args.diagnostic:
         return run_diagnostic()

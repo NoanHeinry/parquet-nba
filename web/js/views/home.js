@@ -4,7 +4,7 @@
 import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
-import { errorState, favorites, gameTile, headshot, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
+import { errorState, favoritePlayers, favorites, gameTile, headshot, loading, scoreMap, section, setTileRevealed, staleBanner, teamLogo } from "../components.js";
 import { gameKey, isRevealed, isSpoilerFree } from "../spoiler.js";
 import { checkScoreboard } from "../notifications.js";
 import { createRecap } from "./recap.js";
@@ -63,6 +63,23 @@ function refreshDelay(data) {
   return data.isToday ? 120000 : 600000;
 }
 
+// Accès rapide aux joueurs favoris (photo et nom seulement : aucun score, donc aucun spoiler).
+function favStrip() {
+  const favs = favoritePlayers();
+  if (!favs.length) return "";
+  return h(
+    "nav",
+    { class: "home-favs", "aria-label": "Mes joueurs" },
+    h("a", { class: "home-favs-title", href: "#/mes-joueurs" }, "Mes joueurs"),
+    h(
+      "div",
+      { class: "home-favs-list" },
+      favs.map((p) => h("a", { class: "home-fav", href: `#/joueur/${p.id}` }, h("span", { class: "home-fav-pic" }, headshot(p.id, { alt: "" })), h("span", null, p.name)))
+    ),
+    h("a", { class: "home-favs-all", href: "#/mes-joueurs" }, "Leur forme →")
+  );
+}
+
 export async function render(ctx) {
   const requested = ctx.params[0] || null;
   document.body.classList.add("is-home");
@@ -78,7 +95,7 @@ export async function render(ctx) {
   const teaser = createQuizTeaser(ctx);
   const quizSec = h("section", { class: "home-sec home-quiz", id: "jeu", "aria-label": "Le jeu Qui est-ce ?" }, teaser.el);
   const ticker = h("div", { class: "ticker", "aria-hidden": "true" }, h("div", { class: "ticker-track" }));
-  ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec, quizSec));
+  ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, favStrip(), gamesSec, nightSec, tablesSec, quizSec));
   // Bandeau défilant et scène en pause quand ils sont hors de l'écran : plus aucune animation
   // ne tourne pour rien pendant qu'on lit le reste de la page.
   if ("IntersectionObserver" in window) {

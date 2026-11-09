@@ -1,5 +1,5 @@
 import { route, start } from "./router.js";
-import { loadTeams } from "./teams.js";
+import { loadPhotos, loadTeams } from "./teams.js";
 import { api, appStatus } from "./api.js";
 import { initGlobalSearch } from "./search.js";
 import { errorState, refreshLogos } from "./components.js";
@@ -10,6 +10,7 @@ import * as teamsView from "./views/teams.js";
 import * as teamView from "./views/team.js";
 import * as players from "./views/players.js";
 import * as player from "./views/player.js";
+import * as myPlayers from "./views/myplayers.js";
 import * as standings from "./views/standings.js";
 import * as playoffs from "./views/playoffs.js";
 import * as leaders from "./views/leaders.js";
@@ -206,6 +207,7 @@ route("/face-a-face/(\\d+)/(\\d+)", h2h.render, "equipes");
 route("/equipe/(\\d+)", teamView.render, "equipes");
 route("/joueurs", players.render, "joueurs");
 route("/joueur/(\\d+)", player.render, "joueurs");
+route("/mes-joueurs", myPlayers.render, "joueurs");
 route("/classement", standings.render, "classement");
 route("/classement/course", race.render, "classement");
 route("/trophees", awards.render, "trophees");
@@ -236,7 +238,7 @@ initScrollFade();
 const outlet = document.getElementById("main");
 
 // Version de l'interface : elle doit correspondre à celle du serveur (parquet/__init__.py).
-const APP_VERSION = "1.30.0";
+const APP_VERSION = "1.31.0";
 document.documentElement.dataset.version = APP_VERSION;
 
 // Compare deux numéros de version (1.5.0 < 1.12.0).
@@ -368,7 +370,7 @@ document.addEventListener("visibilitychange", () => {
     .catch(() => {});
 });
 
-loadTeams()
+Promise.all([loadTeams(), loadPhotos()])
   .then(() => {
     initGlobalSearch();
     start(outlet);

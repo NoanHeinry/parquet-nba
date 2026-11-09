@@ -3,7 +3,7 @@
 import { h } from "./dom.js";
 import { enhanceTable, refreshTable } from "./tables.js";
 import * as f from "./format.js";
-import { headshotUrl, isDarkTheme, logoUrl, team, teamPair } from "./teams.js";
+import { hasCustomPhoto, headshotUrl, isDarkTheme, logoUrl, team, teamPair } from "./teams.js";
 import { iconStar } from "./icons.js";
 import { gameKey, isRevealed, isSpoilerFree, setRevealed } from "./spoiler.js";
 
@@ -50,7 +50,7 @@ export function refreshLogos() {
 
 export function headshot(id, { size = "small", cls = "headshot", alt = "", width, height } = {}) {
   const img = h("img", {
-    class: cls,
+    class: hasCustomPhoto(id) ? `${cls} is-custom` : cls,
     src: headshotUrl(id, size),
     alt,
     loading: "lazy",
@@ -172,6 +172,32 @@ export function chips(options, value, onChange, label = "") {
 }
 
 // ------------------------------------------------------------ favoris
+
+// Joueurs favoris : [{ id, name, teamId }], dans l'ordre où ils ont été ajoutés.
+const PFAV_KEY = "parquet-joueurs-favoris";
+export function favoritePlayers() {
+  try {
+    const list = JSON.parse(localStorage.getItem(PFAV_KEY) || "[]");
+    return Array.isArray(list) ? list.filter((p) => p && Number(p.id)) : [];
+  } catch {
+    return [];
+  }
+}
+export function isFavoritePlayer(id) {
+  return favoritePlayers().some((p) => Number(p.id) === Number(id));
+}
+export function toggleFavoritePlayer(p) {
+  let list = favoritePlayers();
+  const on = !list.some((x) => Number(x.id) === Number(p.id));
+  list = on ? [...list, { id: Number(p.id), name: p.name, teamId: p.teamId || null }] : list.filter((x) => Number(x.id) !== Number(p.id));
+  try {
+    localStorage.setItem(PFAV_KEY, JSON.stringify(list));
+  } catch {
+    /* stockage indisponible : le favori ne sera pas mémorisé */
+  }
+  window.dispatchEvent(new CustomEvent("parquet:favoris"));
+  return on;
+}
 
 const FAV_KEY = "parquet-favorites";
 export function favorites() {

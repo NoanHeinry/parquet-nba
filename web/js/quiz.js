@@ -2,7 +2,7 @@
 // et progression gardée dans le navigateur. Aucune manipulation de la page ici (voir views/quiz.js).
 
 import * as f from "./format.js";
-import { headshotUrl, silhouetteUrl, team } from "./teams.js";
+import { officialHeadshotUrl as headshotUrl, silhouetteUrl, team } from "./teams.js";
 import { normalize } from "./search.js";
 
 // ---------------------------------------------------------------- réglages

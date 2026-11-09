@@ -14101,3 +14101,334 @@ a.pl-aw:hover b {
 .pl-cups {
   gap: 3px;
 }
+
+/* ================================================================ 4.3 Joueurs favoris et photos choisies */
+
+/* Photo choisie par l'utilisateur : une vraie photo (avec un fond), recadrée sur le visage. */
+.headshot.is-custom {
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+.poster-visual.has-custom .pp-face {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  translate: none;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.photo-reset-btn {
+  color: var(--text-2);
+}
+
+/* Page « Mes joueurs » */
+.mp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.mp-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  min-height: 210px;
+  overflow: hidden;
+  border-left: 4px solid var(--tc);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--tc) 18%, var(--surface)) 0%, var(--surface) 55%);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.mp-card.is-leaving {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.mp-photo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.mp-photo .headshot {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 190%;
+  max-width: none;
+  height: auto;
+  translate: -50% 0;
+  border-radius: 0;
+  background: none;
+}
+
+.mp-photo .headshot.is-custom {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  translate: none;
+}
+
+.mp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px 44px 16px 16px;
+}
+
+.mp-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.mp-name:hover {
+  color: var(--accent);
+}
+
+.mp-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.mp-team a {
+  color: inherit;
+}
+
+.mp-avg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.mp-avg small {
+  flex-basis: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mp-avg b {
+  font-family: var(--font-poster);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.mp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mp-trend {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.mp-trend b {
+  font-weight: 700;
+}
+
+.mp-trend.is-up b {
+  color: var(--win);
+}
+
+.mp-trend.is-down b {
+  color: var(--loss);
+}
+
+.mp-bars {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  height: 72px;
+  max-width: 230px;
+}
+
+.mp-bar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.mp-bar i {
+  display: block;
+  width: 100%;
+  background: var(--line-strong);
+}
+
+.mp-bar.is-win i {
+  background: var(--accent);
+}
+
+.mp-bar b {
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.mp-last {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  font-size: 13px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.mp-last small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mp-last:hover span {
+  color: var(--accent);
+}
+
+.mp-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.mp-remove:hover {
+  color: var(--text);
+}
+
+.mp-empty {
+  max-width: 520px;
+  margin: 24px auto;
+  color: var(--text-2);
+}
+
+.mp-empty svg {
+  color: var(--accent);
+}
+
+/* Accueil : bande « Mes joueurs » */
+.home-favs {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.home-favs-title,
+.home-favs-all {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.home-favs-all {
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.home-favs-list {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.home-fav {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.home-fav:hover {
+  border-color: var(--accent);
+}
+
+.home-fav-pic {
+  width: 34px;
+  height: 34px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-2);
+}
+
+.home-fav-pic .headshot {
+  display: block;
+  width: 46px;
+  max-width: none;
+  margin-left: -6px;
+  border-radius: 0;
+  background: none;
+}
+
+.home-fav-pic .headshot.is-custom {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .mp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mp-card {
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+
+  .home-favs {
+    flex-wrap: wrap;
+  }
+
+  .home-favs-list {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .home-favs-all {
+    margin-left: auto;
+  }
+}

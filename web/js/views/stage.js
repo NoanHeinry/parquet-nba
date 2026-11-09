@@ -8,7 +8,7 @@ import { api } from "../api.js";
 import { h, s } from "../dom.js";
 import * as f from "../format.js";
 import { teamLogo } from "../components.js";
-import { headshotUrl, silhouetteUrl, team, teamColor } from "../teams.js";
+import { officialHeadshotUrl as headshotUrl, silhouetteUrl, team, teamColor } from "../teams.js";
 import { isHidden, setRevealed } from "../spoiler.js";
 import { countUp, reducedMotion } from "../scroll.js";
 

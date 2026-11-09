@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, access, extras, history, nba, net, player_season, season, settings, teams_meta, teamstats, verify
+from . import __version__, access, extras, history, nba, net, photos, player_season, season, settings, teams_meta, teamstats, verify
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -82,6 +82,12 @@ def api_push_key(q):
     if push.STORE is None:
         return _no_meta({"available": False})
     return _no_meta({"available": True, "publicKey": push.STORE.vapid.public_b64, "subscribers": len(push.STORE.subs)})
+
+
+@route(r"/api/photos")
+def api_photos(q):
+    # Photos de joueurs choisies par l'utilisateur : {identifiant: version}.
+    return _no_meta({"photos": photos.listing()})
 
 
 @route(r"/api/deploiement")
@@ -431,6 +437,9 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/push/"):
             self._push(path)
             return
+        if path.startswith("/api/photos/"):
+            self._photo_upload(path)
+            return
         if path != "/api/settings/youtube":
             self._json(404, {"error": "Adresse d'API inconnue"})
             return
@@ -458,6 +467,45 @@ class Handler(BaseHTTPRequestHandler):
             self._json(500, {"error": f"Impossible d'enregistrer la clé ({exc.__class__.__name__})"})
             return
         self._json(200, {"data": {"youtube": settings.youtube_status()}, "meta": {}})
+
+    def _photo_upload(self, path: str) -> None:
+        """POST /api/photos/<joueur> (image en corps de requête) ou /api/photos/<joueur>/supprimer."""
+        m = re.fullmatch(r"/api/photos/(\d{1,12})(/supprimer)?", path)
+        if not m:
+            self._json(404, {"error": "Adresse d'API inconnue"})
+            return
+        if not self._same_origin():
+            self._json(403, {"error": "Requête refusée"})
+            return
+        if not photos.may_edit(self.client_address[0], self.headers, access.enabled()):
+            self._json(
+                403,
+                {"error": "Depuis Internet, changer une photo demande un code d'accès sur le site (commande « parquet code »), pour que personne d'autre ne puisse le faire. Sinon, fais-le depuis le Wi-Fi de la maison."},
+            )
+            return
+        player_id, delete = m.group(1), bool(m.group(2))
+        if delete:
+            photos.remove(player_id)
+            self._json(200, {"data": {"photos": photos.listing()}, "meta": {}})
+            return
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        if length <= 0 or length > photos.MAX_BYTES:
+            self.close_connection = True
+            self._json(413, {"error": "La photo doit peser moins de 3 Mo."})
+            return
+        body = self.rfile.read(length)
+        try:
+            photos.save(player_id, body)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
+        except (OSError, RuntimeError) as exc:
+            self._json(500, {"error": f"Impossible d'enregistrer la photo ({exc.__class__.__name__})"})
+            return
+        self._json(200, {"data": {"photos": photos.listing()}, "meta": {}})
 
     def _push(self, path: str) -> None:
         """Abonnement aux notifications push (voir push.py)."""
@@ -520,6 +568,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path.startswith("/api/"):
             self._api(path, {k: v[0] for k, v in parse_qs(parts.query).items()})
+        elif path.startswith("/photos/"):
+            self._photo(path)
         else:
             self._static(path)
 
@@ -545,6 +595,23 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(500, {"error": f"Erreur interne : {exc.__class__.__name__}"})
             return
         self._json(404, {"error": "Adresse d'API inconnue"})
+
+    def _photo(self, path: str) -> None:
+        m = re.fullmatch(r"/photos/(\d{1,12})", path)
+        found = photos.read(m.group(1)) if m else None
+        if not found:
+            self._send(404, "Photo introuvable".encode("utf-8"), "text/plain; charset=utf-8")
+            return
+        body, content_type = found
+        etag = 'W/"' + hashlib.sha1(body).hexdigest()[:20] + '"'
+        if etag in [t.strip() for t in (self.headers.get("If-None-Match") or "").split(",")]:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "no-cache")
+            self._send_cdn_headers()
+            self.end_headers()
+            return
+        self._send(200, body, content_type, {"ETag": etag})
 
     def _static(self, path: str) -> None:
         if path in ("", "/"):

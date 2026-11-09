@@ -20,9 +20,10 @@ try:
 except ImportError:  # pragma: no cover - dépend de l'environnement
     sync_playwright = None
 
-from parquet import demo, nba, net
+from parquet import demo, nba, net, photos
 from parquet.cache import Cache
 from parquet.server import make_server
+from tests.test_extras import tiny_png
 
 STAR = demo.STAR
 PLACEHOLDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#8592a6"/></svg>'
@@ -43,6 +44,7 @@ class InterfaceTests(unittest.TestCase):
         cls.saved_get = net._get
         demo.install()
         nba.init(Cache(Path(cls.tmp.name) / "ui.sqlite3"))
+        photos.init(Path(cls.tmp.name) / "photos")
         cls.server = make_server("127.0.0.1", 0)
         cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}/"
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
@@ -745,6 +747,37 @@ class InterfaceTests(unittest.TestCase):
         )
         self.assertFalse(overlap)
         self.assertEqual(self.page.evaluate("getComputedStyle(document.documentElement).scrollbarGutter"), "stable")
+
+    def test_favorite_players_page_home_strip_and_custom_photo(self):
+        # Étoile sur la fiche → le joueur apparaît dans « Mes joueurs » et sur l'accueil.
+        self.open("#/joueur/1722115")
+        self.page.wait_for_selector(".fav-btn")
+        self.page.click(".fav-btn")
+        self.assertEqual(self.page.get_attribute(".fav-btn", "aria-pressed"), "true")
+        self.open("#/mes-joueurs")
+        card = self.page.wait_for_selector(".mp-card:not(.is-loading)")
+        self.assertIn("Ugo Sabatier", card.text_content())
+        self.assertTrue(self.page.locator(".mp-card .mp-avg").count())
+        self.assertTrue(self.page.locator(".mp-card .mp-bars .mp-bar").count())
+        self.open("#/")
+        self.page.wait_for_selector(".home-favs .home-fav")
+        self.assertIn("Ugo Sabatier", self.page.text_content(".home-favs"))
+        # Photo choisie : elle remplace la photo officielle sur la fiche, puis on revient à l'origine.
+        png = Path(self.tmp.name) / "photo.png"
+        png.write_bytes(tiny_png(30, 40))
+        self.open("#/joueur/1722115")
+        self.page.wait_for_selector(".photo-btn")
+        self.page.set_input_files(".poster input[type=file]", str(png))
+        self.page.wait_for_selector(".poster-visual.has-custom .pp-face.is-custom")
+        self.assertIn("/photos/1722115", self.page.get_attribute(".pp-face", "src"))
+        self.page.click(".photo-reset-btn")
+        self.page.wait_for_function("!document.querySelector('.poster-visual.has-custom') && document.querySelector('.pp-face')")
+        self.assertNotIn("/photos/", self.page.get_attribute(".pp-face", "src"))
+        # Retirer des favoris depuis « Mes joueurs ».
+        self.open("#/mes-joueurs")
+        self.page.click(".mp-remove")
+        self.page.wait_for_function("!document.querySelector('.mp-card')")
+        self.assertEqual(self.page.evaluate("localStorage.getItem('parquet-joueurs-favoris')"), "[]")
 
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur

@@ -6,7 +6,7 @@
 // navigateur, ni dans celui d'un intermédiaire comme Cloudflare) : une mise à jour du code est
 // donc visible dès le rechargement suivant, sans mélange de versions.
 
-const VERSION = "1.30.0";
+const VERSION = "1.31.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;
@@ -40,6 +40,8 @@ const STATIC_ASSETS = [
   "./js/components.js",
   "./js/tables.js",
   "./js/trophies.js",
+  "./js/photo-edit.js",
+  "./js/views/myplayers.js",
   "./js/icons.js",
   "./js/spoiler.js",
   "./js/notifications.js",

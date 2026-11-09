@@ -14,7 +14,7 @@ import urllib.request
 from pathlib import Path
 from unittest import mock
 
-from parquet import access, demo, extras, nba, net, settings
+from parquet import access, demo, extras, nba, net, photos, settings
 from parquet.cache import Cache
 from parquet.server import make_server
 
@@ -319,6 +319,34 @@ class AccessCodeTests(unittest.TestCase):
         access.init("code-secret", self.key)
 
 
+def tiny_png(width=4, height=5):
+    """Petite image PNG valide, fabriquée sans bibliothèque d'images."""
+    import struct
+    import zlib
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    raw = b"".join(b"\x00" + b"\xff\x7a\x1a" * width for _ in range(height))
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+
+
+class PhotoRulesTests(unittest.TestCase):
+    def test_who_may_change_photos(self):
+        self.assertTrue(photos.may_edit("127.0.0.1", {}, False))
+        self.assertTrue(photos.may_edit("192.168.1.30", {}, False))
+        self.assertFalse(photos.may_edit("8.8.8.8", {}, False))
+        self.assertFalse(photos.may_edit("127.0.0.1", {"CF-Connecting-IP": "203.0.113.9"}, False))
+        # Avec un code d'accès, celui qui l'a tapé peut le faire de partout.
+        self.assertTrue(photos.may_edit("127.0.0.1", {"CF-Connecting-IP": "203.0.113.9"}, True))
+
+    def test_image_kind_comes_from_content(self):
+        self.assertEqual(photos.kind_of(tiny_png()), "png")
+        self.assertEqual(photos.kind_of(b"\xff\xd8\xff\xe0rest"), "jpg")
+        self.assertEqual(photos.kind_of(b"RIFF\x00\x00\x00\x00WEBPVP8 "), "webp")
+        self.assertIsNone(photos.kind_of(b"GIF89a"))
+
+
 class ServerTests(unittest.TestCase):
     """Les nouvelles routes, en mode démo, dans un vrai serveur."""
 
@@ -329,6 +357,7 @@ class ServerTests(unittest.TestCase):
         demo.install()
         nba.init(Cache(Path(cls.tmp.name) / "c.sqlite3"))
         settings.init(Path(cls.tmp.name) / "settings.json")
+        photos.init(Path(cls.tmp.name) / "photos")
         cls.server = make_server("127.0.0.1", 0)
         cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
@@ -372,6 +401,44 @@ class ServerTests(unittest.TestCase):
         req = urllib.request.Request(self.base + "/js/app.js", headers={"If-None-Match": 'W/"ancienne"'})
         with urllib.request.urlopen(req) as r:
             self.assertEqual(r.status, 200)
+
+    def test_custom_player_photo_upload_serve_and_remove(self):
+        png = tiny_png()
+
+        def post(path, body=b"", headers=None):
+            req = urllib.request.Request(self.base + path, data=body, method="POST", headers={"Content-Type": "image/png", **(headers or {})})
+            try:
+                with urllib.request.urlopen(req) as r:
+                    return r.status, json.load(r)
+            except urllib.error.HTTPError as exc:
+                return exc.code, json.load(exc)
+
+        # Depuis la machine elle-même : la photo est enregistrée puis servie.
+        status, data = post("/api/photos/77", png)
+        self.assertEqual(status, 200)
+        self.assertIn("77", data["data"]["photos"])
+        with urllib.request.urlopen(self.base + "/api/photos") as r:
+            self.assertIn("77", json.load(r)["data"]["photos"])
+        with urllib.request.urlopen(self.base + "/photos/77") as r:
+            self.assertEqual(r.headers["Content-Type"], "image/png")
+            self.assertEqual(r.read(), png)
+        # Ce qui n'est pas une image est refusé, quel que soit le type annoncé.
+        status, data = post("/api/photos/77", b"<script>alert(1)</script>")
+        self.assertEqual(status, 400)
+        # Venu d'Internet (tunnel) sans code d'accès : interdit, la photo reste.
+        status, data = post("/api/photos/77", png, {"X-Forwarded-Proto": "https", "CF-Connecting-IP": "203.0.113.9"})
+        self.assertEqual(status, 403)
+        self.assertIn("code", data["error"])
+        # Un autre site ne peut pas changer les photos.
+        status, _ = post("/api/photos/77", png, {"Origin": "https://ailleurs.example"})
+        self.assertEqual(status, 403)
+        # Retour à la photo officielle.
+        status, data = post("/api/photos/77/supprimer")
+        self.assertEqual(status, 200)
+        self.assertNotIn("77", data["data"]["photos"])
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(self.base + "/photos/77")
+        self.assertEqual(ctx.exception.code, 404)
 
     def test_public_address_is_always_https(self):
         class NoRedirect(urllib.request.HTTPRedirectHandler):

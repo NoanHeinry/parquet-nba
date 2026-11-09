@@ -5,9 +5,10 @@ import { h } from "../dom.js";
 import * as f from "../format.js";
 import { lineChart } from "../charts.js";
 import { seasonView } from "./player-season.js";
-import { chips, errorState, headshot, loading, section, segmented, statTable, swapIn, tabs, teamLogo, wl } from "../components.js";
-import { silhouetteUrl, team, teamBand, teamByTri } from "../teams.js";
-import { iconScale } from "../icons.js";
+import { chips, errorState, headshot, isFavoritePlayer, loading, section, segmented, statTable, swapIn, tabs, teamLogo, toggleFavoritePlayer, wl } from "../components.js";
+import { hasCustomPhoto, silhouetteUrl, team, teamBand, teamByTri } from "../teams.js";
+import { photoButtons } from "../photo-edit.js";
+import { iconScale, iconStar } from "../icons.js";
 import { moveRow, statusBadge } from "../news.js";
 import { poster } from "../poster.js";
 
@@ -397,6 +398,22 @@ function draftText(p) {
   return `${p.draftYear}, ${p.draftRound === 1 ? "1er" : `${p.draftRound}e`} tour, ${p.draftNumber === 1 ? "1er" : `${p.draftNumber}e`} choix`;
 }
 
+// Étoile « joueur favori » : il apparaît dans « Mes joueurs » et sur l'accueil.
+function favButton(p) {
+  const btn = h("button", { class: "btn fav-btn", type: "button" });
+  const sync = () => {
+    const on = isFavoritePlayer(p.id);
+    btn.replaceChildren(iconStar(on, 14), on ? "Joueur favori" : "Ajouter aux favoris");
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  };
+  btn.addEventListener("click", () => {
+    toggleFavoritePlayer({ id: p.id, name: p.name, teamId: p.active ? p.teamId : null });
+    sync();
+  });
+  sync();
+  return btn;
+}
+
 // En-tête de la fiche, comme la scène de l'accueil : prénom et nom en très grand, portrait
 // détouré, numéro de maillot en fond et moyennes de la saison.
 function heroView(p, ctx) {
@@ -415,9 +432,12 @@ function heroView(p, ctx) {
   // pied, le portrait prend toute la place ; sans portrait, le joueur en pied reste seul.
   const face = headshot(p.id, { size: "big", alt: "", cls: "pp-face" });
   const card = h("div", { class: "pp-card" }, p.jersey && p.active ? h("span", { class: "pp-num num", "aria-hidden": "true" }, p.jersey) : null, face);
-  const full = h("img", { class: "pp-full", src: silhouetteUrl(p.id), alt: "", decoding: "async", referrerpolicy: "no-referrer" });
-  const duo = [card, full];
-  full.addEventListener("error", () => {
+  // Photo choisie par l'utilisateur : elle seule, en grand, sans la photo en pied officielle.
+  const custom = hasCustomPhoto(p.id);
+  const full = custom ? null : h("img", { class: "pp-full", src: silhouetteUrl(p.id), alt: "", decoding: "async", referrerpolicy: "no-referrer" });
+  const duo = custom ? [card] : [card, full];
+  if (custom) queueMicrotask(() => card.closest(".poster-visual")?.classList.add("no-full", "has-custom"));
+  full?.addEventListener("error", () => {
     full.closest(".poster-visual")?.classList.add("no-full");
     full.remove();
   });
@@ -441,7 +461,7 @@ function heroView(p, ctx) {
           { label: "Passes", v: f.num(hl.ast) },
         ]
       : [],
-    actions: [h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}` }, iconScale(15), "Comparer ce joueur")],
+    actions: [favButton(p), h("a", { class: "btn player-compare-btn", href: `#/comparer/${p.id}` }, iconScale(15), "Comparer ce joueur"), ...photoButtons(p.id)],
   }).el;
 }
 

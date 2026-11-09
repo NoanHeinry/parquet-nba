@@ -44,6 +44,7 @@ const GROUPS = [
     items: [
       ["#/equipes", "Équipes", "Les 30 franchises"],
       ["#/joueurs", "Joueurs", "D'hier et d'aujourd'hui"],
+      ["#/mes-joueurs", "Mes joueurs", "Tes favoris et leur forme"],
       ["#/comparer", "Comparer", "Deux joueurs côte à côte"],
       ["#/face-a-face", "Face-à-face", "L'histoire entre deux équipes"],
       ["#/draft", "Draft", "Chaque draft depuis 1947"],

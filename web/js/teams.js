@@ -30,10 +30,26 @@ export function isDarkTheme() {
 // Elle n'existe pas pour tous les joueurs : prévoir le portrait en secours.
 export const silhouetteUrl = (id) => `https://ak-static.cms.nba.com/wp-content/uploads/silos/nba/latest/440x700/${id}.png`;
 
-export const headshotUrl = (id, size = "big") =>
+// Photo officielle de NBA.com.
+export const officialHeadshotUrl = (id, size = "big") =>
   size === "small"
     ? `https://cdn.nba.com/headshots/nba/latest/260x190/${id}.png`
     : `https://cdn.nba.com/headshots/nba/latest/1040x760/${id}.png`;
+
+// Photos choisies par l'utilisateur (fiche du joueur, « Changer la photo »), gardées sur son
+// serveur : elles remplacent la photo officielle partout, sauf là où il faut un détourage.
+let PHOTOS = {};
+export function loadPhotos() {
+  return api("/photos")
+    .then(({ data }) => setCustomPhotos(data.photos))
+    .catch(() => {});
+}
+export function setCustomPhotos(map) {
+  PHOTOS = map || {};
+}
+export const hasCustomPhoto = (id) => Boolean(PHOTOS[String(id)]);
+
+export const headshotUrl = (id, size = "big") => (PHOTOS[String(id)] ? `/photos/${id}?v=${PHOTOS[String(id)]}` : officialHeadshotUrl(id, size));
 
 // ------------------------------------------------------------ couleurs
 
