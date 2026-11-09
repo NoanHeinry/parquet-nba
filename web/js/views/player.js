@@ -426,7 +426,7 @@ function heroView(p, ctx) {
   if (p.jersey && p.active) metaBits.push(h("span", null, `n° ${p.jersey}`));
   if (p.pos) metaBits.push(h("span", null, f.position(p.pos)));
   const hl = p.headline && p.headline.pts !== null ? p.headline : null;
-  if (hl) metaBits.push(h("span", null, hl.season === "Career" ? "Moyennes en carrière" : `Moyennes ${hl.season}`));
+  if (hl) metaBits.push(h("span", null, /career/i.test(hl.season || "") ? "Moyennes en carrière" : `Moyennes ${hl.season}`));
   // Deux photos côte à côte, à droite du nom : le portrait officiel en couleur dans un cadre aux
   // couleurs de l'équipe, et le joueur en pied (photo « silos ») debout à côté. Sans photo en
   // pied, le portrait prend toute la place ; sans portrait, le joueur en pied reste seul.

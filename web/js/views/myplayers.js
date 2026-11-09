@@ -82,8 +82,11 @@ async function fill(el, fav, signal) {
   }
   const form = formOf(games, hl?.pts);
   const last = games[0];
-  const avgLabel = hl ? (hl.season === "Career" ? "En carrière" : `Saison ${hl.season}`) : "";
-  body.replaceChildren(
+  // NBA.com écrit « Career » ou « career » pour un joueur retraité.
+  const avgLabel = hl ? (/career/i.test(hl.season || "") ? "En carrière" : `Saison ${hl.season}`) : "";
+  const diffText = (d) => (Math.abs(d) < 0.05 ? "comme sa moyenne de la saison" : `${d > 0 ? "+" : "−"}${f.num(Math.abs(d))} par rapport à sa saison`);
+  // replaceChildren écrirait « null » en toutes lettres : on ne garde que les blocs présents.
+  body.replaceChildren(...[
     h("a", { class: "mp-name", href: `#/joueur/${fav.id}` }, p.name),
     h(
       "p",
@@ -108,7 +111,7 @@ async function fill(el, fav, signal) {
             "p",
             { class: `mp-trend is-${form.kind}` },
             h("b", null, form.kind === "up" ? "↑ " : form.kind === "down" ? "↓ " : "→ ", form.label),
-            ` : ${f.num(form.avg)} pts sur ses ${form.recent.length} derniers matchs (${form.diff >= 0 ? "+" : "−"}${f.num(Math.abs(form.diff))} par rapport à sa saison)`
+            ` : ${f.num(form.avg)} pts sur ses ${form.recent.length} derniers matchs (${diffText(form.diff)})`
           ),
           formBars(form.recent)
         )
@@ -122,8 +125,8 @@ async function fill(el, fav, signal) {
         )
       : p.active
         ? h("p", { class: "note" }, "Pas encore de match cette saison.")
-        : null
-  );
+        : null,
+  ].filter(Boolean));
   el.classList.remove("is-loading");
 }
 

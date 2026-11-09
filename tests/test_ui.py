@@ -779,6 +779,23 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_function("!document.querySelector('.mp-card')")
         self.assertEqual(self.page.evaluate("localStorage.getItem('parquet-joueurs-favoris')"), "[]")
 
+    def test_retired_favorite_player_card(self):
+        # Joueur retraité (comme Dennis Rodman) : moyennes « en carrière », rien d'autre, aucun « null ».
+        payload = json.loads(urllib.request.urlopen(self.base + "api/player/1722115").read())
+        payload["data"].update({"active": False, "teamId": None, "from": 1986, "to": 1999})
+        payload["data"]["headline"]["season"] = "career"
+        self.page.route("**/api/player/1722115", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(payload)))
+        self.page.goto(self.base)
+        self.page.evaluate("localStorage.setItem('parquet-joueurs-favoris', JSON.stringify([{id: 1722115, name: 'Ugo Sabatier', teamId: null}]))")
+        self.open("#/mes-joueurs")
+        card = self.page.wait_for_selector(".mp-card:not(.is-loading)")
+        text = card.text_content()
+        self.assertNotIn("null", text)
+        self.assertNotIn("undefined", text)
+        self.assertIn("En carrière", text)
+        self.assertIn("Carrière 1986–1999", text)
+        self.assertEqual(self.page.locator(".mp-card .mp-bars").count(), 0)
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.
