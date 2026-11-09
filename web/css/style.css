@@ -13654,3 +13654,33 @@ input[type="search"].select {
 .table-wrap.is-overflow .stat-table:not(.standings-table) tbody tr:hover > .c-key {
   background: var(--surface-2);
 }
+
+/* ================================================================ 4.1 Accueil et menu sur ordinateur */
+
+/* « Défiler » : en bas au centre de la scène, là où il n'y a rien d'autre (sur le côté gauche,
+   il recouvrait « Sa fiche » et le match). Masqué sur les fenêtres trop basses. */
+.stage-hint {
+  left: 50%;
+  top: auto;
+  bottom: 18px;
+  flex-direction: column-reverse;
+  gap: 8px;
+  writing-mode: horizontal-tb;
+  transform: translateX(-50%);
+}
+
+.stage-hint i {
+  height: 34px;
+}
+
+@media (max-height: 700px) {
+  .stage-hint {
+    display: none;
+  }
+}
+
+/* Ouvrir le menu bloque le défilement de la page : la barre de défilement (Windows) disparaissait
+   et toute la page glissait de quelques pixels pendant l'animation. Sa place est réservée. */
+html {
+  scrollbar-gutter: stable;
+}

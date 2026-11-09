@@ -720,6 +720,24 @@ class InterfaceTests(unittest.TestCase):
         self.assertGreaterEqual(top, 0)
         self.assertLess(top, 80)
 
+    def test_desktop_home_hint_clear_and_menu_does_not_shift_page(self):
+        # « Défiler » ne recouvre plus « Sa fiche » ni le match ; la place de la barre de
+        # défilement est réservée, donc ouvrir le menu ne fait plus glisser la page.
+        self.page.set_viewport_size({"width": 1366, "height": 768})
+        self.open("#/")
+        self.page.wait_for_selector(".stage-bio")
+        overlap = self.page.evaluate(
+            """() => {
+              const hint = document.querySelector('.stage-hint').getBoundingClientRect();
+              return [...document.querySelectorAll('.stage-bio, .stage-match, .stage-stats')].some((el) => {
+                const r = el.getBoundingClientRect();
+                return r.width && hint.width && r.left < hint.right && r.right > hint.left && r.top < hint.bottom && r.bottom > hint.top;
+              });
+            }"""
+        )
+        self.assertFalse(overlap)
+        self.assertEqual(self.page.evaluate("getComputedStyle(document.documentElement).scrollbarGutter"), "stable")
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.
