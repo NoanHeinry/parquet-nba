@@ -5250,10 +5250,10 @@ a.tile {
    joueurs du match, sections numérotées et défilement personnalisé.
    ===================================================================== */
 
-@property --team {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #ff7a1a;
+/* Couleur d'équipe : simple variable (une couleur « déclarée » à Firefox, via @property, était
+   recalculée et réécrite en texte sur chaque élément de la page : très lent). */
+:root {
+  --team: #ff7a1a;
 }
 
 html[data-demo="1"] {
@@ -5485,7 +5485,6 @@ body.menu-open {
   background:
     radial-gradient(52% 58% at 50% 74%, color-mix(in oklab, var(--team) 26%, transparent), transparent 72%),
     linear-gradient(180deg, var(--bg) 0%, color-mix(in oklab, var(--bg) 62%, var(--surface-2)) 100%);
-  transition: --team 0.9s ease;
   user-select: none;
 }
 
@@ -7212,7 +7211,6 @@ html[data-motion="reduce"] .stage-band {
     radial-gradient(46% 62% at 78% 74%, color-mix(in oklab, var(--team) 26%, transparent), transparent 72%),
     linear-gradient(180deg, var(--bg) 0%, color-mix(in oklab, var(--bg) 62%, var(--surface-2)) 100%);
   border-bottom: 1px solid var(--line);
-  transition: --team 0.9s ease;
 }
 
 .poster-compact {
@@ -8930,7 +8928,6 @@ body.is-quiz main {
   background:
     radial-gradient(38% 56% at 74% 66%, color-mix(in oklab, var(--team) 24%, transparent), transparent 72%),
     linear-gradient(180deg, var(--bg) 0%, color-mix(in oklab, var(--bg) 62%, var(--surface-2)) 100%);
-  transition: --team 0.8s ease;
 }
 
 .qz-ghost {

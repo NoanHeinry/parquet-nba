@@ -97,11 +97,17 @@ export function staleBanner(meta) {
 }
 
 // Fait apparaître en douceur un contenu qui vient de changer (onglet, filtre, chargement).
+// Animation jouée directement (sans retirer puis remettre une classe, ce qui forçait le
+// navigateur à remesurer toute la page au milieu du rendu).
 export function swapIn(el) {
-  if (!el) return;
-  el.classList.remove("fx-swap");
-  void el.offsetWidth;
-  el.classList.add("fx-swap");
+  if (!el?.animate || document.documentElement.dataset.motion === "reduce") return;
+  el.animate(
+    [
+      { opacity: 0, transform: "translateY(12px)" },
+      { opacity: 1, transform: "none" },
+    ],
+    { duration: 500, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+  );
 }
 
 // Charge une section de page de façon indépendante (chargement, erreur, réessai).

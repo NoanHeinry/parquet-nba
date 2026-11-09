@@ -388,7 +388,8 @@ class InterfaceTests(unittest.TestCase):
         self.open("#/trophees")
         self.page.click(".seg-links a[href='#/trophees/palmares']")
         self.page.wait_for_selector(".pl-season")
-        self.assertGreaterEqual(self.page.locator(".pl-season").count(), 80)
+        # Les saisons arrivent par paquets (la page ne se fige pas) : toutes finissent par être là.
+        self.page.wait_for_function("document.querySelectorAll('.pl-season').length >= 80")
         first = self.page.locator(".pl-season").first
         self.assertIn("New York Knicks", first.text_content())
         self.assertIn("Shai Gilgeous-Alexander", first.text_content())

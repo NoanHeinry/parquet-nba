@@ -23,39 +23,53 @@ function teamName(id, name) {
 function seasonsView(data) {
   const bySeason = {};
   for (const a of data.awards) for (const w of a.winners) (bySeason[w.season] ||= []).push({ ...w, key: a.key });
-  return h(
-    "div",
-    { class: "pl-seasons" },
-    data.finals.map((fin) => {
-      const season = seasonOf(fin.year);
-      const winners = bySeason[season] || [];
-      return h(
-        "article",
-        { class: "pl-season", style: { "--i": 0 } },
-        h("span", { class: "pl-year num" }, season),
+  const build = (fin) => {
+    const season = seasonOf(fin.year);
+    const winners = bySeason[season] || [];
+    return h(
+      "article",
+      { class: "pl-season", style: { "--i": 0 } },
+      h("span", { class: "pl-year num" }, season),
+      h(
+        "div",
+        { class: "pl-champ" },
+        fin.championId ? teamLogo(fin.championId, 52) : h("span", { class: "pl-nologo", "aria-hidden": "true" }, "🏆"),
         h(
-          "div",
-          { class: "pl-champ" },
-          fin.championId ? teamLogo(fin.championId, 52) : h("span", { class: "pl-nologo", "aria-hidden": "true" }, "🏆"),
-          h(
-            "span",
-            null,
-            h("small", null, "Champion"),
-            h("b", null, teamName(fin.championId, fin.champion)),
-            h("small", null, `${fin.result} contre `, teamName(fin.runnerUpId, fin.runnerUp))
-          )
-        ),
-        h(
-          "div",
-          { class: "pl-awards" },
-          winners.length
-            ? winners.map((w) => h("div", { class: "pl-award" }, h("small", { class: "pl-award-label" }, SHORT[w.key]), person(w)))
-            : h("p", { class: "note" }, "Pas encore de trophées individuels à cette époque.")
+          "span",
+          null,
+          h("small", null, "Champion"),
+          h("b", null, teamName(fin.championId, fin.champion)),
+          h("small", null, `${fin.result} contre `, teamName(fin.runnerUpId, fin.runnerUp))
         )
-      );
-    })
-  );
+      ),
+      h(
+        "div",
+        { class: "pl-awards" },
+        winners.length
+          ? winners.map((w) => h("div", { class: "pl-award" }, h("small", { class: "pl-award-label" }, SHORT[w.key]), person(w)))
+          : h("p", { class: "note" }, "Pas encore de trophées individuels à cette époque.")
+      )
+    );
+  };
+  // Près de 80 saisons et des centaines de photos : les premières s'affichent tout de suite, les
+  // suivantes par petits paquets quand le navigateur est libre (la page ne se fige plus).
+  const box = h("div", { class: "pl-seasons" }, data.finals.slice(0, FIRST_SEASONS).map(build));
+  let next = FIRST_SEASONS;
+  const later = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 250 }) : setTimeout(fn, 30));
+  const step = () => {
+    if (!box.isConnected) return; // autre affichage choisi entre-temps
+    const until = performance.now() + 10;
+    const chunk = [];
+    do chunk.push(build(data.finals[next++]));
+    while (next < data.finals.length && performance.now() < until);
+    box.append(...chunk);
+    if (next < data.finals.length) later(step);
+  };
+  if (next < data.finals.length) later(step);
+  return box;
 }
+
+const FIRST_SEASONS = 8;
 
 function awardView(a) {
   return h(
