@@ -1,6 +1,7 @@
 // Briques d'interface réutilisées par les pages.
 
 import { h } from "./dom.js";
+import { enhanceTable, refreshTable } from "./tables.js";
 import * as f from "./format.js";
 import { headshotUrl, isDarkTheme, logoUrl, team, teamPair } from "./teams.js";
 import { iconStar } from "./icons.js";
@@ -363,7 +364,7 @@ export function scoreMap(games) {
 // ------------------------------------------------------------ tableaux
 
 // columns: [{key, label, title, cls, render(row), sort(row) , align:'l'}]
-export function statTable(columns, rows, { sortable = false, initialSort = null, rowClass, caption } = {}) {
+export function statTable(columns, rows, { sortable = false, initialSort = null, rowClass, caption, compact = true } = {}) {
   const table = h("table", { class: "stat-table" });
   if (caption) table.append(h("caption", { class: "visually-hidden" }, caption));
   const thead = h("thead");
@@ -391,7 +392,8 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
         const tr = h("tr", { class: rowClass ? rowClass(row) || "" : "" });
         for (const c of columns) {
           const content = c.render ? c.render(row) : row[c.key];
-          tr.append(h("td", { class: [c.align === "l" ? "l" : "", c.cls || ""].join(" ").trim() || null }, content ?? "–"));
+          const sorted = sort && sort.key === c.key ? "is-sorted" : "";
+          tr.append(h("td", { class: [c.align === "l" ? "l" : "", c.cls || "", sorted].join(" ").trim() || null }, content ?? "–"));
         }
         return tr;
       })
@@ -402,7 +404,7 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
   for (const c of columns) {
     const th = h(
       "th",
-      { scope: "col", class: [c.align === "l" ? "l" : "", c.cls || ""].join(" ").trim() || null, title: c.title || null },
+      { scope: "col", class: [c.align === "l" ? "l" : "", c.cls || ""].join(" ").trim() || null, title: c.title || null, dataset: c.prio === undefined ? null : { prio: c.prio } },
       c.label
     );
     if (sortable && c.sortable !== false && !rows.some((r) => r.__group)) {
@@ -413,6 +415,7 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
         for (const other of headRow.children) other.removeAttribute("aria-sort");
         th.setAttribute("aria-sort", sort.dir === "asc" ? "ascending" : "descending");
         renderBody();
+        refreshTable(wrap);
       };
       th.addEventListener("click", activate);
       th.addEventListener("keydown", (e) => {
@@ -427,7 +430,8 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
   }
   thead.append(headRow);
   renderBody();
-  return h("div", { class: "table-wrap" }, table);
+  const wrap = h("div", { class: "table-wrap" }, table);
+  return enhanceTable(wrap, { compact });
 }
 
 export function playerCell(id, name, sub, { link = true } = {}) {

@@ -2,6 +2,7 @@
 
 import { api } from "../api.js";
 import { h } from "../dom.js";
+import { enhanceTable } from "../tables.js";
 import * as f from "../format.js";
 import { errorState, loading, segmented, staleBanner, teamLogo } from "../components.js";
 import { team } from "../teams.js";
@@ -19,20 +20,21 @@ const CLINCH = {
 };
 
 function table(rows) {
+  // [titre, explication, importance (0 toujours visible … 3 détail masqué en premier sur téléphone)]
   const head = [
-    ["", "Rang"],
-    ["Équipe", ""],
-    ["V", "Victoires"],
-    ["D", "Défaites"],
-    ["%", "Pourcentage de victoires"],
-    ["Écart", "Matchs de retard sur le premier"],
-    ["Dom.", "Bilan à domicile"],
-    ["Ext.", "Bilan à l'extérieur"],
-    ["10 der.", "Bilan sur les 10 derniers matchs"],
-    ["Série", "Série en cours"],
-    ["Pts", "Points marqués par match"],
-    ["Pts enc.", "Points encaissés par match"],
-    ["Diff.", "Différence moyenne"],
+    ["", "Rang", 0],
+    ["Équipe", "", 0],
+    ["V", "Victoires", 1],
+    ["D", "Défaites", 1],
+    ["%", "Pourcentage de victoires", 1],
+    ["Écart", "Matchs de retard sur le premier", 2],
+    ["Dom.", "Bilan à domicile", 3],
+    ["Ext.", "Bilan à l'extérieur", 3],
+    ["10 der.", "Bilan sur les 10 derniers matchs", 2],
+    ["Série", "Série en cours", 2],
+    ["Pts", "Points marqués par match", 3],
+    ["Pts enc.", "Points encaissés par match", 3],
+    ["Diff.", "Différence moyenne", 2],
   ];
   const body = rows.map((r) => {
     const zone = r.rank <= 6 ? "zone-po" : r.rank <= 10 ? "zone-pi" : "";
@@ -57,14 +59,16 @@ function table(rows) {
       h("td", { style: { color: r.diff > 0 ? "var(--win)" : r.diff < 0 ? "var(--loss)" : null } }, r.diff > 0 ? `+${f.num(r.diff)}` : f.num(r.diff))
     );
   });
-  return h(
-    "div",
-    { class: "table-wrap" },
+  return enhanceTable(
     h(
-      "table",
-      { class: "stat-table standings-table" },
-      h("thead", null, h("tr", null, head.map(([l, t], i) => h("th", { scope: "col", class: i === 1 ? "l" : null, title: t || null }, l)))),
-      h("tbody", null, body)
+      "div",
+      { class: "table-wrap" },
+      h(
+        "table",
+        { class: "stat-table standings-table" },
+        h("thead", null, h("tr", null, head.map(([l, t, prio], i) => h("th", { scope: "col", class: i === 1 ? "l" : null, title: t || null, dataset: { prio } }, l)))),
+        h("tbody", null, body)
+      )
     )
   );
 }

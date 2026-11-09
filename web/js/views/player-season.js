@@ -108,16 +108,16 @@ function splitsBlock(data) {
     },
     { key: "gp", label: "MJ", render: (r) => r.gp },
     { key: "w", label: "V-D", render: (r) => (r.gp ? `${r.w}-${r.gp - r.w}` : "–") },
-    { key: "min", label: "Min", render: (r) => f.num(r.min) },
-    { key: "pts", label: "Pts", render: (r) => h("b", null, f.num(r.pts)) },
-    { key: "reb", label: "Reb", render: (r) => f.num(r.reb) },
-    { key: "ast", label: "Pd", render: (r) => f.num(r.ast) },
+    { key: "min", label: "Min", prio: 3, render: (r) => f.num(r.min) },
+    { key: "pts", label: "Pts", prio: 1, render: (r) => h("b", null, f.num(r.pts)) },
+    { key: "reb", label: "Reb", prio: 1, render: (r) => f.num(r.reb) },
+    { key: "ast", label: "Pd", prio: 1, render: (r) => f.num(r.ast) },
     { key: "fgPct", label: "Tirs", render: (r) => pct(r.fgPct) },
     { key: "tpPct", label: "3 pts", render: (r) => pct(r.tpPct) },
     { key: "ts", label: "Adr. réelle", render: (r) => pct(r.ts) },
     { key: "pm", label: "+/-", render: (r) => (r.pm === null || r.pm === undefined ? "–" : `${r.pm > 0 ? "+" : ""}${f.num(r.pm)}`) },
   ];
-  return h("div", { class: "table-wrap" }, statTable(cols, rows, { caption: "Moyennes selon le contexte" }));
+  return statTable(cols, rows, { caption: "Moyennes selon le contexte" });
 }
 
 export function seasonView(container, id, ctx, career) {

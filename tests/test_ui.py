@@ -688,6 +688,38 @@ class InterfaceTests(unittest.TestCase):
             self.page.click(".menu-fab")  # referme le menu avant la taille suivante
             self.page.wait_for_timeout(600)
 
+    def test_tables_fit_phone_and_keep_header_visible(self):
+        # Téléphone : colonnes essentielles seulement, le tableau tient en largeur ; un bouton
+        # affiche toutes les colonnes (nom épinglé) et le choix est retenu.
+        self.page.set_viewport_size({"width": 390, "height": 844})
+        self.open("#/classement")
+        wrap = self.page.wait_for_selector(".table-wrap.is-compact")
+        fits = wrap.evaluate("e => e.querySelector('table').offsetWidth <= e.clientWidth + 1")
+        self.assertTrue(fits)
+        visible = [t.strip() for t in wrap.evaluate("e => [...e.querySelectorAll('thead th')].filter(th => th.offsetParent).map(th => th.textContent)")]
+        self.assertEqual(visible[1:5], ["Équipe", "V", "D", "%"])
+        self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"), 390)
+        toggle = self.page.locator(".tbl-toggle").first
+        self.assertIn("autres colonnes", toggle.text_content())
+        toggle.click()
+        self.page.wait_for_selector(".table-wrap.is-overflow")
+        self.assertEqual(self.page.locator("thead th.c-off").count(), 0)
+        self.assertEqual(self.page.evaluate("localStorage.getItem('parquet-colonnes')"), "toutes")
+        self.assertLessEqual(self.page.evaluate("document.documentElement.scrollWidth"), 390)
+        self.page.locator(".tbl-toggle").first.click()
+        self.page.wait_for_selector(".table-wrap.is-compact")
+
+        # Ordinateur : tout tient, et l'en-tête reste visible quand on descend dans le tableau.
+        self.page.set_viewport_size({"width": 1366, "height": 800})
+        self.open("#/equipes/stats")
+        self.page.wait_for_selector(".table-wrap[data-enhanced] tbody tr")
+        self.assertEqual(self.page.locator("thead th.c-off").count(), 0)
+        self.page.evaluate("window.scrollTo(0, document.querySelector('.stat-table tbody tr:nth-child(20)').getBoundingClientRect().top + scrollY - 300)")
+        self.page.wait_for_timeout(300)
+        top = self.page.evaluate("document.querySelector('.stat-table thead th').getBoundingClientRect().top")
+        self.assertGreaterEqual(top, 0)
+        self.assertLess(top, 80)
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

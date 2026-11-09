@@ -56,11 +56,11 @@ export async function renderStats(ctx) {
   const byRank = (key) => (r) => -(r.ranks?.[key] ?? 99);
   const cols = [
     { key: "name", label: "Équipe", align: "l", render: (r) => h("a", { class: "player-cell", href: `#/equipe/${r.teamId}` }, teamLogo(r.teamId, 24), h("span", { class: "nm" }, r.name)) },
-    { key: "w", label: "Bilan", sort: (r) => r.w / Math.max(1, r.w + r.l), render: (r) => `${r.w}-${r.l}` },
-    { key: "net", label: "Écart", render: (r) => h("b", { class: r.net > 0 ? "pos" : r.net < 0 ? "neg" : "" }, `${r.net > 0 ? "+" : ""}${one(r.net)}`) },
+    { key: "w", label: "Bilan", prio: 1, sort: (r) => r.w / Math.max(1, r.w + r.l), render: (r) => `${r.w}-${r.l}` },
+    { key: "net", label: "Écart", prio: 1, render: (r) => h("b", { class: r.net > 0 ? "pos" : r.net < 0 ? "neg" : "" }, `${r.net > 0 ? "+" : ""}${one(r.net)}`) },
     { key: "off", label: "Attaque", sort: byRank("off"), render: cell("off", one) },
     { key: "def", label: "Défense", sort: byRank("def"), render: cell("def", one) },
-    { key: "pace", label: "Rythme", sort: byRank("pace"), render: cell("pace", one) },
+    { key: "pace", label: "Rythme", prio: 3, sort: byRank("pace"), render: cell("pace", one) },
     { key: "ts", label: "Adr. réelle", sort: byRank("ts"), render: cell("ts", pct) },
     { key: "astPct", label: "Paniers assistés", sort: byRank("astPct"), render: cell("astPct", pct) },
     { key: "orebPct", label: "Reb. off.", sort: byRank("orebPct"), render: cell("orebPct", pct) },
@@ -74,7 +74,7 @@ export async function renderStats(ctx) {
       h("h2", { class: "section-title" }, "Attaque et défense"),
       h("div", { class: "ts-map" }, efficiencyMap(data.teams, { onPick: (t) => (location.hash = `#/equipe/${t.teamId}`), fmt: one }))
     ),
-    h("section", { class: "section" }, h("h2", { class: "section-title" }, "Les 30 équipes"), h("div", { class: "table-wrap" }, statTable(cols, data.teams, { caption: "Statistiques avancées des équipes", sortable: true, initialSort: { key: "net", dir: "desc" } }))),
+    h("section", { class: "section" }, h("h2", { class: "section-title" }, "Les 30 équipes"), statTable(cols, data.teams, { caption: "Statistiques avancées des équipes", sortable: true, initialSort: { key: "net", dir: "desc" } })),
     h(
       "p",
       { class: "note" },

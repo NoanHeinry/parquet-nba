@@ -257,7 +257,7 @@ function boxTable(box, key) {
     "div",
     { class: "section box-side", dataset: { side: key } },
     h("h2", { class: "section-title", style: { display: "flex", alignItems: "center", gap: "10px" } }, teamLogo(side?.id, 30), sideName(side).name),
-    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : ""), caption: `Box score ${sideName(side).name}` })),
+    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : ""), caption: `Box score ${sideName(side).name}`, compact: false })),
     boxCards(rows, live)
   );
   if (out.length) {

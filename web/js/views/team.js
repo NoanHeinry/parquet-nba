@@ -461,10 +461,10 @@ function franchiseView(container, t, ctx) {
             statTable(
               [
                 { key: "season", label: "Saison", align: "l" },
-                { key: "team", label: "Nom", align: "l" },
+                { key: "team", label: "Nom", align: "l", prio: 3 },
                 { key: "w", label: "V" },
                 { key: "l", label: "D" },
-                { key: "pct", label: "%", render: (s) => f.pct(s.pct) },
+                { key: "pct", label: "%", prio: 1, render: (s) => f.pct(s.pct) },
                 { key: "confRank", label: "Rang conf." },
                 { key: "po", label: "Playoffs", align: "l", sortable: false, render: (s) => playoffText(s) },
               ],

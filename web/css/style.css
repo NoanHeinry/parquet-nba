@@ -13494,3 +13494,163 @@ input[type="search"].select {
     animation: none;
   }
 }
+
+/* ================================================================ 4.0 Tableaux lisibles (tables.js) */
+
+/* Tableau qui tient en largeur : il ne défile plus de côté, ce qui permet à la ligne d'en-tête
+   de rester visible en haut de l'écran pendant qu'on descend dans la page. */
+.table-wrap[data-enhanced]:not(.is-overflow) {
+  overflow-x: clip;
+}
+
+.table-wrap[data-enhanced] .stat-table thead th {
+  position: sticky;
+  top: var(--banner-h, 0px);
+  z-index: 2;
+  background: var(--bg);
+  box-shadow: inset 0 -1px 0 var(--line-strong, var(--line));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11.5px;
+}
+
+/* Plus large que l'écran et long : il défile dans son propre cadre, en-tête toujours visible. */
+.table-wrap.is-scroll {
+  max-height: min(78vh, 760px);
+  overflow: auto;
+}
+
+.table-wrap.is-scroll .stat-table thead th {
+  top: 0;
+}
+
+/* Défilement de côté : la colonne du nom reste épinglée à gauche. */
+.table-wrap.is-overflow .stat-table:not(.standings-table) .c-key {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+  box-shadow: 8px 0 10px -8px rgba(0, 0, 0, 0.55);
+}
+
+.table-wrap.is-overflow .stat-table:not(.standings-table) thead .c-key {
+  z-index: 3;
+}
+
+/* Colonnes masquées faute de place. */
+.stat-table .c-off {
+  display: none;
+}
+
+/* Une ligne sur deux légèrement teintée : on suit une ligne d'un bout à l'autre sans se perdre. */
+.stat-table.is-striped {
+  --zebra: color-mix(in srgb, var(--text) 4%, var(--bg));
+}
+
+.stat-table.is-striped tbody tr:nth-child(even) > td {
+  background: var(--zebra);
+}
+
+.stat-table.is-striped tbody tr:hover > td,
+.stat-table tbody tr:hover > td.c-key {
+  background: var(--surface-2);
+}
+
+.stat-table.is-striped tbody tr.total > td,
+.stat-table.is-striped tbody tr.group > td {
+  background: var(--surface-2);
+}
+
+/* Colonne triée : chiffres en clair et en gras, flèche dans l'en-tête. */
+.stat-table td.is-sorted {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.stat-table th[aria-sort] {
+  color: var(--accent);
+}
+
+.stat-table th[aria-sort]::after {
+  content: "▼";
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 0.75em;
+}
+
+.stat-table th[aria-sort="ascending"]::after {
+  content: "▲";
+}
+
+.stat-table th[data-sort]:not([aria-sort]):hover {
+  color: var(--text);
+}
+
+/* Bouton des colonnes masquées : discret, aligné à droite, il ne défile pas avec le tableau. */
+.tbl-bar {
+  position: sticky;
+  left: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 6px;
+}
+
+.tbl-bar[hidden] {
+  display: none;
+}
+
+.tbl-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tbl-toggle::before {
+  content: "↔";
+  color: var(--accent);
+}
+
+.tbl-toggle:hover {
+  border-color: var(--accent);
+}
+
+/* Mode compact (téléphone) : le nom peut passer sur deux lignes plutôt que de chasser des colonnes. */
+.table-wrap.is-compact .stat-table td.c-key .nm {
+  white-space: normal;
+}
+
+@media (max-width: 700px) {
+  .table-wrap[data-enhanced] .stat-table th,
+  .table-wrap[data-enhanced] .stat-table td {
+    padding: 9px 7px;
+  }
+
+  .table-wrap[data-enhanced] .stat-table {
+    font-size: 14.5px;
+  }
+}
+
+/* Téléphone : le bouton du menu (en haut à droite) revient quand on remonte ; l'en-tête des
+   tableaux se range alors juste en dessous pour ne pas être caché. */
+@media (max-width: 900px) {
+  html:not(.fab-away) .table-wrap[data-enhanced]:not(.is-scroll) .stat-table thead th {
+    top: calc(var(--banner-h, 0px) + 66px);
+  }
+}
+
+.table-wrap.is-overflow .stat-table.is-striped:not(.standings-table) tbody tr:nth-child(even) > .c-key {
+  background: var(--zebra);
+}
+
+.table-wrap.is-overflow .stat-table:not(.standings-table) tbody tr:hover > .c-key {
+  background: var(--surface-2);
+}
