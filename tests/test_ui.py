@@ -398,9 +398,8 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("is-latest", first.get_attribute("class"))
         # Saut direct vers une décennie.
         self.page.click(".pl-jump a:text-is('1980s')")
-        self.page.wait_for_timeout(900)
-        top = self.page.evaluate("document.getElementById('pl-1980').getBoundingClientRect().top")
-        self.assertLess(abs(top), 200)
+        # Défilement doux : on attend qu'il soit arrivé (plus lent sur les machines de test).
+        self.page.wait_for_function("Math.abs(document.getElementById('pl-1980').getBoundingClientRect().top) < 200", timeout=8000)
         self.page.click(".chip:has-text('Titres par franchise')")
         self.page.wait_for_selector(".pl-title-row")
         self.assertIn("18", self.page.locator(".pl-title-row").first.text_content())
