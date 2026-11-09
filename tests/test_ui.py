@@ -393,9 +393,18 @@ class InterfaceTests(unittest.TestCase):
         first = self.page.locator(".pl-season").first
         self.assertIn("New York Knicks", first.text_content())
         self.assertIn("Shai Gilgeous-Alexander", first.text_content())
+        # Chaque trophée a son icône ; la dernière saison est mise en avant.
+        self.assertEqual(first.locator(".pl-aw .trophy-ico").count(), 6)
+        self.assertIn("is-latest", first.get_attribute("class"))
+        # Saut direct vers une décennie.
+        self.page.click(".pl-jump a:text-is('1980s')")
+        self.page.wait_for_timeout(900)
+        top = self.page.evaluate("document.getElementById('pl-1980').getBoundingClientRect().top")
+        self.assertLess(abs(top), 200)
         self.page.click(".chip:has-text('Titres par franchise')")
         self.page.wait_for_selector(".pl-title-row")
         self.assertIn("18", self.page.locator(".pl-title-row").first.text_content())
+        self.assertEqual(self.page.locator(".pl-title-row").first.locator(".pl-cups .trophy-ico").count(), 18)
         self.page.click(".chip:text-is('MVP')")
         self.page.wait_for_selector(".pl-card")
         self.assertIn("6×", self.page.text_content(".pl-most-list"))

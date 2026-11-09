@@ -13684,3 +13684,420 @@ input[type="search"].select {
 html {
   scrollbar-gutter: stable;
 }
+
+/* ================================================================ 4.2 Palmarès : saisons et trophées */
+
+.trophy-ico {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trophy-ico .acc {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.trophy-ico .acc-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.trophy-ico .cut {
+  stroke: var(--bg);
+  stroke-width: 1.7;
+}
+
+.chip .trophy-ico {
+  margin-right: 6px;
+  vertical-align: -3px;
+}
+
+/* Saut vers une décennie */
+.pl-jump {
+  position: sticky;
+  top: var(--banner-h, 0px);
+  z-index: 4;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+  padding: 10px 70px 10px 0;
+  background: var(--bg);
+  scrollbar-width: none;
+}
+
+.pl-jump a {
+  flex: none;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pl-jump a:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.pl-seasons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Titre de décennie : grand chiffre en contour, comme sur les affiches. */
+.pl-decade {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 26px 0 4px;
+  scroll-margin-top: calc(var(--banner-h, 0px) + 64px);
+  border-bottom: 1px solid var(--line);
+}
+
+.pl-decade:first-child {
+  margin-top: 0;
+}
+
+.pl-decade-num {
+  font-family: var(--font-poster);
+  font-size: 64px;
+  line-height: 0.85;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--text-2);
+}
+
+.pl-decade b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pl-decade small {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* Carte d'une saison : liseré et halo aux couleurs du champion. */
+.pl-season {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px 28px;
+  padding: 18px 22px 18px 24px;
+  border: 0;
+  border-left: 4px solid var(--tc);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 16%, var(--surface)) 0%, var(--surface) 42%);
+}
+
+.pl-season.is-bare {
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.pl-s-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pl-year {
+  font-family: var(--font-poster);
+  font-size: 34px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.pl-season.is-bare .pl-s-main {
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+}
+
+.pl-season.is-bare .pl-year {
+  width: 110px;
+  font-size: 26px;
+}
+
+.pl-champ {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  color: var(--text);
+  text-decoration: none;
+}
+
+a.pl-champ:hover b {
+  color: var(--accent);
+}
+
+.pl-champ-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pl-champ-txt b {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.pl-champ-txt small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.pl-champ-kicker {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent) !important;
+}
+
+.pl-nologo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+/* Les trophées individuels de la saison */
+.pl-awards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.pl-aw {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 0 0 0 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 4%, var(--bg));
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+a.pl-aw:hover {
+  background: var(--surface-2);
+}
+
+a.pl-aw:hover b {
+  color: var(--accent);
+}
+
+.pl-aw-ico {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text);
+}
+
+.pl-aw-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pl-aw-txt small:first-child {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.pl-aw-txt b {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-aw-team {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pl-aw-team i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.pl-aw-pic {
+  align-self: end;
+  display: grid;
+  place-items: end center;
+  height: 58px;
+  overflow: hidden;
+}
+
+.pl-aw-pic .headshot {
+  display: block;
+  width: 58px;
+  height: auto;
+  border-radius: 0;
+  background: none;
+}
+
+.pl-aw-pic .pl-nopic {
+  align-self: center;
+}
+
+/* La dernière saison, en plus grand. */
+.pl-season.is-latest {
+  padding: 26px 26px 26px 28px;
+  border-left-width: 6px;
+}
+
+.pl-season.is-latest .pl-year {
+  font-size: 48px;
+}
+
+.pl-season.is-latest .pl-champ-txt b {
+  font-size: 28px;
+}
+
+/* Pages d'un trophée et titres par franchise : grande icône en tête. */
+.pl-head.has-ico {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.pl-head-ico {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.pl-title-row {
+  grid-template-columns: 34px minmax(160px, 260px) minmax(0, 1fr) 40px;
+  padding: 8px 0 8px 12px;
+  border-left: 3px solid var(--tc);
+}
+
+.pl-cups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  color: var(--text-2);
+}
+
+@media (max-width: 860px) {
+  .pl-season,
+  .pl-season.is-latest {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px 14px 14px 16px;
+  }
+
+  .pl-season.is-latest .pl-year {
+    font-size: 38px;
+  }
+
+  .pl-season.is-latest .pl-champ-txt b {
+    font-size: 23px;
+  }
+
+  .pl-season.is-latest .pl-champ .team-logo,
+  .pl-season.is-latest .pl-champ img {
+    width: 72px;
+    height: 72px;
+  }
+
+  .pl-awards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pl-season.is-bare .pl-s-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .pl-decade-num {
+    font-size: 48px;
+  }
+
+  .pl-title-row {
+    grid-template-columns: 34px minmax(0, 1fr) 40px;
+  }
+
+  .pl-cups {
+    grid-column: 2;
+  }
+
+  .pl-head-ico {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+.pl-aw-txt b {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+}
+
+.pl-champ-txt small.pl-final {
+  display: block;
+}
+
+.pl-final-opp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
+}
+
+.pl-cups {
+  gap: 3px;
+}
