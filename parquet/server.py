@@ -333,6 +333,32 @@ class Handler(BaseHTTPRequestHandler):
         # du code pourrait rester invisible sur les téléphones.
         self.send_header("CDN-Cache-Control", "no-store")
         self.send_header("Cloudflare-CDN-Cache-Control", "no-store")
+        # Ouvert en https par l'adresse publique : le navigateur retient de ne plus jamais passer
+        # par http (même si on tape l'adresse sans « https:// »).
+        if self._public_scheme() == "https":
+            self.send_header("Strict-Transport-Security", "max-age=15552000")
+
+    def _public_scheme(self) -> str:
+        """Protocole utilisé par le visiteur quand Parquet est derrière un tunnel (Cloudflare…), sinon ""."""
+        proto = (self.headers.get("X-Forwarded-Proto") or "").split(",")[0].strip().lower()
+        if proto in ("http", "https"):
+            return proto
+        visitor = self.headers.get("CF-Visitor") or ""
+        match = re.search(r'"scheme"\s*:\s*"(https?)"', visitor)
+        return match.group(1) if match else ""
+
+    def _force_https(self) -> bool:
+        """Adresse publique ouverte en http:// : renvoie vers la même page en https://.
+        Vrai si la redirection est envoyée. Le réseau local (http://192.168…:8765) n'est pas concerné."""
+        if self._public_scheme() != "http":
+            return False
+        host = (self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or "").strip().lower()
+        if not re.fullmatch(r"[a-z0-9-]+(\.[a-z0-9-]+)+", host) or re.fullmatch(r"[0-9.]+", host):
+            return False
+        target = "https://" + host + (self.path if self.path.startswith("/") else "/")
+        self._send(301 if self.command in ("GET", "HEAD") else 308, b"", "text/plain; charset=utf-8", {"Location": target, "Connection": "close"})
+        self.close_connection = True  # un éventuel contenu envoyé (POST) n'a pas été lu
+        return True
 
     def _json(self, status: int, payload: Any) -> None:
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -350,7 +376,7 @@ class Handler(BaseHTTPRequestHandler):
     # -- Code d'accès (facultatif, voir access.py) ----------------------------------------
 
     def _https(self) -> bool:
-        return (self.headers.get("X-Forwarded-Proto") or "").lower() == "https"
+        return self._public_scheme() == "https"
 
     def _gate(self, path: str) -> bool:
         """Vrai si la requête peut continuer ; sinon la réponse « code requis » est déjà envoyée."""
@@ -394,6 +420,8 @@ class Handler(BaseHTTPRequestHandler):
         self._redirect(target, access.set_cookie(self._https()))
 
     def do_POST(self) -> None:
+        if self._force_https():
+            return
         path = urlsplit(self.path).path
         if path == "/acces":
             self._login()
@@ -474,6 +502,8 @@ class Handler(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_GET(self) -> None:
+        if self._force_https():
+            return
         parts = urlsplit(self.path)
         path = parts.path
         if path == "/acces/sortie":

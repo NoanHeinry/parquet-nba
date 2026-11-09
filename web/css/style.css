@@ -13462,3 +13462,38 @@ input[type="search"].select {
   position: relative;
   z-index: 20;
 }
+
+/* ================================================================ 3.9 Fluidité sous Firefox */
+
+/* Animations en boucle arrêtées quand leur bloc est hors de l'écran (voir home.js). */
+.ticker.is-offscreen .ticker-track,
+.stage.is-offscreen *,
+.stage.is-offscreen *::before,
+.stage.is-offscreen *::after {
+  animation-play-state: paused !important;
+}
+
+/* Firefox dessine les flous d'arrière-plan et les filtres combinés beaucoup plus lentement que
+   Chrome : il reçoit une version allégée, visuellement presque identique. */
+@supports (-moz-appearance: none) {
+  .topbar {
+    background: var(--bg);
+    backdrop-filter: none;
+  }
+
+  .share-overlay {
+    background: rgba(5, 6, 8, 0.86);
+    backdrop-filter: none;
+  }
+
+  /* Grands portraits noir et blanc : un seul filtre au lieu de trois. */
+  .stage-cutout,
+  .poster-visual.is-cutout img {
+    filter: grayscale(1);
+  }
+
+  /* Points « en direct » : l'onde lumineuse animée est remplacée par un point fixe. */
+  .live-dot::after {
+    animation: none;
+  }
+}

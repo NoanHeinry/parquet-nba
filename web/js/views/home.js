@@ -79,6 +79,16 @@ export async function render(ctx) {
   const quizSec = h("section", { class: "home-sec home-quiz", id: "jeu", "aria-label": "Le jeu Qui est-ce ?" }, teaser.el);
   const ticker = h("div", { class: "ticker", "aria-hidden": "true" }, h("div", { class: "ticker-track" }));
   ctx.outlet.append(stage.el, ticker, h("div", { class: "home-body" }, gamesSec, nightSec, tablesSec, quizSec));
+  // Bandeau défilant et scène en pause quand ils sont hors de l'écran : plus aucune animation
+  // ne tourne pour rien pendant qu'on lit le reste de la page.
+  if ("IntersectionObserver" in window) {
+    const offscreen = new IntersectionObserver((entries) => {
+      for (const e of entries) e.target.classList.toggle("is-offscreen", !e.isIntersecting);
+    });
+    offscreen.observe(ticker);
+    offscreen.observe(stage.el);
+    ctx.onCleanup(() => offscreen.disconnect());
+  }
   gamesSec.append(loading("Chargement des matchs…"));
 
   const scroller = ctx.scroller;

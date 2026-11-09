@@ -373,6 +373,40 @@ class ServerTests(unittest.TestCase):
         with urllib.request.urlopen(req) as r:
             self.assertEqual(r.status, 200)
 
+    def test_public_address_is_always_https(self):
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *args, **kwargs):
+                return None
+
+        opener = urllib.request.build_opener(NoRedirect)
+
+        def fetch(path, headers, method="GET"):
+            req = urllib.request.Request(self.base + path, headers=headers, method=method, data=b"{}" if method == "POST" else None)
+            try:
+                with opener.open(req) as r:
+                    return r.status, r.headers
+            except urllib.error.HTTPError as exc:
+                return exc.code, exc.headers
+
+        # Ouvert en http:// via Cloudflare : renvoi permanent vers la même page en https://.
+        status, headers = fetch("/#/match/1?x=1", {"Host": "parquet-nba.fr", "X-Forwarded-Proto": "http"})
+        self.assertEqual(status, 301)
+        self.assertEqual(headers["Location"], "https://parquet-nba.fr/")
+        status, headers = fetch("/api/sante?a=b", {"Host": "parquet-nba.fr", "CF-Visitor": '{"scheme":"http"}'})
+        self.assertEqual((status, headers["Location"]), (301, "https://parquet-nba.fr/api/sante?a=b"))
+        status, headers = fetch("/api/push/test", {"Host": "parquet-nba.fr", "X-Forwarded-Proto": "http"}, "POST")
+        self.assertEqual(status, 308)
+        # En https : la page, avec l'ordre de ne plus passer par http.
+        status, headers = fetch("/api/sante", {"Host": "parquet-nba.fr", "X-Forwarded-Proto": "https"})
+        self.assertEqual(status, 200)
+        self.assertIn("max-age=", headers["Strict-Transport-Security"])
+        # Réseau local (pas de tunnel) ou adresse IP : rien ne change.
+        status, headers = fetch("/api/sante", {})
+        self.assertEqual(status, 200)
+        self.assertIsNone(headers["Strict-Transport-Security"])
+        status, _ = fetch("/api/sante", {"Host": "192.168.1.20:8765", "X-Forwarded-Proto": "http"})
+        self.assertEqual(status, 200)
+
     def test_game_extras_and_events(self):
         data = self.get("/api/game/0012600050/extras")
         self.assertTrue(data["page"]["recap"]["title"].startswith("Game Recap"))
