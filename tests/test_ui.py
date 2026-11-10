@@ -821,6 +821,45 @@ class InterfaceTests(unittest.TestCase):
         self.assertTrue(bg.startswith("radial-gradient"), bg)
         self.assertIn("icon-192.png", bg)
 
+    def test_fullscreen_video_turns_phone_to_landscape(self):
+        # Téléphone (écran tactile) : une vidéo en plein écran verrouille l'écran en paysage,
+        # et la sortie du plein écran rend la rotation normale.
+        ctx = self.browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, service_workers="block")
+        try:
+            page = ctx.new_page()
+            page.add_init_script(
+                """
+                window.__orient = [];
+                Object.defineProperty(screen, 'orientation', { configurable: true, value: {
+                  type: 'portrait-primary',
+                  lock: (o) => { window.__orient.push('lock:' + o); return Promise.resolve(); },
+                  unlock: () => { window.__orient.push('unlock'); },
+                  addEventListener() {}, removeEventListener() {},
+                }});
+                """
+            )
+            page.goto(self.base + "#/")
+            page.wait_for_selector("main > :not(.state)")
+            page.evaluate(
+                """() => {
+                  const v = document.createElement('video');
+                  v.id = 'test-video';
+                  document.body.append(v);
+                  const b = document.createElement('button');
+                  b.id = 'go-fs';
+                  b.textContent = 'plein écran';
+                  b.style.cssText = 'position:fixed;top:200px;left:20px;z-index:9999';
+                  b.onclick = () => v.requestFullscreen();
+                  document.body.append(b);
+                }"""
+            )
+            page.tap("#go-fs")
+            page.wait_for_function("window.__orient.includes('lock:landscape')")
+            page.evaluate("document.exitFullscreen()")
+            page.wait_for_function("window.__orient.includes('unlock')")
+        finally:
+            ctx.close()
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.
