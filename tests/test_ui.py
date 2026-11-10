@@ -812,6 +812,15 @@ class InterfaceTests(unittest.TestCase):
             self.assertLess(abs(pos[0] - pos[1]), 6, (width, pos))
             self.assertLess(abs(pos[2] - pos[3]), 6, (width, pos))
 
+    def test_match_hero_image_is_dimmed_behind_score(self):
+        # Image du résumé en fond : voile opaque (le score reste lisible).
+        self.page.route("**/api/game/*/extras", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps({"data": {"page": {"recap": {"image": "/img/icon-192.png"}}}, "meta": {}})))
+        self.open("#/match/0012600050")
+        self.page.wait_for_selector(".game-page.has-hero")
+        bg = self.page.evaluate("getComputedStyle(document.querySelector('.game-page .scoreboard')).backgroundImage")
+        self.assertTrue(bg.startswith("radial-gradient"), bg)
+        self.assertIn("icon-192.png", bg)
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

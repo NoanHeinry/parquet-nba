@@ -14458,3 +14458,17 @@ a.pl-aw:hover b {
     translate: -50% -50%;
   }
 }
+
+/* Page d'un match avec l'image du résumé vidéo en fond : voile bien plus opaque, et plus sombre
+   encore derrière le score, pour que l'image donne l'ambiance sans gêner la lecture. */
+.game-page.has-hero .scoreboard {
+  background:
+    radial-gradient(55% 60% at 50% 50%, color-mix(in srgb, var(--bg) 75%, transparent), transparent 100%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--bg) 70%, transparent), color-mix(in srgb, var(--bg) 80%, transparent) 60%, var(--bg) 97%),
+    var(--hero-img, none) center 30% / cover no-repeat,
+    linear-gradient(180deg, var(--bg), color-mix(in oklab, var(--bg) 62%, var(--surface-2)));
+}
+
+.game-page.has-hero .sb-scores {
+  text-shadow: 0 2px 24px color-mix(in srgb, var(--bg) 85%, transparent);
+}

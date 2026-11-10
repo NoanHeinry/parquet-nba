@@ -813,7 +813,10 @@ export async function render(ctx) {
     loadExtras()
       .then((ex) => {
         const img = ex.page?.recap?.image;
-        if (img && ctx.active) wrapper.style.setProperty("--hero-img", `url("${img.replace(/"/g, "")}")`);
+        if (img && ctx.active) {
+          wrapper.style.setProperty("--hero-img", `url("${img.replace(/"/g, "")}")`);
+          wrapper.classList.add("has-hero");
+        }
       })
       .catch(() => {});
   }
