@@ -390,7 +390,7 @@ export function scoreMap(games) {
 // ------------------------------------------------------------ tableaux
 
 // columns: [{key, label, title, cls, render(row), sort(row) , align:'l'}]
-export function statTable(columns, rows, { sortable = false, initialSort = null, rowClass, caption, compact = true } = {}) {
+export function statTable(columns, rows, { sortable = false, initialSort = null, rowClass, caption, compact = true, onSort = null } = {}) {
   const table = h("table", { class: "stat-table" });
   if (caption) table.append(h("caption", { class: "visually-hidden" }, caption));
   const thead = h("thead");
@@ -400,7 +400,11 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
 
   const renderBody = () => {
     let list = rows.slice();
-    if (sort) {
+    // Les lignes de total restent en bas, quel que soit le tri.
+    const totals = list.filter((r) => r.__total);
+    if (sort && !onSort) {
+      // Trié : les intertitres de groupe (cinq de départ, banc…) n'ont plus de sens, on les retire.
+      list = list.filter((r) => !r.__total && !r.__group);
       const col = columns.find((c) => c.key === sort.key);
       const get = col?.sort || ((r) => r[sort.key]);
       list.sort((a, b) => {
@@ -411,6 +415,7 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
         if (vb === null || vb === undefined) return -1;
         return (va < vb ? -1 : 1) * (sort.dir === "asc" ? 1 : -1);
       });
+      list.push(...totals);
     }
     tbody.replaceChildren(
       ...list.map((row) => {
@@ -433,13 +438,15 @@ export function statTable(columns, rows, { sortable = false, initialSort = null,
       { scope: "col", class: [c.align === "l" ? "l" : "", c.cls || ""].join(" ").trim() || null, title: c.title || null, dataset: c.prio === undefined ? null : { prio: c.prio } },
       c.label
     );
-    if (sortable && c.sortable !== false && !rows.some((r) => r.__group)) {
+    if (sortable && c.sortable !== false) {
       th.dataset.sort = c.key;
       th.tabIndex = 0;
       const activate = () => {
         sort = sort && sort.key === c.key ? { key: c.key, dir: sort.dir === "desc" ? "asc" : "desc" } : { key: c.key, dir: c.align === "l" ? "asc" : "desc" };
         for (const other of headRow.children) other.removeAttribute("aria-sort");
         th.setAttribute("aria-sort", sort.dir === "asc" ? "ascending" : "descending");
+        // Tri fait par la page (liste plus longue que les lignes affichées) : elle redessine.
+        if (onSort) return onSort(sort);
         renderBody();
         refreshTable(wrap);
       };

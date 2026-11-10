@@ -13,6 +13,7 @@ import { countUp, reducedMotion, reveal, sectionIndex } from "../scroll.js";
 import { createQuizTeaser } from "./quiz.js";
 import { iconGrid } from "../icons.js";
 import { team } from "../teams.js";
+import { dayPicker } from "../datepicker.js";
 
 // Un titre découpé en mots, pour les faire monter l'un après l'autre.
 function words(text) {
@@ -153,6 +154,7 @@ export async function render(ctx) {
 
   let previous = new Map();
   let last = null;
+  let picker = null;
   const updatedLine = h("p", { class: "updated", "aria-live": "polite" });
 
   const draw = (data, meta) => {
@@ -161,10 +163,8 @@ export async function render(ctx) {
     const games = [...data.games].sort((a, b) => isFav(b) - isFav(a));
     const live = games.filter((g) => g.status === 2).length;
 
-    const dateInput = h("input", { type: "date", value: data.date, "aria-label": "Choisir une date" });
-    dateInput.addEventListener("change", () => {
-      if (dateInput.value) location.hash = `#/matchs/${dateInput.value}`;
-    });
+    // Bande des jours proches et calendrier du mois : créés une fois, gardés d'une actualisation à l'autre.
+    picker ||= dayPicker({ date: data.date, today: data.today });
 
     const toggleAllBtn = h(
       "button",
@@ -196,7 +196,7 @@ export async function render(ctx) {
       { class: "day-nav" },
       h("a", { class: "btn square", href: data.prev ? `#/matchs/${data.prev}` : "#/", "aria-disabled": data.prev ? null : "true", "aria-label": "Journée précédente", title: data.prev ? f.dayShort(data.prev) : "" }, "‹"),
       data.isToday ? null : h("a", { class: "btn", href: "#/" }, "Aujourd'hui"),
-      dateInput,
+      picker.button,
       h("a", { class: "btn square", href: data.next ? `#/matchs/${data.next}` : "#/", "aria-disabled": data.next ? null : "true", "aria-label": "Journée suivante", title: data.next ? f.dayShort(data.next) : "" }, "›"),
       games.some((g) => g.status >= 2) ? toggleAllBtn : null
     );
@@ -209,7 +209,8 @@ export async function render(ctx) {
       "div",
       { class: "day-head" },
       h("div", null, h("p", { class: "home-kicker" }, counts.join(" · ") || "Matchs"), h("h1", { class: "page-title", id: "day-title" }, words(f.dayTitle(data.date)))),
-      nav
+      nav,
+      picker.strip
     );
 
     let content;

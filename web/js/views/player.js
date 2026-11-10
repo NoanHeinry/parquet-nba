@@ -282,13 +282,13 @@ function statsView(container, career) {
       { key: "age", label: "Âge", prio: 3 },
       { key: "gp", label: "MJ", title: "Matchs joués", prio: 1 },
       { key: "gs", label: "TIT", prio: 3, title: "Titularisations", render: (r) => r.gs ?? "–" },
-      { key: "min", label: "MIN", title: "Minutes", render: (r) => fmt("min", value(r, "min")) },
-      { key: "pts", label: "PTS", title: "Points", prio: 1, render: (r) => h("b", null, fmt("pts", value(r, "pts"))) },
-      { key: "reb", label: "REB", title: "Rebonds", prio: 1, render: (r) => fmt("reb", value(r, "reb")) },
-      { key: "ast", label: "PD", title: "Passes décisives", prio: 1, render: (r) => fmt("ast", value(r, "ast")) },
-      { key: "stl", label: "INT", title: "Interceptions", render: (r) => fmt("stl", value(r, "stl")) },
-      { key: "blk", label: "CTR", title: "Contres", render: (r) => fmt("blk", value(r, "blk")) },
-      { key: "tov", label: "BP", title: "Balles perdues", prio: 3, render: (r) => fmt("tov", value(r, "tov")) },
+      { key: "min", label: "MIN", title: "Minutes", render: (r) => fmt("min", value(r, "min")), sort: (r) => value(r, "min") },
+      { key: "pts", label: "PTS", title: "Points", prio: 1, render: (r) => h("b", null, fmt("pts", value(r, "pts"))), sort: (r) => value(r, "pts") },
+      { key: "reb", label: "REB", title: "Rebonds", prio: 1, render: (r) => fmt("reb", value(r, "reb")), sort: (r) => value(r, "reb") },
+      { key: "ast", label: "PD", title: "Passes décisives", prio: 1, render: (r) => fmt("ast", value(r, "ast")), sort: (r) => value(r, "ast") },
+      { key: "stl", label: "INT", title: "Interceptions", render: (r) => fmt("stl", value(r, "stl")), sort: (r) => value(r, "stl") },
+      { key: "blk", label: "CTR", title: "Contres", render: (r) => fmt("blk", value(r, "blk")), sort: (r) => value(r, "blk") },
+      { key: "tov", label: "BP", title: "Balles perdues", prio: 3, render: (r) => fmt("tov", value(r, "tov")), sort: (r) => value(r, "tov") },
       { key: "fgPct", label: "% tirs", title: "Adresse aux tirs", render: (r) => f.pct(r.fgPct) },
       { key: "tpPct", label: "% 3 pts", title: "Adresse à 3 points", render: (r) => f.pct(r.tpPct) },
       { key: "ftPct", label: "% LF", title: "Adresse aux lancers francs", render: (r) => f.pct(r.ftPct) },
@@ -303,6 +303,7 @@ function statsView(container, career) {
       statTable(cols.map((c) => (c.key === "tri" ? { ...c, render: (r) => (r.__total ? "" : c.render(r)) } : c)), tableRows, {
         rowClass: (r) => (r.__total ? "total" : hasTot.has(r.season) && r.tri !== "TOT" ? "dim" : ""),
         caption: "Statistiques saison par saison",
+        sortable: true,
       })
     );
   };
@@ -376,14 +377,14 @@ function gamelogView(container, id, ctx) {
         { key: "stl", label: "INT" },
         { key: "blk", label: "CTR" },
         { key: "tov", label: "BP", prio: 3 },
-        { key: "fg", label: "Tirs", render: (g) => f.ratio(g.fgm, g.fga) },
-        { key: "tp", label: "3 pts", render: (g) => f.ratio(g.tpm, g.tpa) },
-        { key: "ft", label: "LF", render: (g) => f.ratio(g.ftm, g.fta) },
+        { key: "fg", label: "Tirs", render: (g) => f.ratio(g.fgm, g.fga), sort: (g) => (g.fga ? g.fgm / g.fga : null) },
+        { key: "tp", label: "3 pts", render: (g) => f.ratio(g.tpm, g.tpa), sort: (g) => (g.tpa ? g.tpm / g.tpa : null) },
+        { key: "ft", label: "LF", render: (g) => f.ratio(g.ftm, g.fta), sort: (g) => (g.fta ? g.ftm / g.fta : null) },
         { key: "pm", label: "+/-", render: (g) => f.signed(g.pm) },
       ];
       return [
         h("p", { class: "note", style: { margin: "0 0 12px" } }, `Saison ${data.season}, ${SEASON_TYPES[data.type] || data.type}. ${f.plural(data.games.length, "match", "matchs")}, du plus récent au plus ancien.`),
-        statTable(cols, data.games, { caption: "Derniers matchs" }),
+        statTable(cols, data.games, { caption: "Derniers matchs", sortable: true }),
       ];
     }
   );

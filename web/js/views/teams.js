@@ -4,7 +4,8 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import * as f from "../format.js";
 import { efficiencyMap } from "../charts.js";
-import { errorState, favorites, loading, staleBanner, statTable, teamLogo } from "../components.js";
+import { errorState, favorites, loading, segmented, staleBanner, statTable, teamLogo } from "../components.js";
+import { teamColor } from "../teams.js";
 import { iconStar } from "../icons.js";
 import { poster } from "../poster.js";
 
@@ -83,6 +84,51 @@ export async function renderStats(ctx) {
   );
 }
 
+const ORDER_KEY = "parquet-equipes-ordre";
+
+const streakText = (st) => {
+  const m = /^([WL])\s*(\d+)$/.exec(st || "");
+  return m ? `${m[1] === "W" ? "V" : "D"}${m[2]}` : st || "";
+};
+
+// Carte d'une équipe : aux couleurs de la franchise, bilan, rang, forme récente.
+function teamCard(t, st, fav, rankLabel) {
+  const rec = t.record;
+  const games = rec ? rec.w + rec.l : 0;
+  const pct = games ? rec.w / games : null;
+  const streak = streakText(st?.streak);
+  return h(
+    "a",
+    { class: "tcard", href: `#/equipe/${t.id}`, style: { "--tc": teamColor(t.id) } },
+    rankLabel ? h("span", { class: "tc-rank num", "aria-hidden": "true" }, rankLabel) : null,
+    h("span", { class: "tc-logo" }, teamLogo(t.id, 64)),
+    h(
+      "span",
+      { class: "tc-txt" },
+      h("b", { class: "tc-name" }, t.name, fav ? h("span", { class: "fav-star", title: "Équipe favorite" }, iconStar(true, 12)) : null),
+      h("small", null, t.city)
+    ),
+    rec
+      ? h(
+          "span",
+          { class: "tc-rec" },
+          h("b", { class: "num" }, `${rec.w}-${rec.l}`),
+          h("small", null, st?.rank ? `${st.rank}${st.rank === 1 ? "er" : "e"} ${t.confFr}` : rec.rank ? `${rec.rank}${rec.rank === 1 ? "er" : "e"} ${t.confFr}` : "")
+        )
+      : null,
+    pct !== null ? h("span", { class: "tc-bar", role: "img", "aria-label": `${f.num(pct * 100, 1)} % de victoires` }, h("i", { style: { width: `${(pct * 100).toFixed(1)}%` } })) : null,
+    st
+      ? h(
+          "span",
+          { class: "tc-meta" },
+          st.l10 ? h("span", null, "10 der. ", h("b", { class: "num" }, st.l10)) : null,
+          streak ? h("span", { class: streak.startsWith("V") ? "pos" : "neg" }, "Série ", h("b", { class: "num" }, streak)) : null,
+          st.diff !== null && st.diff !== undefined ? h("span", null, "Écart ", h("b", { class: "num" }, f.signed(st.diff))) : null
+        )
+      : null
+  );
+}
+
 export async function render(ctx) {
   const top = poster(ctx, { kicker: "Deux conférences, six divisions", title: "Équipes", ghost: "30", actions: [viewLinks("list")] });
   const body = h("div", null, loading("Chargement des équipes…"));
@@ -95,10 +141,19 @@ export async function render(ctx) {
     body.replaceChildren(errorState(err, () => location.reload()));
     return;
   }
+  // Forme récente (10 derniers matchs, série, écart) : depuis le classement, si disponible.
+  const standing = new Map();
+  try {
+    const st = (await api("/standings", { signal: ctx.signal })).data;
+    for (const r of st.rows || []) standing.set(r.teamId, r);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+  }
+  if (!ctx.active) return;
   const favs = favorites();
   // En vedette : la première équipe favorite, sinon le meilleur bilan.
-  const withRecord = data.teams.filter((t) => t.record);
-  const star = data.teams.find((t) => favs.has(t.id)) || withRecord.sort((a, b) => b.record.w - a.record.w)[0];
+  const winPct = (t) => (t.record && t.record.w + t.record.l ? t.record.w / (t.record.w + t.record.l) : -1);
+  const star = data.teams.find((t) => favs.has(t.id)) || data.teams.slice().sort((a, b) => winPct(b) - winPct(a))[0];
   if (star) {
     top.update({
       teamId: star.id,
@@ -108,35 +163,60 @@ export async function render(ctx) {
     });
   }
 
-  const blocks = LAYOUT.map((c) =>
-    h(
-      "section",
-      { class: "conf-block", "aria-label": c.title },
-      h("h2", { class: "section-title" }, c.title),
-      h(
-        "div",
-        { class: "div-grid" },
-        c.divs.map((div) => {
-          const list = data.teams.filter((t) => t.conf === c.conf && t.div === div);
-          list.sort((a, b) => (a.record && b.record ? b.record.w - a.record.w || a.record.l - b.record.l : a.name.localeCompare(b.name)));
-          return h(
-            "div",
-            { class: "div-col" },
-            h("h3", null, `Division ${list[0]?.divFr || div}`),
-            list.map((t) =>
-              h(
-                "a",
-                { class: "team-row", href: `#/equipe/${t.id}` },
-                teamLogo(t.id, 72),
-                h("span", { class: "nm" }, t.name, favs.has(t.id) ? h("span", { class: "fav-star", title: "Équipe favorite", style: { marginLeft: "4px" } }, iconStar(true, 11)) : null, h("small", null, t.city)),
-                t.record ? h("span", { class: "rec num" }, `${t.record.w}-${t.record.l}`) : null
-              )
-            )
-          );
-        })
-      )
-    )
-  );
+  let order = "division";
+  try {
+    order = localStorage.getItem(ORDER_KEY) || "division";
+  } catch {
+    /* rien */
+  }
+  const content = h("div");
+  const card = (t, rank) => teamCard(t, standing.get(t.id), favs.has(t.id), rank);
+  const byRecord = (a, b) => winPct(b) - winPct(a) || (b.record?.w || 0) - (a.record?.w || 0);
 
-  body.replaceChildren(...blocks);
+  const draw = () => {
+    if (order === "bilan") {
+      const list = data.teams.slice().sort(byRecord);
+      content.replaceChildren(
+        h("section", { class: "conf-block" }, h("h2", { class: "section-title" }, "Toute la ligue, du meilleur au moins bon bilan"), h("div", { class: "tcard-grid" }, list.map((t, i) => card(t, String(i + 1)))))
+      );
+    } else if (order === "nom") {
+      const list = data.teams.slice().sort((a, b) => a.name.localeCompare(b.name, "fr"));
+      content.replaceChildren(h("section", { class: "conf-block" }, h("h2", { class: "section-title" }, "De A à Z"), h("div", { class: "tcard-grid" }, list.map((t) => card(t)))));
+    } else {
+      content.replaceChildren(
+        ...LAYOUT.map((c) =>
+          h(
+            "section",
+            { class: "conf-block", "aria-label": c.title },
+            h("h2", { class: "section-title" }, c.title),
+            c.divs.map((div) => {
+              const list = data.teams.filter((t) => t.conf === c.conf && t.div === div).sort(byRecord);
+              return h("div", { class: "tdiv" }, h("h3", { class: "tdiv-title" }, `Division ${list[0]?.divFr || div}`), h("div", { class: "tcard-grid" }, list.map((t) => card(t))));
+            })
+          )
+        )
+      );
+    }
+  };
+
+  const control = segmented(
+    [
+      { value: "division", label: "Par division" },
+      { value: "bilan", label: "Par bilan" },
+      { value: "nom", label: "De A à Z" },
+    ],
+    order,
+    (v) => {
+      order = v;
+      try {
+        localStorage.setItem(ORDER_KEY, v);
+      } catch {
+        /* rien */
+      }
+      draw();
+    },
+    "Ordre des équipes"
+  );
+  draw();
+  body.replaceChildren(h("div", { class: "toolbar" }, control), content);
 }

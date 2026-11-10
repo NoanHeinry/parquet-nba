@@ -236,7 +236,7 @@ function boxTable(box, key, focusId = null) {
       render: (p) =>
         playerCell(p.id, p.name, [p.jersey ? `n° ${p.jersey}` : "", f.position(p.pos)].filter(Boolean).join(", ") || null),
     },
-    { key: "min", label: "MIN", title: "Minutes jouées", render: (p) => h("span", null, live && p.oncourt ? h("span", { class: "oncourt", title: "Sur le terrain", style: { marginRight: "6px" } }) : null, p.min || "–") },
+    { key: "min", label: "MIN", title: "Minutes jouées", sort: (p) => p.sec ?? null, render: (p) => h("span", null, live && p.oncourt ? h("span", { class: "oncourt", title: "Sur le terrain", style: { marginRight: "6px" } }) : null, p.min || "–") },
     { key: "pts", label: "PTS", title: "Points", render: (p) => h("b", null, p.pts) },
     { key: "reb", label: "REB", title: "Rebonds (offensifs + défensifs)" },
     { key: "ast", label: "PD", title: "Passes décisives" },
@@ -244,9 +244,9 @@ function boxTable(box, key, focusId = null) {
     { key: "blk", label: "CTR", title: "Contres" },
     { key: "tov", label: "BP", title: "Balles perdues" },
     { key: "pf", label: "F", title: "Fautes personnelles" },
-    { key: "fg", label: "Tirs", title: "Tirs réussis / tentés", render: (p) => f.ratio(p.fgm, p.fga) },
-    { key: "tp", label: "3 pts", title: "Tirs à 3 points réussis / tentés", render: (p) => f.ratio(p.tpm, p.tpa) },
-    { key: "ft", label: "LF", title: "Lancers francs réussis / tentés", render: (p) => f.ratio(p.ftm, p.fta) },
+    { key: "fg", label: "Tirs", title: "Tirs réussis / tentés", render: (p) => f.ratio(p.fgm, p.fga), sort: (p) => (p.fga ? p.fgm + p.fgm / (p.fga + 1) : null) },
+    { key: "tp", label: "3 pts", title: "Tirs à 3 points réussis / tentés", render: (p) => f.ratio(p.tpm, p.tpa), sort: (p) => (p.tpa ? p.tpm + p.tpm / (p.tpa + 1) : null) },
+    { key: "ft", label: "LF", title: "Lancers francs réussis / tentés", render: (p) => f.ratio(p.ftm, p.fta), sort: (p) => (p.fta ? p.ftm + p.ftm / (p.fta + 1) : null) },
     { key: "pm", label: "+/-", title: "Écart au score quand le joueur était sur le terrain", render: (p) => f.signed(p.pm) },
   ];
   const ts = t.stats;
@@ -257,7 +257,7 @@ function boxTable(box, key, focusId = null) {
     "div",
     { class: "section box-side", dataset: { side: key } },
     h("h2", { class: "section-title", style: { display: "flex", alignItems: "center", gap: "10px" } }, teamLogo(side?.id, 30), sideName(side).name),
-    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : r.id === focusId ? "is-focus" : ""), caption: `Box score ${sideName(side).name}`, compact: false })),
+    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : r.id === focusId ? "is-focus" : ""), caption: `Box score ${sideName(side).name}`, compact: false, sortable: true })),
     boxCards(rows, live, focusId)
   );
   if (out.length) {

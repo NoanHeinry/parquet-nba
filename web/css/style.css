@@ -14519,3 +14519,559 @@ html[data-motion="reduce"] .stat-table tbody tr.is-focus > td {
 .stat-table th.sticky {
   background: var(--bg);
 }
+
+/* ================================================================ 4.4 Mes joueurs : photo pleine hauteur */
+
+/* La photo occupe toute la colonne, recadrée sur le visage, sur un fond aux couleurs de l'équipe
+   (elle restait petite, collée en bas, avec un grand vide au-dessus). */
+.mp-photo {
+  background:
+    radial-gradient(120% 70% at 50% 20%, color-mix(in srgb, var(--tc) 45%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--tc) 25%, var(--surface-2)), var(--surface));
+}
+
+.mp-photo .headshot,
+.mp-photo .headshot.is-custom {
+  position: absolute;
+  inset: 0;
+  left: 0;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  translate: none;
+  object-fit: cover;
+  object-position: 50% 12%;
+  transition: transform 0.4s ease;
+}
+
+.mp-photo:hover .headshot {
+  transform: scale(1.04);
+}
+
+/* Fondu en bas de la photo vers la carte. */
+.mp-photo::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 30%;
+  background: linear-gradient(transparent, color-mix(in srgb, var(--surface) 70%, transparent));
+  pointer-events: none;
+}
+
+.mp-card {
+  grid-template-columns: 150px minmax(0, 1fr);
+}
+
+@media (max-width: 700px) {
+  .mp-card {
+    grid-template-columns: 112px minmax(0, 1fr);
+  }
+}
+
+/* ================================================================ 4.5 Joueurs : filtres, tris, tableau */
+
+.players-filters {
+  align-items: flex-end;
+}
+
+.players-filters select {
+  max-width: 190px;
+}
+
+.players-view {
+  margin-left: auto;
+}
+
+.sort-row {
+  display: flex;
+  gap: 6px;
+}
+
+.sort-dir {
+  min-width: 42px;
+  font-size: 18px;
+}
+
+.players-reset {
+  color: var(--accent);
+}
+
+.players-reset[hidden] {
+  display: none;
+}
+
+.pl-team-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 700px) {
+  .players-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .players-filters select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .players-filters .players-sort,
+  .players-filters .players-reset {
+    grid-column: 1 / -1;
+  }
+
+  .players-sort select {
+    flex: 1;
+  }
+
+  .players-view {
+    margin-left: 0;
+  }
+}
+
+/* ================================================================ 4.6 Page des équipes : cartes */
+
+.tdiv + .tdiv {
+  margin-top: 22px;
+}
+
+.tdiv-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.tcard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.tcard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-areas:
+    "logo txt"
+    "rec rec"
+    "bar bar"
+    "meta meta";
+  align-items: center;
+  gap: 10px 12px;
+  padding: 16px 16px 14px;
+  overflow: hidden;
+  border-top: 3px solid var(--tc);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 20%, var(--surface)) 0%, var(--surface) 60%);
+  color: var(--text);
+  text-decoration: none;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.tcard:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 32%, var(--surface)) 0%, var(--surface) 70%);
+}
+
+.tc-rank {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-family: var(--font-poster);
+  font-size: 34px;
+  line-height: 1;
+  color: color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+.tc-logo {
+  grid-area: logo;
+}
+
+.tc-txt {
+  grid-area: txt;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tc-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.tc-txt small {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.tc-rec {
+  grid-area: rec;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.tc-rec b {
+  font-family: var(--font-poster);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.tc-rec small {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.tc-bar {
+  grid-area: bar;
+  display: block;
+  height: 4px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.tc-bar i {
+  display: block;
+  height: 100%;
+  background: var(--tc);
+}
+
+.tc-meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tc-meta b {
+  color: var(--text);
+}
+
+.tc-meta .pos b {
+  color: var(--win);
+}
+
+.tc-meta .neg b {
+  color: var(--loss);
+}
+
+@media (max-width: 700px) {
+  .tcard-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .tcard {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "logo txt rec"
+      "logo meta meta";
+    gap: 4px 12px;
+    padding: 12px 14px;
+    border-top: 0;
+    border-left: 3px solid var(--tc);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 20%, var(--surface)) 0%, var(--surface) 60%);
+  }
+
+  .tcard .tc-logo .logo,
+  .tcard .tc-logo img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .tc-rec {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .tc-rec b {
+    font-size: 24px;
+  }
+
+  .tc-bar {
+    display: none;
+  }
+
+  .tc-name {
+    font-size: 18px;
+  }
+
+  .tc-rank {
+    top: 4px;
+    right: auto;
+    left: 6px;
+    z-index: 1;
+    font-size: 15px;
+    color: var(--text-2);
+  }
+}
+
+/* ================================================================ 4.7 Calendrier des matchs */
+
+/* Bande des 7 jours proches */
+.day-strip-box {
+  flex-basis: 100%;
+}
+
+.day-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ds-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 7px;
+  border: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.ds-day:hover {
+  border-color: var(--accent);
+}
+
+.ds-day small {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ds-day b {
+  font-family: var(--font-poster);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.ds-n {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.ds-day.is-empty {
+  opacity: 0.45;
+}
+
+.ds-day.is-today {
+  border-color: var(--text-2);
+}
+
+.ds-day.is-current {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.ds-day.is-current small,
+.ds-day.is-current .ds-n {
+  color: inherit;
+}
+
+.ds-fav {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.ds-day.is-current .ds-fav {
+  background: var(--accent-ink);
+}
+
+/* Calendrier du mois */
+.dp-wrap {
+  position: relative;
+}
+
+.dp-btn::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border: 2px solid currentColor;
+  border-top-width: 4px;
+  border-radius: 2px;
+}
+
+.dp-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid var(--line-strong, var(--line));
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.dp-pop[hidden] {
+  display: none;
+}
+
+.dp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.dp-head b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.dp-wd {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.dp-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  color: var(--text-2);
+  text-decoration: none;
+}
+
+.dp-day b {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dp-day.has-games {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.dp-day:hover,
+.dp-day:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.dp-day.is-out {
+  opacity: 0.35;
+}
+
+.dp-day.is-today {
+  box-shadow: inset 0 0 0 1px var(--text-2);
+}
+
+.dp-day.is-current {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.dp-n {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.dp-day.is-current .dp-n {
+  color: var(--accent-ink);
+}
+
+.dp-day .ds-fav {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+}
+
+.dp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dp-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dp-legend .ds-fav {
+  margin-left: 8px;
+}
+
+@media (max-width: 560px) {
+  .day-strip {
+    gap: 4px;
+  }
+
+  .ds-day {
+    padding: 6px 2px;
+  }
+
+  .ds-day b {
+    font-size: 20px;
+  }
+
+  .day-nav {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .day-nav > .btn,
+  .day-nav .dp-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .dp-pop {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+  }
+}

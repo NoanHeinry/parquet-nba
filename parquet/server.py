@@ -115,6 +115,11 @@ def api_scoreboard(q):
     return nba.scoreboard(day)
 
 
+@route(r"/api/calendar")
+def api_calendar(q):
+    return nba.calendar()
+
+
 @route(r"/api/game/(\d{10})")
 def api_game(q, game_id):
     return nba.game_box(game_id)

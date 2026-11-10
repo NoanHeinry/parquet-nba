@@ -381,6 +381,28 @@ def schedule() -> tuple[dict, dict]:
     return _cache().get("schedule:current", 30 * 60, _fetch_schedule)
 
 
+def calendar() -> tuple[dict, dict]:
+    """Jours de match de la saison : {date: [[extérieur, domicile], …]} (pour le calendrier)."""
+    sched, meta = schedule()
+    days: dict[str, list] = {}
+    for g in sched.get("games") or []:
+        day = g.get("etDate")
+        if not day:
+            continue
+        away = (g.get("away") or {}).get("id")
+        home = (g.get("home") or {}).get("id")
+        days.setdefault(day, []).append([away, home])
+    return {"season": sched.get("season"), "today": live_today(), "days": days}, meta
+
+
+def live_today() -> str:
+    """Date du jour de la NBA (heure de New York), celle du scoreboard en cours."""
+    cached = _cache().peek("live:scoreboard")
+    if cached and cached[1].get("date"):
+        return cached[1]["date"]
+    return game_day_et().isoformat()
+
+
 def _schedule_or_none() -> dict | None:
     try:
         return schedule()[0]

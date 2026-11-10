@@ -878,6 +878,81 @@ class InterfaceTests(unittest.TestCase):
                 timeout=8000,
             )
 
+    def test_day_strip_and_month_calendar(self):
+        # Matchs du jour : bande des 7 jours (nombre de matchs) et calendrier du mois.
+        cal = json.loads(urllib.request.urlopen(self.base + "api/calendar").read())["data"]
+        self.assertTrue(cal["days"])
+        day = sorted(cal["days"])[len(cal["days"]) // 2]
+        self.open(f"#/matchs/{day}")
+        self.page.wait_for_selector(".day-strip .ds-n:not(:empty)")
+        self.assertEqual(self.page.locator(".ds-day").count(), 7)
+        current = self.page.locator(".ds-day.is-current")
+        self.assertEqual(current.locator(".ds-n").text_content().strip(), str(len(cal["days"][day])))
+        self.page.click(".dp-btn")
+        self.page.wait_for_selector(".dp-pop:not([hidden]) .dp-day.has-games")
+        self.page.keyboard.press("Escape")
+        self.assertTrue(self.page.locator(".dp-pop").is_hidden())
+        # Mois suivant, puis choix d'un jour de match.
+        self.page.click(".dp-btn")
+        self.page.click(".dp-pop button[aria-label='Mois suivant']")
+        target = self.page.locator(".dp-day.has-games:not(.is-out)").first
+        href = target.get_attribute("href")
+        target.click()
+        self.page.wait_for_function(f"location.hash === {json.dumps(href)}")
+        self.assertTrue(self.page.locator(".dp-pop").is_hidden())
+
+    def test_players_filters_sorts_and_table(self):
+        self.open("#/joueurs")
+        self.page.wait_for_selector(".player-card")
+        total = int(self.page.text_content(".players-grid ~ p, p.note[aria-live]").split()[0].replace("\u202f", "").replace(" ", ""))
+        self.page.select_option("select[aria-label='Draft']", "r1")
+        self.page.wait_for_timeout(200)
+        self.assertIn("1 filtre actif", self.page.text_content("p.note[aria-live]"))
+        firsts = self.page.locator(".player-card").count()
+        self.assertLess(firsts, total)
+        # Tableau : tri par la colonne Taille, puis inversion du sens avec le bouton.
+        self.page.click(".players-view .segmented button:has-text('Tableau')")
+        self.page.wait_for_selector(".players-table .stat-table tbody tr")
+        if self.page.locator(".players-table .tbl-toggle").is_visible():
+            self.page.click(".players-table .tbl-toggle")  # toutes les colonnes
+        self.page.click(".players-table th[data-sort='height']")
+        heights = self.page.locator(".players-table tbody tr td:nth-child(4)").all_text_contents()
+        values = [float(h.replace(" m", "").replace(",", ".")) for h in heights if h != "–"]
+        self.assertEqual(values, sorted(values, reverse=True))
+        self.page.click(".sort-dir")
+        heights = self.page.locator(".players-table tbody tr td:nth-child(4)").all_text_contents()
+        values = [float(h.replace(" m", "").replace(",", ".")) for h in heights if h != "–"]
+        self.assertEqual(values, sorted(values))
+        # Réinitialiser retire le filtre.
+        self.page.click(".players-reset")
+        self.assertTrue(self.page.locator(".players-reset").is_hidden())
+
+    def test_teams_page_cards_and_orders(self):
+        self.open("#/equipes")
+        self.page.wait_for_selector(".tcard")
+        self.assertEqual(self.page.locator(".tcard").count(), 30)
+        self.assertEqual(self.page.locator(".tdiv").count(), 6)
+        self.assertTrue(self.page.locator(".tcard .tc-meta").count())
+        self.page.click(".segmented button:has-text('Par bilan')")
+        self.assertEqual(self.page.locator(".tcard .tc-rank").first.text_content(), "1")
+        recs = [tuple(map(int, r.split("-"))) for r in self.page.locator(".tc-rec b").all_text_contents()]
+        pcts = [w / (w + l) for w, l in recs]
+        self.assertEqual(pcts, sorted(pcts, reverse=True))
+        self.open("#/equipes")  # le choix est retenu
+        self.page.wait_for_selector(".tcard .tc-rank")
+
+    def test_sorting_keeps_totals_last_and_box_score_sorts(self):
+        # Box score : trier par points retire les intertitres, le total reste en bas.
+        self.open("#/match/0012600050")
+        self.page.click('[role="tab"][data-tab="box"]')
+        table = self.page.locator(".box-side[data-side='away'] .stat-table")
+        table.locator("th[data-sort='pts']").click()
+        rows = table.locator("tbody tr")
+        self.assertEqual(table.locator("tbody tr.group").count(), 0)
+        self.assertIn("total", rows.last.get_attribute("class"))
+        pts = [int(t) for t in table.locator("tbody tr:not(.total) td:nth-child(3)").all_text_contents()]
+        self.assertEqual(pts, sorted(pts, reverse=True))
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.
