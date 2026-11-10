@@ -796,6 +796,22 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Carrière 1986–1999", text)
         self.assertEqual(self.page.locator(".mp-card .mp-bars").count(), 0)
 
+    def test_phone_match_scores_sit_under_their_teams(self):
+        # Téléphone : chaque score est centré sous son équipe (il restait collé à gauche).
+        for width in (360, 390, 430):
+            self.page.set_viewport_size({"width": width, "height": 844})
+            self.open("#/match/0012600050")
+            self.page.wait_for_selector(".sb-scores span")
+            pos = self.page.evaluate(
+                """() => {
+                  const mid = (el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2; };
+                  const s = document.querySelectorAll('.sb-scores > span:not(.dash)');
+                  return [mid(document.querySelector('.sb-team.away .nick')), mid(s[0]), mid(document.querySelector('.sb-team.home .nick')), mid(s[1])];
+                }"""
+            )
+            self.assertLess(abs(pos[0] - pos[1]), 6, (width, pos))
+            self.assertLess(abs(pos[2] - pos[3]), 6, (width, pos))
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

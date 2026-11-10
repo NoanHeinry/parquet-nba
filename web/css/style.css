@@ -14432,3 +14432,29 @@ a.pl-aw:hover b {
     margin-left: auto;
   }
 }
+
+/* Page d'un match sur téléphone : chaque score sous son équipe (ils restaient collés à gauche). */
+@media (max-width: 560px) {
+  .game-page .sb-grid {
+    column-gap: 8px;
+  }
+
+  .game-page .sb-center {
+    justify-self: stretch;
+  }
+
+  .game-page .sb-scores {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 8px;
+    justify-items: center;
+  }
+
+  .game-page .sb-scores .dash {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+  }
+}
