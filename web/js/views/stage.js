@@ -280,7 +280,9 @@ export function createStage(ctx) {
       decoding: "async",
       referrerpolicy: "no-referrer",
     });
-    const cutLayer = h("a", { class: "stage-layer cut-layer is-full", href: `#/joueur/${p.id}`, tabindex: "-1", "aria-hidden": "true" }, cut);
+    // Le joueur (photo et stats) mène à ses stats dans le box score du match ; « Sa fiche » à sa fiche.
+    const boxHref = `#/match/${g.id}/joueur/${p.id}`;
+    const cutLayer = h("a", { class: "stage-layer cut-layer is-full", href: boxHref, tabindex: "-1", "aria-hidden": "true" }, cut);
     let slide = null;
     cut.addEventListener("error", () => {
       if (cut.dataset.fallback) {
@@ -293,8 +295,8 @@ export function createStage(ctx) {
       cut.src = headshotUrl(p.id, "big");
     });
     const stats = h(
-      "div",
-      { class: "stage-stats" },
+      "a",
+      { class: "stage-stats", href: boxHref, "aria-label": `Stats de ${p.first} ${p.last} dans le box score du match` },
       statItems(p).map((it, i) => {
         const v = h("b", { class: "num" }, String(it.v));
         countUp(v, it.v, dir ? 350 : 0);

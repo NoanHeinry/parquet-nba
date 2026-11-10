@@ -200,6 +200,8 @@ function initPwa() {
 route("/", home.render, "matchs");
 route("/matchs/(\\d{4}-\\d{2}-\\d{2})", home.render, "matchs");
 route("/match/(\\d{10})", game.render, "matchs");
+// Box score d'un match, ouvert sur la ligne d'un joueur (depuis la scène de l'accueil).
+route("/match/(\\d{10})/joueur/(\\d+)", game.render, "matchs");
 route("/multi", multi.render, "matchs");
 route("/equipes", teamsView.render, "equipes");
 route("/equipes/stats", teamsView.renderStats, "equipes");
@@ -240,7 +242,7 @@ initVideoLandscape();
 const outlet = document.getElementById("main");
 
 // Version de l'interface : elle doit correspondre à celle du serveur (parquet/__init__.py).
-const APP_VERSION = "1.32.0";
+const APP_VERSION = "1.33.0";
 document.documentElement.dataset.version = APP_VERSION;
 
 // Compare deux numéros de version (1.5.0 < 1.12.0).

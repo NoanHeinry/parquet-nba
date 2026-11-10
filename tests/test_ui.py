@@ -860,6 +860,24 @@ class InterfaceTests(unittest.TestCase):
         finally:
             ctx.close()
 
+    def test_home_player_opens_his_line_in_box_score(self):
+        # Scène de l'accueil : les stats du joueur mènent à sa ligne dans le box score du match
+        # (la fiche reste accessible par « Sa fiche »).
+        for size in ({"width": 390, "height": 844}, {"width": 1366, "height": 800}):
+            self.page.set_viewport_size(size)
+            self.open("#/")
+            self.page.wait_for_selector(".stage-stats")
+            href = self.page.get_attribute(".stage-stats", "href")
+            self.assertRegex(href, r"^#/match/\d{10}/joueur/\d+$")
+            self.assertRegex(self.page.get_attribute(".stage-bio", "href"), r"^#/joueur/\d+$")
+            self.page.click(".stage-stats")
+            self.page.wait_for_function("[...document.querySelectorAll('.is-focus')].some((e) => e.offsetParent)")
+            self.assertEqual(self.page.locator("[role=tab][aria-selected=true]").text_content().strip(), "Box score")
+            self.page.wait_for_function(
+                "(() => { const r = [...document.querySelectorAll('.is-focus')].find((e) => e.offsetParent).getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; })()",
+                timeout=8000,
+            )
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

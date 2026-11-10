@@ -215,7 +215,7 @@ function resume(box) {
   ];
 }
 
-function boxTable(box, key) {
+function boxTable(box, key, focusId = null) {
   const t = box.teams[key];
   const side = box.game[key];
   const live = box.game.status === 2;
@@ -257,8 +257,8 @@ function boxTable(box, key) {
     "div",
     { class: "section box-side", dataset: { side: key } },
     h("h2", { class: "section-title", style: { display: "flex", alignItems: "center", gap: "10px" } }, teamLogo(side?.id, 30), sideName(side).name),
-    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : ""), caption: `Box score ${sideName(side).name}`, compact: false })),
-    boxCards(rows, live)
+    h("div", { class: "box-table-view" }, statTable(totalColumns, rows, { rowClass: (r) => (r.__total ? "total" : r.id === focusId ? "is-focus" : ""), caption: `Box score ${sideName(side).name}`, compact: false })),
+    boxCards(rows, live, focusId)
   );
   if (out.length) {
     wrap.append(
@@ -275,7 +275,7 @@ function boxTable(box, key) {
 
 // Box score sur téléphone : une ligne par joueur, lisible sans faire défiler de côté. Les points en
 // grand à droite, les autres chiffres en dessous du nom, les meilleurs de l'équipe en orange.
-function boxCards(rows, live) {
+function boxCards(rows, live, focusId = null) {
   const players = rows.filter((r) => !r.__group && !r.__total);
   const best = {};
   for (const k of ["pts", "reb", "ast", "stl", "blk"]) best[k] = Math.max(1, ...players.map((p) => p[k] || 0));
@@ -323,7 +323,7 @@ function boxCards(rows, live) {
       ].filter(Boolean);
       return h(
         "a",
-        { class: "bc-row", href: `#/joueur/${p.id}` },
+        { class: p.id === focusId ? "bc-row is-focus" : "bc-row", href: `#/joueur/${p.id}` },
         h("span", { class: "bc-photo" }, headshot(p.id, { alt: "" })),
         h(
           "div",
@@ -346,7 +346,16 @@ function boxCards(rows, live) {
 
 // Choix d'équipe et de présentation du box score (téléphone seulement, masqué sur grand écran).
 const BOX_VIEW_KEY = "parquet-box-vue";
-function boxPanel(box, panel) {
+// Joueur mis en avant (arrivée depuis l'accueil) : son équipe affichée, sa ligne au centre de
+// l'écran, surlignée.
+function focusBoxRow(panel) {
+  requestAnimationFrame(() => {
+    const row = [...panel.querySelectorAll(".is-focus")].find((el) => el.offsetParent !== null);
+    row?.scrollIntoView({ block: "center", behavior: document.documentElement.dataset.motion === "reduce" ? "auto" : "smooth" });
+  });
+}
+
+function boxPanel(box, panel, focusId = null) {
   let view = "lignes";
   try {
     view = localStorage.getItem(BOX_VIEW_KEY) || "lignes";
@@ -357,7 +366,7 @@ function boxPanel(box, panel) {
     panel.classList.toggle("bx-home", side === "home");
     panel.classList.toggle("bx-table", v === "tableau");
   };
-  let side = "away";
+  let side = focusId && box.teams.home.players.some((p) => p.id === focusId) ? "home" : "away";
   const a = box.game.away || {};
   const hm = box.game.home || {};
   const bar = h(
@@ -394,7 +403,7 @@ function boxPanel(box, panel) {
     )
   );
   apply(side, view);
-  return [bar, boxTable(box, "away"), boxTable(box, "home")];
+  return [bar, boxTable(box, "away", focusId), boxTable(box, "home", focusId)];
 }
 
 // ------------------------------------------------------------ faits marquants et clés du match
@@ -666,7 +675,10 @@ export async function render(ctx) {
   let box = boxRes.data;
   let meta = boxRes.meta;
   let pbp = null;
-  let tab = "resume";
+  // #/match/<id>/joueur/<joueur> : directement sur le box score, à la ligne du joueur.
+  const focusId = ctx.params[1] ? Number(ctx.params[1]) : null;
+  let focusPending = Boolean(focusId);
+  let tab = focusId ? "box" : "resume";
   let previous = null;
   const key = gameKey(id);
   let isRevealed = isRevealedKey(key);
@@ -754,7 +766,14 @@ export async function render(ctx) {
     } else if (tab === "videos") {
       videosView(panel, box.game, ctx, loadExtras);
     }
-    else if (tab === "box") panel.replaceChildren(...boxPanel(box, panel));
+    else if (tab === "box") {
+      panel.replaceChildren(...boxPanel(box, panel, focusId));
+      if (focusPending) {
+        // Une seule fois : les actualisations en direct ne font pas sauter la page.
+        focusBoxRow(panel);
+        focusPending = false;
+      }
+    }
     else {
       if (!pbp) panel.replaceChildren(loading("Chargement des actions…"));
       try {
