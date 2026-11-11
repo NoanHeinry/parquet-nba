@@ -48,5 +48,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r requirements.txt playwright cryptography
-      - run: python -m playwright install --with-deps chromium
+      # Les miroirs d'Ubuntu sont parfois injoignables depuis GitHub : trois essais, puis le
+      # navigateur seul (l'image de GitHub contient déjà les bibliothèques dont il a besoin).
+      - name: Navigateur de test
+        run: |
+          for i in 1 2 3; do
+            python -m playwright install --with-deps chromium && exit 0
+            echo "Échec de l'installation (essai $i), nouvel essai dans 20 s"
+            sleep 20
+          done
+          echo "Miroirs d'Ubuntu indisponibles : installation du navigateur seul"
+          python -m playwright install chromium
       - run: python -m unittest tests.test_ui -v
