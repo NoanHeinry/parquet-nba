@@ -45,8 +45,14 @@ function card(fav) {
   const el = h(
     "article",
     { class: "mp-card is-loading", style: { "--tc": fav.teamId ? teamColor(fav.teamId) : "var(--line-strong)" } },
-    h("a", { class: "mp-photo", href: `#/joueur/${fav.id}`, "aria-label": `Fiche de ${fav.name}` }, headshot(fav.id, { size: "big", alt: "" })),
-    h("div", { class: "mp-body" }, h("a", { class: "mp-name", href: `#/joueur/${fav.id}` }, fav.name), h("p", { class: "note" }, "Chargement…"))
+    // Bandeau du haut : nom et équipe à gauche, photo à droite à sa taille naturelle (sans zoom).
+    h(
+      "div",
+      { class: "mp-top" },
+      h("div", { class: "mp-id" }, h("a", { class: "mp-name", href: `#/joueur/${fav.id}` }, fav.name)),
+      h("a", { class: "mp-photo", href: `#/joueur/${fav.id}`, "aria-label": `Fiche de ${fav.name}` }, headshot(fav.id, { size: "big", alt: "" }))
+    ),
+    h("div", { class: "mp-body" }, h("p", { class: "note" }, "Chargement…"))
   );
   const remove = h("button", { type: "button", class: "mp-remove", title: "Retirer des favoris", "aria-label": `Retirer ${fav.name} des favoris` }, iconStar(true, 16));
   remove.addEventListener("click", () => {
@@ -86,13 +92,15 @@ async function fill(el, fav, signal) {
   const avgLabel = hl ? (/career/i.test(hl.season || "") ? "En carrière" : `Saison ${hl.season}`) : "";
   const diffText = (d) => (Math.abs(d) < 0.05 ? "comme sa moyenne de la saison" : `${d > 0 ? "+" : "−"}${f.num(Math.abs(d))} par rapport à sa saison`);
   // replaceChildren écrirait « null » en toutes lettres : on ne garde que les blocs présents.
-  body.replaceChildren(...[
+  el.querySelector(".mp-id").replaceChildren(
     h("a", { class: "mp-name", href: `#/joueur/${fav.id}` }, p.name),
     h(
       "p",
       { class: "mp-team" },
       t ? [teamLogo(t.id, 20), h("a", { href: `#/equipe/${t.id}` }, t.fullName), p.jersey ? ` · n° ${p.jersey}` : ""] : p.to ? `Carrière ${p.from}–${p.to}` : "Retraité"
-    ),
+    )
+  );
+  body.replaceChildren(...[
     hl
       ? h(
           "div",

@@ -15075,3 +15075,103 @@ html[data-motion="reduce"] .stat-table tbody tr.is-focus > td {
     width: auto;
   }
 }
+
+/* ================================================================ 4.8 Mes joueurs : photo en bandeau */
+
+/* La photo officielle est un portrait en largeur : dans une colonne étroite et haute, il fallait
+   la zoomer énormément. Elle passe en bandeau en haut de la carte, à sa taille naturelle, à côté
+   du nom ; les stats viennent dessous. */
+.mp-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 0;
+  border-top: 4px solid var(--tc);
+  background: var(--surface);
+}
+
+.mp-top {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 170px;
+  overflow: hidden;
+  background:
+    radial-gradient(90% 120% at 85% 100%, color-mix(in srgb, var(--tc) 45%, transparent), transparent 70%),
+    linear-gradient(120deg, color-mix(in srgb, var(--tc) 22%, var(--surface)) 0%, var(--surface) 75%);
+}
+
+.mp-id {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 58%;
+  padding: 18px 0 16px 16px;
+}
+
+.mp-photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 56%;
+  background: none;
+}
+
+.mp-photo::after {
+  display: none;
+}
+
+/* Photo officielle (buste détouré) : hauteur du bandeau, largeur naturelle, calée en bas à droite. */
+.mp-photo .headshot {
+  position: absolute;
+  inset: auto 0 0 auto;
+  width: auto;
+  height: 100%;
+  max-width: none;
+  translate: none;
+  object-fit: contain;
+  object-position: right bottom;
+}
+
+/* Photo choisie par l'utilisateur (avec un fond) : remplit la moitié droite, fondu vers la gauche. */
+.mp-photo .headshot.is-custom {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 15%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 35%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 35%);
+}
+
+.mp-photo:hover .headshot {
+  transform: none;
+}
+
+.mp-body {
+  padding: 14px 16px 16px;
+}
+
+.mp-name {
+  font-size: 24px;
+  text-shadow: 0 1px 12px color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
+.mp-remove {
+  z-index: 2;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border-radius: 50%;
+}
+
+@media (max-width: 700px) {
+  .mp-top {
+    min-height: 150px;
+  }
+
+  .mp-name {
+    font-size: 22px;
+  }
+}
