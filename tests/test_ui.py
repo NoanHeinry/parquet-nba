@@ -976,6 +976,35 @@ class InterfaceTests(unittest.TestCase):
         self.page.wait_for_selector(".mp-card .mp-status .inj-status")
         self.page.wait_for_selector(".mp-card .mp-news:has-text('Record en carrière : 52 points')")
 
+    def test_back_arrow_returns_to_previous_page(self):
+        # Accueil sans page précédente : pas de flèche. Ensuite elle ramène page après page.
+        self.open("#/")
+        self.page.wait_for_selector(".stage-bio")
+        self.assertTrue(self.page.locator(".back-fab").is_hidden())
+        self.page.click(".stage-bio")
+        self.page.wait_for_function("location.hash.startsWith('#/joueur/')")
+        player = self.page.evaluate("location.hash")
+        self.page.click(".back-fab")
+        self.page.wait_for_function("location.hash === '#/' || location.hash === ''")
+        self.page.go_forward()
+        self.page.wait_for_function(f"location.hash === {json.dumps(player)}")
+        self.open("#/equipes")
+        self.page.wait_for_selector(".tcard")
+        self.page.click(".back-fab")
+        self.page.wait_for_function(f"location.hash === {json.dumps(player)}")
+        # Page ouverte directement dans un nouvel onglet (lien, notification) : la flèche mène à l'accueil.
+        ctx = self.browser.new_context(service_workers="block")
+        try:
+            page = ctx.new_page()
+            page.goto(self.base + "#/classement")
+            page.wait_for_selector(".back-fab:not([hidden])")
+            self.assertEqual(page.get_attribute(".back-fab", "aria-label"), "Revenir à l'accueil")
+            page.click(".back-fab")
+            page.wait_for_function("location.hash === '#/'")
+            page.wait_for_selector(".back-fab", state="hidden")
+        finally:
+            ctx.close()
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

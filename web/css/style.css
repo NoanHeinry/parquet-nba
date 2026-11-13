@@ -15304,3 +15304,75 @@ html[data-motion="reduce"] .stat-table tbody tr.is-focus > td {
   font-size: 12.5px;
   color: var(--text-2);
 }
+
+/* ================================================================ 5.0 Flèche retour */
+
+.back-fab {
+  position: fixed;
+  top: calc(var(--banner-h, 0px) + 16px);
+  left: 20px;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s, color 0.2s;
+}
+
+.back-fab[hidden] {
+  display: none;
+}
+
+.back-fab svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.back-fab:hover,
+.back-fab:focus-visible {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.back-fab:active svg {
+  transform: translateX(-3px);
+}
+
+/* Le logo se décale pour laisser la place à la flèche. */
+html.has-back .float-brand {
+  left: 90px;
+}
+
+body.menu-open .back-fab {
+  visibility: hidden;
+}
+
+@media (max-width: 700px) {
+  .back-fab {
+    top: calc(var(--banner-h, 0px) + 12px);
+    left: 14px;
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  html.has-back .float-brand {
+    left: 74px;
+  }
+
+  /* Comme le bouton du menu : s'efface en descendant, revient en remontant. */
+  html.fab-away .back-fab {
+    transform: translateY(calc(-100% - var(--banner-h, 0px) - 40px));
+    box-shadow: none;
+  }
+}

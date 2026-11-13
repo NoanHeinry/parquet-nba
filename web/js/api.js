@@ -18,7 +18,9 @@ export async function api(path, { signal } = {}) {
   let body = null;
   try {
     body = await res.json();
-  } catch {
+  } catch (err) {
+    // Page quittée pendant la lecture de la réponse : ce n'est pas une erreur à afficher.
+    if (signal?.aborted || err?.name === "AbortError") throw new DOMException("Lecture interrompue", "AbortError");
     throw new ApiError(`Réponse illisible du serveur local (code ${res.status}).`, res.status);
   }
   // Parquet protégé par un code d'accès (hébergement) : le rechargement affiche la page du code.
