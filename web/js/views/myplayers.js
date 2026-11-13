@@ -7,6 +7,7 @@ import { favoritePlayers, headshot, teamLogo, toggleFavoritePlayer } from "../co
 import { team, teamColor } from "../teams.js";
 import { iconStar } from "../icons.js";
 import { poster } from "../poster.js";
+import { statusBadge } from "../news.js";
 
 const FORM_GAMES = 5;
 
@@ -136,6 +137,30 @@ async function fill(el, fav, signal) {
         : null,
   ].filter(Boolean));
   el.classList.remove("is-loading");
+  if (p.active) addNews(el, fav.id, signal);
+}
+
+// État de santé (badge à côté du nom) et dernier fait marquant, d'après l'actualité du joueur.
+async function addNews(el, id, signal) {
+  let data;
+  try {
+    data = (await api(`/player/${id}/actu`, { signal })).data;
+  } catch {
+    return;
+  }
+  if (data.status) el.querySelector(".mp-id")?.append(h("p", { class: "mp-status" }, statusBadge(data.status), data.status.reason ? h("span", null, data.status.reason) : null));
+  const top = data.items.find((i) => i.kind !== "transaction" || data.items.length === 1);
+  if (top) {
+    el.querySelector(".mp-body")?.prepend(
+      h(
+        top.gameId ? "a" : "p",
+        { class: `mp-news tone-${top.tone || "info"}`, href: top.gameId ? `#/match/${top.gameId}` : null },
+        h("small", null, `Actu, ${f.dayShort(top.date)}`),
+        h("b", null, top.title),
+        top.text ? h("span", null, top.text) : null
+      )
+    );
+  }
 }
 
 export async function render(ctx) {

@@ -953,6 +953,29 @@ class InterfaceTests(unittest.TestCase):
         pts = [int(t) for t in table.locator("tbody tr:not(.total) td:nth-child(3)").all_text_contents()]
         self.assertEqual(pts, sorted(pts, reverse=True))
 
+    def test_player_news_block_and_favorite_card(self):
+        # Joueur du rapport des blessures (démo) : bandeau d'état, rubrique Actualité, badge sur sa carte.
+        report = json.loads(urllib.request.urlopen(self.base + "api/injuries").read())["data"]
+        hurt = next(p for g in report["games"] for t in g["teams"] for p in t["players"] if p["id"])
+        news = json.loads(urllib.request.urlopen(self.base + f"api/player/{hurt['id']}/actu").read())["data"]
+        self.assertEqual(news["status"]["statusFr"], hurt["statusFr"])
+        self.open(f"#/joueur/{hurt['id']}")
+        self.page.wait_for_selector(".inj-banner .inj-status")
+        self.assertIn(hurt["statusFr"], self.page.text_content(".inj-banner"))
+        self.page.wait_for_selector(".news-block")
+        # Faits récents : un record lié à son match.
+        rich = {"data": {"status": None, "items": [{"kind": "career-high", "date": "2026-11-11", "title": "Record en carrière : 52 points", "text": "Meilleur total de sa carrière contre PHX.", "gameId": "0012600050", "tone": "good"}]}, "meta": {}}
+        self.page.route("**/api/player/1722115/actu", lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(rich)))
+        self.open("#/joueur/1722115")
+        item = self.page.wait_for_selector(".news-item a")
+        self.assertIn("Record en carrière : 52 points", item.text_content())
+        self.assertEqual(item.get_attribute("href"), "#/match/0012600050")
+        # Mes joueurs : badge d'état pour le blessé, dernier fait pour l'autre.
+        self.page.evaluate(f"localStorage.setItem('parquet-joueurs-favoris', JSON.stringify([{{id: 1722115, name: 'A'}}, {{id: {hurt['id']}, name: 'B'}}]))")
+        self.open("#/mes-joueurs")
+        self.page.wait_for_selector(".mp-card .mp-status .inj-status")
+        self.page.wait_for_selector(".mp-card .mp-news:has-text('Record en carrière : 52 points')")
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

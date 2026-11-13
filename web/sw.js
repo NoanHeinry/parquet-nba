@@ -6,7 +6,7 @@
 // navigateur, ni dans celui d'un intermédiaire comme Cloudflare) : une mise à jour du code est
 // donc visible dès le rechargement suivant, sans mélange de versions.
 
-const VERSION = "1.34.1";
+const VERSION = "1.35.0";
 const STATIC_CACHE = `parquet-static-${VERSION}`;
 const API_CACHE = `parquet-api-${VERSION}`;
 const API_CACHE_MAX = 150;

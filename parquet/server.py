@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, urlsplit
 
-from . import __version__, access, extras, history, nba, net, photos, player_season, season, settings, teams_meta, teamstats, verify
+from . import __version__, access, extras, history, nba, net, photos, player_news, player_season, season, settings, teams_meta, teamstats, verify
 from .net import SourceError
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
@@ -297,6 +297,12 @@ def api_player_career(q, player_id):
 @route(r"/api/player/(\d+)/awards")
 def api_player_awards(q, player_id):
     return nba.player_awards(int(player_id))
+
+
+@route(r"/api/player/(\d+)/actu")
+def api_player_news(q, player_id):
+    # Actualité : état de santé (rapport officiel) et faits récents (records, absences, transactions…).
+    return player_news.player_news(int(player_id))
 
 
 @route(r"/api/player/(\d+)/gamelog")

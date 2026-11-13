@@ -15175,3 +15175,132 @@ html[data-motion="reduce"] .stat-table tbody tr.is-focus > td {
     font-size: 22px;
   }
 }
+
+/* ================================================================ 4.9 Actualité d'un joueur */
+
+.news-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.news-item > a,
+.news-item > div {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 10px 10px;
+  border-left: 3px solid var(--news-c, var(--line-strong, var(--line)));
+  background: color-mix(in srgb, var(--text) 4%, var(--bg));
+  color: var(--text);
+  text-decoration: none;
+}
+
+.news-item > a:hover {
+  background: var(--surface-2);
+}
+
+.news-item > a:hover b {
+  color: var(--accent);
+}
+
+.tone-good {
+  --news-c: var(--accent);
+}
+
+.tone-warn {
+  --news-c: var(--loss);
+}
+
+.tone-info {
+  --news-c: var(--text-2);
+}
+
+.news-ico {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 16px;
+  color: var(--news-c);
+}
+
+.news-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.news-txt b {
+  font-size: 15px;
+}
+
+.news-txt span {
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.news-date {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Cartes « Mes joueurs » */
+.mp-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.mp-news {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 0 4px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--news-c);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.mp-news small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mp-news b {
+  font-size: 13.5px;
+}
+
+@media (max-width: 560px) {
+  .news-item > a,
+  .news-item > div {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .news-date {
+    grid-column: 2;
+    margin-top: -4px;
+  }
+
+  .news-ico {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.mp-news span {
+  font-size: 12.5px;
+  color: var(--text-2);
+}

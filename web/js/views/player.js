@@ -8,6 +8,7 @@ import { seasonView } from "./player-season.js";
 import { chips, errorState, headshot, isFavoritePlayer, loading, section, segmented, statTable, swapIn, tabs, teamLogo, toggleFavoritePlayer, wl } from "../components.js";
 import { hasCustomPhoto, silhouetteUrl, team, teamBand, teamByTri } from "../teams.js";
 import { photoButtons } from "../photo-edit.js";
+import { trophyIcon } from "../trophies.js";
 import { iconScale, iconStar } from "../icons.js";
 import { moveRow, statusBadge } from "../news.js";
 import { poster } from "../poster.js";
@@ -399,6 +400,32 @@ function draftText(p) {
   return `${p.draftYear}, ${p.draftRound === 1 ? "1er" : `${p.draftRound}e`} tour, ${p.draftNumber === 1 ? "1er" : `${p.draftNumber}e`} choix`;
 }
 
+// Actualité du joueur : un fait par ligne, du plus récent au plus ancien.
+const NEWS_ICON = { "season-high": "mvp", "career-high": "champion", milestone: "mip", award: "mvp", "triple-double": "fmvp", streak: "mip", "big-game": "fmvp" };
+const NEWS_GLYPH = { absence: "⏸", return: "↩", transaction: "⇄" };
+
+export function newsView(items) {
+  return h(
+    "section",
+    { class: "section news-block", "aria-label": "Actualité du joueur" },
+    h("h2", { class: "section-title" }, "Actualité"),
+    items.length
+      ? h(
+          "ul",
+          { class: "news-list" },
+          items.map((it) => {
+            const body = [
+              h("span", { class: "news-ico", "aria-hidden": "true" }, NEWS_ICON[it.kind] ? trophyIcon(NEWS_ICON[it.kind], 20) : NEWS_GLYPH[it.kind] || "•"),
+              h("span", { class: "news-txt" }, h("b", null, it.title), it.text ? h("span", null, it.text) : null),
+              h("time", { class: "news-date num", datetime: it.date }, f.dayShort(it.date)),
+            ];
+            return h("li", { class: `news-item tone-${it.tone || "info"}` }, it.gameId ? h("a", { href: `#/match/${it.gameId}` }, body) : h("div", null, body));
+          })
+        )
+      : h("p", { class: "note" }, "Rien de particulier ces 30 derniers jours.")
+  );
+}
+
 // Étoile « joueur favori » : il apparaît dans « Mes joueurs » et sur l'accueil.
 function favButton(p) {
   const btn = h("button", { class: "btn fav-btn", type: "button" });
@@ -566,33 +593,33 @@ export async function render(ctx) {
     }
   };
 
-  // Joueur présent dans le dernier rapport des blessures : on l'indique sous l'en-tête.
+  // Actualité : état de santé (rapport officiel des blessures) sous l'en-tête, puis les faits
+  // récents (records, absences, retour au jeu, transactions, récompenses).
   const injury = h("div");
-  api("/injuries", { signal: ctx.signal })
+  const news = h("div");
+  api(`/player/${id}/actu`, { signal: ctx.signal })
     .then(({ data }) => {
-      for (const g of data.games) {
-        for (const t of g.teams) {
-          const p = t.players.find((x) => x.id === id);
-          if (!p) continue;
-          const opp = g.matchup.split("@").find((x) => x !== t.tri) || "";
-          injury.replaceChildren(
-            h(
-              "div",
-              { class: "inj-banner" },
-              statusBadge(p),
-              h("span", null, h("span", { title: p.reasonFr ? p.reason : null }, p.reasonFr || p.reason), ` pour le match contre ${opp}`, g.start ? ` (${f.localDayShort(g.start)})` : "", "."),
-              h("a", { class: "link", href: "#/infos" }, "Rapport des blessures")
-            )
-          );
-          return;
-        }
+      const st = data.status;
+      if (st) {
+        const opp = (st.matchup || "").split("@").find((x) => x && x !== info.teamTri) || "";
+        injury.replaceChildren(
+          h(
+            "div",
+            { class: "inj-banner" },
+            statusBadge(st),
+            h("span", null, st.reason || "Raison non précisée", opp ? ` pour le match contre ${opp}` : "", st.gameDate ? ` (${f.dayShort(st.gameDate)})` : "", "."),
+            h("a", { class: "link", href: "#/infos" }, "Rapport des blessures")
+          )
+        );
       }
+      if (info.active || data.items.length) news.replaceChildren(newsView(data.items));
     })
     .catch(() => {});
 
   ctx.outlet.replaceChildren(
     heroView(info, ctx),
     injury,
+    news,
     factsView(info),
     tabs(
       [
