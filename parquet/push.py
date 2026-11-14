@@ -24,7 +24,7 @@ from typing import Callable
 
 from . import nba, webpush
 
-DEFAULT_PREFS = {"start": True, "final": True, "clutch": True, "clutchAll": False, "perf": True, "server": False, "spoiler": False, "teams": []}
+DEFAULT_PREFS = {"start": True, "final": True, "finalAll": False, "clutch": True, "clutchAll": False, "perf": True, "server": False, "spoiler": False, "teams": []}
 STAT_LABELS = (("pts", "pts"), ("reb", "reb"), ("ast", "pd"), ("stl", "int"), ("blk", "ctr"))
 
 
@@ -174,9 +174,9 @@ def message_final(g: dict, spoiler: bool) -> dict:
     if spoiler:
         return {"title": f"Match terminé : {_matchup(g)}", "body": "Le résultat t'attend dans Parquet.", "url": f"#/match/{g['id']}", "tag": f"match-{g['id']}"}
     a, h = _side(g, "away"), _side(g, "home")
-    winner = a if (a.get("score") or 0) > (h.get("score") or 0) else h
+    winner, loser = (a, h) if (a.get("score") or 0) > (h.get("score") or 0) else (h, a)
     extra = " après prolongation" if (g.get("period") or 0) > 4 else ""
-    return {"title": f"Fin du match : {_score_line(g)}", "body": f"Victoire des {winner.get('name')}{extra}.", "url": f"#/match/{g['id']}", "tag": f"match-{g['id']}"}
+    return {"title": f"Fin du match : {_score_line(g)}", "body": f"Victoire des {winner.get('name')} contre les {loser.get('name')}{extra}.", "url": f"#/match/{g['id']}", "tag": f"match-{g['id']}"}
 
 
 def big_games(box: dict) -> list[tuple[dict, dict, dict]]:
@@ -280,7 +280,8 @@ class Watcher:
             if is_clutch(g):
                 sent += self._send_once(f"{gid}:clutch", lambda p: p["clutch"] and (p["clutchAll"] or fav(p)), lambda p, g=g: message_clutch(g, p["spoiler"]))
             if prev == 2 and status == 3:
-                sent += self._send_once(f"{gid}:final", lambda p: p["final"] and fav(p), lambda p, g=g: message_final(g, p["spoiler"]))
+                # Score final : équipes favorites, ou tous les matchs (option « finalAll »).
+                sent += self._send_once(f"{gid}:final", lambda p: (p["final"] and fav(p)) or p.get("finalAll", False), lambda p, g=g: message_final(g, p["spoiler"]))
                 if any(s["prefs"]["perf"] and not s["prefs"]["spoiler"] for s in self.store.subs.values()):
                     try:
                         box = self.box(gid)

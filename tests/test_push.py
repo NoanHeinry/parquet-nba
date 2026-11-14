@@ -229,6 +229,27 @@ class AlertTests(unittest.TestCase):
         w2.tick()
         self.assertEqual(self.inbox(), {})
 
+    def test_final_score_of_every_game_for_morning_readers(self):
+        # Option « score final de tous les matchs » : un résultat par match, même sans équipe favorite.
+        self.device("reveil", teams=[], finalAll=True, perf=False)
+        self.device("fan", teams=[self.BOS], perf=False)
+        w = self.watcher()
+        self.board = {"games": [game("001", 2, period=4), game("002", 2, period=4)]}
+        w.tick()  # premier passage : relevé seulement
+        self.inbox()
+        self.board = {"games": [
+            game("001", 3, away=(self.BOS, "BOS", "Boston", "Celtics", 110), home=(self.LAL, "LAL", "Los Angeles", "Lakers", 104), period=4),
+            game("002", 3, away=(1610612759, "SAS", "San Antonio", "Spurs", 122), home=(1610612756, "PHX", "Phoenix", "Suns", 96), period=5),
+        ]}
+        w.tick()
+        w.tick()  # pas de doublon
+        box = self.inbox()
+        self.assertEqual([m["title"] for m in box["reveil"]], ["Fin du match : BOS 110 – 104 LAL", "Fin du match : SAS 122 – 96 PHX"])
+        self.assertEqual(box["reveil"][1]["body"], "Victoire des Spurs contre les Suns après prolongation.")
+        self.assertEqual(box["reveil"][1]["url"], "#/match/002")
+        # Sans l'option : seulement le match de son équipe favorite.
+        self.assertEqual([m["title"] for m in box["fan"]], ["Fin du match : BOS 110 – 104 LAL"])
+
     def test_server_alerts_only_for_devices_that_want_them(self):
         self.device("admin", server=True)
         self.device("fan", teams=[self.BOS])

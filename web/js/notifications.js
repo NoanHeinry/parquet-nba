@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS = {
   onStart: true,
   onClutch: true,
   onEnd: true,
+  onEndAll: false, // score final de tous les matchs (pour voir les résultats de la nuit au réveil)
   clutchOnlyFavs: false,
   onPerf: true,
   onServer: false,
@@ -214,6 +215,7 @@ function pushPrefs() {
   return {
     start: currentSettings.onStart,
     final: currentSettings.onEnd,
+    finalAll: currentSettings.onEndAll,
     clutch: currentSettings.onClutch,
     clutchAll: !currentSettings.clutchOnlyFavs,
     perf: currentSettings.onPerf,
@@ -332,7 +334,7 @@ export function checkScoreboard(games) {
 
     // 3. Résultat final d'une équipe favorite
     const endKey = `end:${gid}`;
-    if (currentSettings.onEnd && isFav && prev.status === 2 && status === 3 && !notifiedEvents.has(endKey)) {
+    if (((currentSettings.onEnd && isFav) || currentSettings.onEndAll) && prev.status === 2 && status === 3 && !notifiedEvents.has(endKey)) {
       markNotified(endKey);
       const homeWon = (hScore || 0) > (aScore || 0);
       const winTeam = homeWon ? g.home : g.away;
@@ -404,6 +406,7 @@ export function initNotificationsUI() {
     const chkClutch = h("input", { type: "checkbox", checked: currentSettings.onClutch || null });
     const chkEnd = h("input", { type: "checkbox", checked: currentSettings.onEnd || null });
     const chkClutchFavs = h("input", { type: "checkbox", checked: currentSettings.clutchOnlyFavs || null });
+    const chkEndAll = h("input", { type: "checkbox", checked: currentSettings.onEndAll || null });
     const chkPerf = h("input", { type: "checkbox", checked: currentSettings.onPerf || null });
     const chkServer = h("input", { type: "checkbox", checked: currentSettings.onServer || null });
     const canPush = pushPossible();
@@ -507,6 +510,11 @@ export function initNotificationsUI() {
       saveSettings();
       syncPush();
     });
+    chkEndAll.addEventListener("change", () => {
+      currentSettings.onEndAll = chkEndAll.checked;
+      saveSettings();
+      syncPush();
+    });
     chkPerf.addEventListener("change", () => {
       currentSettings.onPerf = chkPerf.checked;
       saveSettings();
@@ -540,6 +548,7 @@ export function initNotificationsUI() {
       h("label", { class: "notif-opt" }, chkClutch, h("span", null, "Fin de match serrée (5 dernières minutes, 5 pts d'écart ou moins)")),
       h("label", { class: "notif-opt" }, chkClutchFavs, h("span", null, "Fins de match serrées : uniquement mes favoris")),
       h("label", { class: "notif-opt" }, chkEnd, h("span", null, "Résultat final des équipes favorites")),
+      h("label", { class: "notif-opt" }, chkEndAll, h("span", null, "Score final de tous les matchs (les résultats de la nuit au réveil)")),
       h("label", { class: "notif-opt" }, chkPerf, h("span", null, "Grosses performances (40 points ou triple-double), tous les matchs")),
       canPush ? h("label", { class: "notif-opt" }, chkServer, h("span", null, "Alertes du serveur : mise à jour ratée ou annulée, redémarrage")) : "",
       h("p", { class: "note", style: { margin: "8px 0 0", fontSize: "11px" } }, "Conseil : marque tes équipes préférées sur leur page pour recevoir leurs alertes."),

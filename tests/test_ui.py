@@ -157,6 +157,15 @@ class InterfaceTests(unittest.TestCase):
             subs = list(push.STORE.subs.values())
             self.assertEqual(len(subs), 1)
             self.assertEqual(subs[0]["prefs"]["teams"], [1610612748])
+            self.assertFalse(subs[0]["prefs"]["finalAll"])
+            # Option « score final de tous les matchs » : transmise au serveur dès qu'on la coche.
+            self.page.click(".notif-panel label:has-text('Score final de tous les matchs') input")
+            self.page.wait_for_function("1", timeout=1000)
+            for _ in range(50):
+                if list(push.STORE.subs.values())[0]["prefs"]["finalAll"]:
+                    break
+                self.page.wait_for_timeout(100)
+            self.assertTrue(list(push.STORE.subs.values())[0]["prefs"]["finalAll"])
             self.page.click("text=Envoyer une notification test")
             self.page.wait_for_function("document.querySelector('.notif-panel [role=status]')?.textContent.includes('Envoyée par le serveur')", timeout=15000)
             _path, _headers, body = service.received[-1]
