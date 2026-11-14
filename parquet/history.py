@@ -149,3 +149,165 @@ def palmares_data() -> tuple[dict, dict]:
     ]
     data["lastSeason"] = data["awards"][0]["winners"][0]["season"]
     return data, {"fetchedAt": None, "stale": False}
+
+
+# ---------------------------------------------------------------------------
+# Records en un match et sur une saison
+# ---------------------------------------------------------------------------
+
+# Catégories (colonne du journal des matchs de NBA.com, libellé, unité courte).
+SPLIT_CATEGORIES = [
+    ("PTS", "Points", "pts"),
+    ("REB", "Rebonds", "reb"),
+    ("AST", "Passes décisives", "pd"),
+    ("STL", "Interceptions", "int"),
+    ("BLK", "Contres", "ct"),
+    ("FG3M", "Paniers à 3 points", "3 pts"),
+]
+TOP = 10
+
+
+def _ranked(rows: list[dict]) -> list[dict]:
+    """Rang avec ex aequo (même valeur, même rang)."""
+    rows.sort(key=lambda r: -(r["value"] or 0))
+    for i, r in enumerate(rows):
+        r["rank"] = rows[i - 1]["rank"] if i and rows[i - 1]["value"] == r["value"] else i + 1
+    return rows
+
+
+def _season_game_log() -> tuple[list[dict], str, dict]:
+    """Toutes les lignes joueur-match de la saison régulière en cours (ou de la précédente avant
+    son début)."""
+    last_meta: dict = {}
+    for season_label in (nba.current_season(), nba.previous_season()):
+        ttl = 1800 if season_label == nba.current_season() else 24 * 3600
+
+        def fetch(s=season_label):
+            raw = stats_json(
+                "leaguegamelog",
+                {"Counter": 0, "Direction": "DESC", "LeagueID": "00", "PlayerOrTeam": "P", "Season": s, "SeasonType": "Regular Season", "Sorter": "DATE"},
+            )
+            keep = ("PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "TEAM_ABBREVIATION", "GAME_ID", "GAME_DATE", "MATCHUP", "WL", "PTS", "REB", "AST", "STL", "BLK", "FG3M")
+            return [{k: r.get(k) for k in keep} for r in result_sets(raw).get("LeagueGameLog", [])]
+
+        rows, last_meta = nba._cache().get(f"leaguegamelog:{season_label}", ttl, fetch)
+        if rows:
+            return rows, season_label, last_meta
+    return [], nba.current_season(), last_meta
+
+
+def _resolver():
+    from . import records_data
+
+    by_name = _name_index()
+
+    def resolve(name: str, year: int) -> int | None:
+        key = palmares.norm(name)
+        key = records_data.NAME_ALIASES.get(key, key)
+        return _player_id(by_name, key, year)
+
+    return resolve
+
+
+def _matchup_opp(matchup: str) -> tuple[str, bool]:
+    """« MIA vs. WAS » → ("WAS", à domicile) ; « MIA @ WAS » → ("WAS", à l'extérieur)."""
+    parts = (matchup or "").replace("vs.", "@").split("@")
+    return (parts[1].strip() if len(parts) > 1 else ""), "vs." in (matchup or "")
+
+
+def _day_iso(raw: str) -> str:
+    from datetime import datetime
+
+    raw = (raw or "").strip()
+    for fmt in ("%Y-%m-%d", "%b %d, %Y", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(raw[:19] if "T" in raw else raw, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return raw[:10]
+
+
+def records_game() -> tuple[dict, dict]:
+    """Records en un match : de tous les temps (livre des records) et de la saison en cours."""
+    from . import records_data
+
+    rows, season_label, meta = _season_game_log()
+    resolve = _resolver()
+    boards = []
+    for key, label, unit in SPLIT_CATEGORIES:
+        all_time = _ranked(
+            [
+                {"value": v, "name": n, "id": resolve(n, int(d[:4])), "team": t, "opp": o, "date": d}
+                for v, n, t, o, d in records_data.GAME.get(key, [])
+            ]
+        )
+        current = []
+        for r in sorted(rows, key=lambda r: -(nba._num(r.get(key)) or 0))[: TOP * 3]:
+            value = nba._int(r.get(key))
+            if not value:
+                continue
+            opp, home = _matchup_opp(r.get("MATCHUP"))
+            current.append(
+                {
+                    "value": value,
+                    "name": r.get("PLAYER_NAME") or "",
+                    "id": nba._int(r.get("PLAYER_ID")),
+                    "teamId": nba._int(r.get("TEAM_ID")),
+                    "tri": r.get("TEAM_ABBREVIATION") or "",
+                    "opp": opp,
+                    "home": home,
+                    "date": _day_iso(r.get("GAME_DATE")),
+                    "gameId": r.get("GAME_ID") or "",
+                    "win": r.get("WL") == "W",
+                }
+            )
+        current = _ranked(current)[:TOP]
+        floor = all_time[min(TOP, len(all_time)) - 1]["value"] if all_time else None
+        for c in current:
+            # Performance de la saison qui entre dans le top 10 de l'histoire.
+            c["historic"] = floor is not None and c["value"] >= floor
+            c["historicRank"] = 1 + sum(1 for a in all_time if a["value"] > c["value"]) if c["historic"] else None
+        boards.append({"key": key, "label": label, "unit": unit, "allTime": all_time, "current": current})
+    return {"season": season_label, "live": season_label == nba.current_season(), "boards": boards}, meta
+
+
+def records_season() -> tuple[dict, dict]:
+    """Records sur une saison : de tous les temps et meilleurs de la saison en cours (moyennes par
+    match, sauf les paniers à 3 points en total)."""
+    from . import records_data
+
+    rows, season_label, meta = _season_game_log()
+    resolve = _resolver()
+    per: dict[int, dict] = {}
+    for r in rows:
+        pid = nba._int(r.get("PLAYER_ID"))
+        if not pid:
+            continue
+        p = per.setdefault(pid, {"id": pid, "name": r.get("PLAYER_NAME") or "", "teamId": nba._int(r.get("TEAM_ID")), "tri": r.get("TEAM_ABBREVIATION") or "", "gp": 0, **{k: 0 for k, *_ in SPLIT_CATEGORIES}})
+        p["gp"] += 1
+        for k, *_ in SPLIT_CATEGORIES:
+            p[k] += nba._int(r.get(k)) or 0
+    # Pour une moyenne, il faut avoir joué au moins 70 % des matchs de son équipe à ce jour
+    # (matchs de l'équipe = ceux du coéquipier qui en a joué le plus).
+    team_games: dict[int, int] = {}
+    for p in per.values():
+        team_games[p["teamId"]] = max(team_games.get(p["teamId"], 0), p["gp"])
+    boards = []
+    for key, label, unit in SPLIT_CATEGORIES:
+        total = key == "FG3M"
+        all_time = _ranked([{"value": v, "name": n, "id": resolve(n, int(s[:4])), "season": s} for v, n, s in records_data.SEASON.get(key, [])])
+        current = []
+        for p in per.values():
+            needed = max(1, math.ceil(0.7 * team_games.get(p["teamId"], 0)))
+            if not total and p["gp"] < needed:
+                continue
+            value = p[key] if total else round(p[key] / p["gp"], 2)
+            if value:
+                current.append({"value": value, "name": p["name"], "id": p["id"], "teamId": p["teamId"], "tri": p["tri"], "gp": p["gp"], "season": season_label})
+        current = _ranked(current)[:TOP]
+        floor = all_time[min(TOP, len(all_time)) - 1]["value"] if all_time else None
+        for c in current:
+            # Une saison en cours n'est pas finie : pour les moyennes seulement, « au rythme actuel ».
+            c["historic"] = floor is not None and c["value"] >= floor
+        boards.append({"key": key, "label": label, "unit": unit, "perGame": not total, "allTime": all_time, "current": current})
+    return {"season": season_label, "live": season_label == nba.current_season(), "boards": boards}, meta

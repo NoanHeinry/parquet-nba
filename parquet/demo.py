@@ -578,6 +578,20 @@ def player_awards(pid: int) -> dict:
     return wrap(rs("PlayerAwards", hdr, rows))
 
 
+def league_game_log(season: str, season_type: str) -> dict:
+    """Journal de tous les matchs des joueurs fictifs (assemblé à partir de leurs journaux)."""
+    hdr = ["SEASON_ID", "PLAYER_ID", "PLAYER_NAME", "TEAM_ID", "TEAM_ABBREVIATION", "GAME_ID", "GAME_DATE", "MATCHUP", "WL", "PTS", "REB", "AST", "STL", "BLK", "FG3M"]
+    rows = []
+    for pid, p in PLAYERS.items():
+        gl = player_gamelog(pid, season, season_type)["resultSets"][0]
+        idx = {h: i for i, h in enumerate(gl["headers"])}
+        for r in gl["rowSet"]:
+            rows.append([r[idx["SEASON_ID"]], pid, f"{p['first']} {p['last']}", p["teamId"], p["tri"], f"{r[idx['Game_ID']]}{pid % 7}",
+                         r[idx["GAME_DATE"]], r[idx["MATCHUP"]], r[idx["WL"]], r[idx["PTS"]], r[idx["REB"]], r[idx["AST"]], r[idx["STL"]],
+                         r[idx["BLK"]], r[idx["FG3M"]]])
+    return wrap(rs("LeagueGameLog", hdr, rows))
+
+
 def player_gamelog(pid: int, season: str, season_type: str) -> dict:
     hdr = ["SEASON_ID", "Player_ID", "Game_ID", "GAME_DATE", "MATCHUP", "WL", "MIN", "FGM", "FGA", "FG_PCT", "FG3M", "FG3A", "FG3_PCT", "FTM", "FTA",
            "FT_PCT", "OREB", "DREB", "REB", "AST", "STL", "BLK", "TOV", "PF", "PTS", "PLUS_MINUS", "VIDEO_AVAILABLE"]
@@ -974,6 +988,8 @@ def _handle_base(url: str, params: dict | None):
             return player_career(int(params["PlayerID"]))
         if ep == "playerawards":
             return player_awards(int(params["PlayerID"]))
+        if ep == "leaguegamelog":
+            return league_game_log(params["Season"], params.get("SeasonType", "Regular Season"))
         if ep == "playergamelog":
             return player_gamelog(int(params["PlayerID"]), params["Season"], params["SeasonType"])
         if ep == "commonteamroster":

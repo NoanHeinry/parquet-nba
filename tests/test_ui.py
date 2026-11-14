@@ -1005,6 +1005,29 @@ class InterfaceTests(unittest.TestCase):
         finally:
             ctx.close()
 
+    def test_single_game_and_single_season_records(self):
+        self.open("#/records")
+        self.page.wait_for_selector(".rc-board")
+        # En un match : record de tous les temps (100 points) et meilleurs matchs de la saison.
+        self.page.click(".segmented button:has-text('En un match')")
+        first = self.page.wait_for_selector(".rs-col:not(.is-current) .rs-row.is-first")
+        self.assertIn("Wilt Chamberlain", first.text_content())
+        self.assertIn("100", first.text_content())
+        current = self.page.locator(".rs-col.is-current .rs-row")
+        self.assertEqual(current.count(), 10)
+        self.assertRegex(current.first.get_attribute("href"), r"^#/match/")
+        # Sur une saison, paniers à 3 points : 402 de Stephen Curry en 2015-16.
+        self.page.click(".segmented button:has-text('Sur une saison')")
+        self.page.wait_for_selector(".rs-board")
+        self.page.click(".chip:has-text('Paniers à 3 points')")
+        first = self.page.locator(".rs-col:not(.is-current) .rs-row.is-first")
+        self.assertIn("402", first.text_content())
+        self.assertIn("2015-16", first.text_content())
+        # Retour à la carrière : le choix playoffs réapparaît.
+        self.page.click(".segmented button:has-text('Carrière')")
+        self.page.wait_for_selector(".rc-board")
+        self.assertTrue(self.page.locator(".segmented button:has-text('Playoffs')").is_visible())
+
     def test_newer_server_offers_one_tap_update(self):
         # Nouvelle version installée sur le serveur : un bouton met à jour (pas de Ctrl+F5 sur
         # téléphone). Si le rechargement n'a rien changé, l'encart explique quoi faire.

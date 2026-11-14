@@ -15376,3 +15376,178 @@ body.menu-open .back-fab {
     box-shadow: none;
   }
 }
+
+/* ================================================================ 5.1 Records en un match et sur une saison */
+
+.rs-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.rs-col .rc-h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rs-live {
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.rs-list {
+  display: grid;
+  gap: 6px;
+}
+
+.rs-row {
+  display: grid;
+  grid-template-columns: 30px 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 6px 14px 6px 10px;
+  background: color-mix(in srgb, var(--text) 4%, var(--bg));
+  color: var(--text);
+  text-decoration: none;
+}
+
+a.rs-row:hover {
+  background: var(--surface-2);
+}
+
+a.rs-row:hover .rs-who b {
+  color: var(--accent);
+}
+
+.rs-row.is-first {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 16%, var(--surface)) 0%, var(--surface) 70%);
+}
+
+.rs-rank {
+  font-family: var(--font-poster);
+  font-size: 22px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.rs-row.is-first .rs-rank {
+  color: var(--accent);
+}
+
+.rs-pic {
+  display: grid;
+  place-items: end center;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-2);
+}
+
+.rs-pic .headshot {
+  width: 64px;
+  max-width: none;
+  border-radius: 0;
+  background: none;
+}
+
+.rs-pic .headshot.is-custom {
+  width: 100%;
+  height: 100%;
+}
+
+.rs-nopic {
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.rs-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rs-who b {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rs-who small {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+
+.rs-badge {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 7px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rs-val {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+}
+
+.rs-val b {
+  font-family: var(--font-poster);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.rs-val small {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .rs-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .rs-row {
+    grid-template-columns: 24px 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding-right: 10px;
+  }
+
+  .rs-pic {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rs-pic .headshot {
+    width: 54px;
+  }
+
+  .rs-val b {
+    font-size: 25px;
+  }
+}
+
+.rs-live.is-past {
+  border-color: var(--line);
+  color: var(--muted);
+}

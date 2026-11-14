@@ -267,6 +267,16 @@ def api_records(q):
     return history.records("Playoffs" if q.get("type") == "playoffs" else "Regular Season")
 
 
+@route(r"/api/records/match")
+def api_records_game(q):
+    return history.records_game()
+
+
+@route(r"/api/records/saison")
+def api_records_season(q):
+    return history.records_season()
+
+
 @route(r"/api/palmares")
 def api_palmares(q):
     return history.palmares_data()
