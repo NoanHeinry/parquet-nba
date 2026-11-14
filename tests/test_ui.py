@@ -231,6 +231,29 @@ class InterfaceTests(unittest.TestCase):
         self.assertFalse(visible(".box-side[data-side='home'] .box-cards"))
         self.assertEqual(self.page.evaluate("localStorage.getItem('parquet-box-vue')"), "tableau")
 
+    def test_phone_alerts_panel_is_a_full_width_sheet_over_the_menu(self):
+        """Téléphone : le panneau des alertes prend toute la largeur, au-dessus du menu, sans dépasser l'écran."""
+        for width, height in ((390, 844), (360, 640)):
+            self.page.set_viewport_size({"width": width, "height": height})
+            self.open("#/")
+            self.page.reload()  # repart d'une page neuve à chaque taille
+            self.page.wait_for_selector(".menu-fab")
+            self.page.click(".menu-fab")
+            self.page.click("#notif-toggle")
+            self.page.wait_for_selector(".notif-panel")
+            self.page.wait_for_timeout(300)
+            box = self.page.evaluate("""() => { const r = document.querySelector('.notif-panel').getBoundingClientRect();
+                return { top: r.top, bottom: r.bottom, w: r.width, page: document.documentElement.clientWidth }; }""")
+            self.assertGreaterEqual(box["w"], width * 0.85)  # il faisait 66 px de large
+            self.assertGreaterEqual(box["top"], 0)
+            self.assertLessEqual(box["bottom"], height)
+            # Rien du menu ne passe par-dessus : chaque option est bien le premier plan à son endroit.
+            covered = self.page.evaluate("""() => [...document.querySelectorAll('.notif-panel .notif-opt')].filter((el) => {
+                const r = el.getBoundingClientRect(); if (r.bottom > innerHeight || r.top < 0) return false;
+                const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                return !el.closest('.notif-panel').contains(hit); }).length""")
+            self.assertEqual(covered, 0)
+
     def test_game_page_tabs_and_flow_chart(self):
         self.open("#/match/0012600050")
         self.page.wait_for_selector(".flow-chart")

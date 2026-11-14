@@ -559,10 +559,12 @@ export function initNotificationsUI() {
     panel.querySelector(".toast-close").addEventListener("click", closePanel);
     document.body.append(panel);
 
-    // Positionner sous le bouton
-    const r = btn.getBoundingClientRect();
-    panel.style.top = `${r.bottom + 8}px`;
-    panel.style.right = `${Math.max(12, window.innerWidth - r.right)}px`;
+    // Positionner sous le bouton ; sur téléphone, le panneau s'ouvre en volet sur toute la largeur (CSS).
+    if (!window.matchMedia("(max-width: 700px)").matches) {
+      const r = btn.getBoundingClientRect();
+      panel.style.top = `${r.bottom + 8}px`;
+      panel.style.right = `${Math.max(12, window.innerWidth - r.right)}px`;
+    }
 
     const onOutside = (e) => {
       if (panel && !panel.contains(e.target) && !btn.contains(e.target)) {
